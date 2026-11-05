@@ -1,0 +1,143 @@
+{
+  "irrigate_today": true,
+  "irrigation_depth_mm": 18.5,
+  "water_volume_litres": 277500.0,
+  "estimated_pump_runtime_minutes": 231,
+  "current_growth_stage": "Vegetative / Flowering",
+  "current_kc": 0.85,
+  "next_irrigation_date": "2026-11-08",
+  "rain_warning": "Light showers predicted on day 4 (approx 8mm). Monitor soil before scheduling irrigation.",
+  "risk_status": "Moderate",
+  "ml_adjustment_used": false,
+  "explanation": "Your tomato crop is currently in the active vegetative/flowering stage. With recent dry weather and high evapotranspiration, soil moisture has dropped to 42%. We recommend irrigating 18.5 mm (approx. 277,500 L for 1.5 hectares) today using your drip system.",
+  "seven_day_schedule": [
+    {
+      "date": "2026-11-05",
+      "day": "Today",
+      "action": "Irrigate",
+      "recommended_depth_mm": 18.5,
+      "water_volume_litres": 277500.0,
+      "runtime_minutes": 231
+    },
+    {
+      "date": "2026-11-06",
+      "day": "Fri",
+      "action": "Rest",
+      "recommended_depth_mm": 0.0,
+      "water_volume_litres": 0.0,
+      "runtime_minutes": 0
+    },
+    {
+      "date": "2026-11-07",
+      "day": "Sat",
+      "action": "Rest",
+      "recommended_depth_mm": 0.0,
+      "water_volume_litres": 0.0,
+      "runtime_minutes": 0
+    },
+    {
+      "date": "2026-11-08",
+      "day": "Sun",
+      "action": "Irrigate",
+      "recommended_depth_mm": 15.0,
+      "water_volume_litres": 225000.0,
+      "runtime_minutes": 188
+    },
+    {
+      "date": "2026-11-09",
+      "day": "Mon",
+      "action": "Rain Pause",
+      "recommended_depth_mm": 0.0,
+      "water_volume_litres": 0.0,
+      "runtime_minutes": 0
+    },
+    {
+      "date": "2026-11-10",
+      "day": "Tue",
+      "action": "Rest",
+      "recommended_depth_mm": 0.0,
+      "water_volume_litres": 0.0,
+      "runtime_minutes": 0
+    },
+    {
+      "date": "2026-11-11",
+      "day": "Wed",
+      "action": "Irrigate",
+      "recommended_depth_mm": 16.0,
+      "water_volume_litres": 240000.0,
+      "runtime_minutes": 200
+    }
+  ],
+  "seven_day_weather": [
+    {
+      "date": "2026-11-05",
+      "day": "Today",
+      "temp_max_c": 29.5,
+      "temp_min_c": 19.0,
+      "humidity_pct": 58,
+      "rainfall_mm": 0.0,
+      "et0_mm": 4.6,
+      "condition": "Sunny"
+    },
+    {
+      "date": "2026-11-06",
+      "day": "Fri",
+      "temp_max_c": 30.0,
+      "temp_min_c": 19.5,
+      "humidity_pct": 55,
+      "rainfall_mm": 0.0,
+      "et0_mm": 4.8,
+      "condition": "Clear"
+    },
+    {
+      "date": "2026-11-07",
+      "day": "Sat",
+      "temp_max_c": 28.5,
+      "temp_min_c": 20.0,
+      "humidity_pct": 68,
+      "rainfall_mm": 1.5,
+      "et0_mm": 4.1,
+      "condition": "Partly Cloudy"
+    },
+    {
+      "date": "2026-11-08",
+      "day": "Sun",
+      "temp_max_c": 27.0,
+      "temp_min_c": 19.0,
+      "humidity_pct": 74,
+      "rainfall_mm": 8.0,
+      "et0_mm": 3.4,
+      "condition": "Rainy"
+    },
+    {
+      "date": "2026-11-09",
+      "day": "Mon",
+      "temp_max_c": 26.5,
+      "temp_min_c": 18.5,
+      "humidity_pct": 80,
+      "rainfall_mm": 4.2,
+      "et0_mm": 3.2,
+      "condition": "Scattered Showers"
+    },
+    {
+      "date": "2026-11-10",
+      "day": "Tue",
+      "temp_max_c": 28.0,
+      "temp_min_c": 19.0,
+      "humidity_pct": 65,
+      "rainfall_mm": 0.0,
+      "et0_mm": 4.0,
+      "condition": "Partly Cloudy"
+    },
+    {
+      "date": "2026-11-11",
+      "day": "Wed",
+      "temp_max_c": 29.0,
+      "temp_min_c": 19.5,
+      "humidity_pct": 60,
+      "rainfall_mm": 0.0,
+      "et0_mm": 4.4,
+      "condition": "Sunny"
+    }
+  ]
+}

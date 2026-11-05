@@ -1,0 +1,12 @@
+{
+  "farm_name": "Bengaluru Green Fields",
+  "latitude": 12.9716,
+  "longitude": 77.5946,
+  "crop": "Tomato",
+  "soil_type": "Red Sandy Loam",
+  "sowing_date": "2026-10-15",
+  "farm_area_hectares": 1.5,
+  "irrigation_method": "Drip Irrigation",
+  "last_irrigation_date": "2026-11-02",
+  "pump_flow_rate_lpm": 120.0
+}
