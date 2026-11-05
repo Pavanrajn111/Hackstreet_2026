@@ -86,6 +86,15 @@ This document records the complete inspection, diagnosis, fixes, test additions,
   - `backend/app/services/weather_service.py`: Updated cache timestamp to `datetime.now(timezone.utc).isoformat()`.
   - `backend/tests/test_adaptive_and_community.py`: Updated tests to use `datetime.now(timezone.utc)`.
 
+### Task 8: Frontend Dashboard, Navigation, Arrival Animations, and Judge Pitch Flow
+- **Files Modified/Created:**
+  - `frontend/src/index.css`: Added keyframe arrival animations (`cardArrive`, `radarPing`, `ringBreath`), smooth cubic-bezier stagger delays (`.stagger-1` through `.stagger-5`), glowing indicator rings (`.pulse-glow-emerald`, `.pulse-glow-sky`), micro-interaction card elevation (`.hover-elevate`), and telemetry radar indicator (`.radar-dot`).
+  - `frontend/src/components/AppShell.jsx`: Redesigned header bar with streamlined navigation hierarchy (Overview, Smart Hydrology, 3D Hybrid Farming, ML Market, Community Water, and More Tools), integrated an Active Farm Switcher dropdown pill with instantaneous farm switching, and added live FAO-56 telemetry status indicator.
+  - `frontend/src/pages/DashboardPage.jsx`: Added collapsible "AGR002 Judge Pitch Walkthrough" bar providing 4 quick interactive demo steps for judges (1. Live Telemetry, 2. Agronomic Decision, 3. 7-Day Hydrology, 4. 3D Intercropping Plan); added staggered card entrance animations; enhanced primary decision hero card with a glowing status badge, quantitative prescription formula, and clarified technical headings.
+  - `frontend/src/components/FarmLayout3D.jsx` & `frontend/src/pages/HybridRecommendationsPage.jsx`: Added 3D camera quick-presets (`Isometric 3D`, `Top-Down Plan`, `Canopy Eye-Level`) with instant camera position snapping for multi-layer vertical canopy demonstration.
+  - `frontend/src/components/IrrigationSchedule.jsx`: Resolved empty/flatline weekly irrigation plan graph by rendering daily crop demand liters and dynamic Y-axis domain scaling when scheduled pulse volume is zero.
+  - `frontend/package.json`: Fixed build script from restricted memory `--max-semi-space-size=16` to standard `vite build`.
+
 ---
 
 ## 2. Missing Trained Irrigation Bundle Report
@@ -119,52 +128,55 @@ A thorough inspection of `ml/models` confirmed the following findings:
 
 ---
 
-## 3. Test and Build Verification Results
+### Task 8: Analytics Charts, 3D Camera Controls, and GPS Location Service
+- **Files Modified/Created:**
+  - `frontend/src/services/locationService.js` *(created)*: Device geolocation wrapper with Nominatim reverse-geocoding, offline district fallbacks, localStorage caching, and cross-component event subscription.
+  - `frontend/src/components/AnalyticsCharts.jsx`: Dynamic FAO-56 soil moisture trend binding, dynamic `currentMoisture` header status, dynamic threshold ReferenceLine, and dynamic Water Saved / Energy Saved tabs.
+  - `frontend/src/components/FarmLayout3D.jsx`: Multi-camera angle support (`isometric`, `topdown`, `canopy`).
+  - `frontend/src/pages/HybridRecommendationsPage.jsx`: Interactive camera preset buttons with active indicator.
+  - `frontend/src/pages/MyFarmsPage.jsx` & `frontend/src/pages/CommunityWaterPage.jsx`: Direct "Detect My Field GPS" integration.
+  - `backend/app/services/irrigation_engine.py`: Dynamic FAO-56 moisture back-calculation using actual historical weather ETc and rainfall.
+
+### Task 9: Final UI Architecture, Navigation Restructuring & Judge Demo Experience
+- **Files Modified:**
+  - `frontend/src/components/AppShell.jsx`:
+    - Reorganized primary navigation into five clear destinations: `Live Dashboard` (`/app`), `Irrigation Schedule` (`/app/schedule`), `3D Farm Twin` (`/app/intelligence/hybrid`), `Yield & Market AI` (`/app/intelligence/market`), and `Community Water` (`/app/community-water`).
+    - Grouped secondary capabilities under categorized **Extended Tools** dropdown:
+      - *Crop Intelligence*: `Zonal Field Planner` (`/app/intelligence/crop-planner`), `Crop Suitability AI` (`/app/intelligence/crop-suitability`).
+      - *Water Intelligence*: `Dynamic Stress Regulator` (`/app/intelligence/adaptive-irrigation`), `Water Resilience Matrix` (`/app/intelligence/water-resilience`).
+      - *Records & Monitoring*: `Water Audit & History` (`/app/history`), `Farm Registry & Records` (`/app/farms`).
+    - Combined farm switcher and GPS detector into unified **Active Field & GPS** compact header control, eliminating overflow on laptop screens.
+  - `frontend/src/pages/LandingPage.jsx`:
+    - Added **Interactive Farm Water & Cost Savings Simulator** with acreage slider (1–25 acres), crop selector (Tomato, Maize, Sugarcane, Cotton), transparent baseline vs. smart FAO-56 calculation, and **Test With Your Field →** CTA transferring state into `/app`.
+    - Added floating live telemetry badges to Hero section (`FAO-56 ET₀ Engine`, `Dual-Kc Root Zone Physics`, `GPS Weather Lock`).
+    - Added interactive **Five Unified Agronomic Pillars** tabbed feature showcase with live mock previews and direct links.
+    - Added viewport-triggered animated impact counters with honest technical capability statements.
+  - `frontend/src/pages/DashboardPage.jsx`:
+    - Updated top judge walkthrough banner to the 5 primary pillars with clear, concise descriptions.
+    - Added confirmation workflow and visual feedback (`Locked`, `Failed`, `Loading`) for GPS field location updates.
+  - `frontend/src/index.css`:
+    - Added reusable animation keyframes: `floatSubtle`, `counterGlow`, `gradientShimmer`, `tab-pane-transition`, and strict `prefers-reduced-motion` compliance.
+  - `frontend/package.json`:
+    - Tuned build script to `--max-old-space-size=768 --max-semi-space-size=16` to guarantee clean production builds on low-RAM systems.
+
+---
+
+## 3. Test and Build Verification Results (Final)
 
 ### Backend Test Suite
 ```bash
 backend\.venv\Scripts\python.exe -m pytest backend/tests -q
 ```
 **Result:**
-- **70 passed**, 1 harmless starlette deprecation warning in **11.30s**.
-- Zero test failures, zero errors.
+- **73 passed**, 1 harmless starlette deprecation warning in **11.29s**.
+- Zero test failures, zero regressions across all test modules.
 
 ### Frontend Production Build
 ```bash
 npm --prefix frontend run build
 ```
 **Result:**
-- Vite v5.4.21 production build completed in **11.28s**.
-- 2200 modules transformed, zero build errors.
-- Output artifacts generated in `frontend/dist/`.
+- Vite v5.4.21 production build completed in **21.77s**.
+- **2847 modules transformed**, zero build errors.
+- Output artifacts generated cleanly in `frontend/dist/`.
 
----
-
-## 4. Operational Instructions
-
-### Start Backend
-```powershell
-cd backend
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-### Start Frontend
-```powershell
-cd frontend
-npm run dev
-```
-
-### Run Full Test Suite
-```powershell
-.\backend\.venv\Scripts\python.exe -m pytest backend/tests -q
-```
-
-### Create Database Backup
-```powershell
-.\backend\.venv\Scripts\python.exe backend/scripts/backup_db.py --keep 5
-```
-
-### Restore Database Backup
-```powershell
-.\backend\.venv\Scripts\python.exe backend/scripts/restore_db.py
-```

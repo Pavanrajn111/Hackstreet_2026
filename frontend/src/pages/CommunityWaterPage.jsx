@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle2, Droplets, Loader2, MapPin, RefreshCw, Send, ShieldCheck, Trash2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Droplets, Loader2, MapPin, RefreshCw, Send, ShieldCheck, Trash2, LocateFixed } from 'lucide-react';
+import { detectBrowserLocation } from '../services/locationService';
 import { getFarms, isMockMode } from '../services/api';
 import { getActiveFarmId, setActiveFarmId } from '../services/farmSelection';
 import {
@@ -37,6 +38,24 @@ export default function CommunityWaterPage() {
   const [resourceLoading, setResourceLoading] = useState(false);
   const [savingResource, setSavingResource] = useState(false);
   const [savingRequest, setSavingRequest] = useState(false);
+  const [detectingGps, setDetectingGps] = useState(false);
+
+  const handleDetectGpsForResource = async () => {
+    setDetectingGps(true);
+    try {
+      const loc = await detectBrowserLocation();
+      setResourceForm((current) => ({
+        ...current,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        approx_district: current.approx_district || loc.placeName,
+      }));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setDetectingGps(false);
+    }
+  };
   const [statusLoading, setStatusLoading] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -196,7 +215,7 @@ export default function CommunityWaterPage() {
       </section>
       <section className="hybrid-input-panel community-resource-form">
         <div className="hybrid-panel-heading"><div className="hybrid-icon"><Droplets size={21} /></div><div><span className="workspace-eyebrow">OFFER A RESOURCE</span><h2>Share available water.</h2><p>Exact coordinates are not shown in public discovery. Discoverability is opt-in and contact details are masked until an accepted exchange.</p></div></div>
-        <form onSubmit={submitResource} className="hybrid-form"><div className="hybrid-form-grid"><label>Resource type<select name="resource_type" value={resourceForm.resource_type} onChange={changeResource}><option value="farm_pond_surplus">Farm pond surplus</option><option value="borewell_slot">Borewell slot</option><option value="shared_pump">Shared pump</option><option value="water_tanker">Water tanker</option><option value="open_well_surplus">Open well surplus</option></select></label><label>Available quantity<span>litres</span><input name="available_quantity_litres" type="number" min="0.01" value={resourceForm.available_quantity_litres} onChange={changeResource} required /></label><label>Available from<input name="availability_start" type="datetime-local" value={resourceForm.availability_start} onChange={changeResource} required /></label><label>Available until<input name="availability_end" type="datetime-local" value={resourceForm.availability_end} onChange={changeResource} required /></label><label>Latitude<input name="latitude" type="number" min="-90" max="90" step="any" value={resourceForm.latitude} onChange={changeResource} required /></label><label>Longitude<input name="longitude" type="number" min="-180" max="180" step="any" value={resourceForm.longitude} onChange={changeResource} required /></label><label>Sharing type<select name="sharing_type" value={resourceForm.sharing_type} onChange={changeResource}><option value="free">Free</option><option value="paid">Paid</option><option value="negotiable">Negotiable</option><option value="cost_sharing">Cost sharing</option></select></label><label>Water quality<input name="water_quality" value={resourceForm.water_quality} onChange={changeResource} /></label><label>Owner name<input name="owner_name" value={resourceForm.owner_name} onChange={changeResource} /></label><label>Owner contact<input name="owner_contact_full" value={resourceForm.owner_contact_full} onChange={changeResource} /></label><label>Description<input name="description" value={resourceForm.description} onChange={changeResource} /></label><label>Terms<input name="terms_and_conditions" value={resourceForm.terms_and_conditions} onChange={changeResource} /></label></div><label className="community-consent"><input type="checkbox" name="is_discoverable" checked={resourceForm.is_discoverable} onChange={changeResource} /> I explicitly consent to make this resource discoverable to nearby community farmers.</label><button type="submit" className="hybrid-submit auth-submit" disabled={savingResource}>{savingResource ? <><Loader2 size={16} className="animate-spin" /> Registering...</> : 'Register water resource'}</button></form>
+        <form onSubmit={submitResource} className="hybrid-form"><div className="hybrid-form-grid"><label>Resource type<select name="resource_type" value={resourceForm.resource_type} onChange={changeResource}><option value="farm_pond_surplus">Farm pond surplus</option><option value="borewell_slot">Borewell slot</option><option value="shared_pump">Shared pump</option><option value="water_tanker">Water tanker</option><option value="open_well_surplus">Open well surplus</option></select></label><label>Available quantity<span>litres</span><input name="available_quantity_litres" type="number" min="0.01" value={resourceForm.available_quantity_litres} onChange={changeResource} required /></label><label>Available from<input name="availability_start" type="datetime-local" value={resourceForm.availability_start} onChange={changeResource} required /></label><label>Available until<input name="availability_end" type="datetime-local" value={resourceForm.availability_end} onChange={changeResource} required /></label><div className="col-span-full flex items-center justify-between text-xs font-semibold text-slate-700 pt-1"><span>GPS Location</span><button type="button" onClick={handleDetectGpsForResource} disabled={detectingGps} className="text-emerald-700 hover:text-emerald-800 flex items-center gap-1 cursor-pointer">{detectingGps ? <Loader2 size={12} className="animate-spin" /> : <LocateFixed size={12} />}<span>Detect My Field GPS</span></button></div><label>Latitude<input name="latitude" type="number" min="-90" max="90" step="any" value={resourceForm.latitude} onChange={changeResource} required /></label><label>Longitude<input name="longitude" type="number" min="-180" max="180" step="any" value={resourceForm.longitude} onChange={changeResource} required /></label><label>Sharing type<select name="sharing_type" value={resourceForm.sharing_type} onChange={changeResource}><option value="free">Free</option><option value="paid">Paid</option><option value="negotiable">Negotiable</option><option value="cost_sharing">Cost sharing</option></select></label><label>Water quality<input name="water_quality" value={resourceForm.water_quality} onChange={changeResource} /></label><label>Owner name<input name="owner_name" value={resourceForm.owner_name} onChange={changeResource} /></label><label>Owner contact<input name="owner_contact_full" value={resourceForm.owner_contact_full} onChange={changeResource} /></label><label>Description<input name="description" value={resourceForm.description} onChange={changeResource} /></label><label>Terms<input name="terms_and_conditions" value={resourceForm.terms_and_conditions} onChange={changeResource} /></label></div><label className="community-consent"><input type="checkbox" name="is_discoverable" checked={resourceForm.is_discoverable} onChange={changeResource} /> I explicitly consent to make this resource discoverable to nearby community farmers.</label><button type="submit" className="hybrid-submit auth-submit" disabled={savingResource}>{savingResource ? <><Loader2 size={16} className="animate-spin" /> Registering...</> : 'Register water resource'}</button></form>
       </section>
     </div>
   );

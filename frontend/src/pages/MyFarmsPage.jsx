@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, ArrowRight, Check, ChevronRight, MapPin, Pencil, Plus, Ruler, Sprout, Trash2, X } from 'lucide-react';
+import { AlertCircle, ArrowRight, Check, ChevronRight, MapPin, Pencil, Plus, Ruler, Sprout, Trash2, X, LocateFixed, Loader2 } from 'lucide-react';
+import { detectBrowserLocation } from '../services/locationService';
 import { Link } from 'react-router-dom';
 import { isMockMode, getFarms, saveFarm, updateSavedFarm, deleteSavedFarm } from '../services/api';
 import { createFarm, deleteFarm, getFarm, listFarms, updateFarm, getOfflineQueue, enqueueOfflineFarmMutation, replayOfflineFarmQueue } from '../services/farmService';
@@ -38,6 +39,24 @@ export default function MyFarmsPage() {
   const [selectedFarm, setSelectedFarm] = useState(null);
   const [editingFarm, setEditingFarm] = useState(null);
   const [deletingFarm, setDeletingFarm] = useState(null);
+  const [detectingGps, setDetectingGps] = useState(false);
+
+  const handleDetectGpsForFarm = async () => {
+    setDetectingGps(true);
+    try {
+      const loc = await detectBrowserLocation();
+      setFormData((current) => ({
+        ...current,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        district: current.district || loc.placeName,
+      }));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setDetectingGps(false);
+    }
+  };
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
@@ -397,6 +416,18 @@ export default function MyFarmsPage() {
                 <label>Area (hectares)<input type="number" min="0.01" step="0.01" name="farm_area_hectares" value={formData.farm_area_hectares} onChange={updateForm} /></label>
                 <label>Sowing date<input type="date" name="sowing_date" value={formData.sowing_date} onChange={updateForm} /></label>
               </div>
+              <div className="flex items-center justify-between mt-2 mb-1 px-1">
+                <span className="text-xs font-semibold text-slate-700">Coordinates</span>
+                <button
+                  type="button"
+                  onClick={handleDetectGpsForFarm}
+                  disabled={detectingGps}
+                  className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 cursor-pointer"
+                >
+                  {detectingGps ? <Loader2 size={12} className="animate-spin" /> : <LocateFixed size={12} />}
+                  <span>Detect My Field GPS</span>
+                </button>
+              </div>
               <div className="farm-form-row">
                 <label>Latitude<input type="number" step="any" name="latitude" value={formData.latitude} onChange={updateForm} /></label>
                 <label>Longitude<input type="number" step="any" name="longitude" value={formData.longitude} onChange={updateForm} /></label>
@@ -453,6 +484,18 @@ export default function MyFarmsPage() {
               <div className="farm-form-row">
                 <label>Area (hectares)<input type="number" min="0.01" step="0.01" name="farm_area_hectares" value={formData.farm_area_hectares ?? ''} onChange={updateForm} /></label>
                 <label>Sowing date<input type="date" name="sowing_date" value={formData.sowing_date || ''} onChange={updateForm} /></label>
+              </div>
+              <div className="flex items-center justify-between mt-2 mb-1 px-1">
+                <span className="text-xs font-semibold text-slate-700">Coordinates</span>
+                <button
+                  type="button"
+                  onClick={handleDetectGpsForFarm}
+                  disabled={detectingGps}
+                  className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 cursor-pointer"
+                >
+                  {detectingGps ? <Loader2 size={12} className="animate-spin" /> : <LocateFixed size={12} />}
+                  <span>Detect My Field GPS</span>
+                </button>
               </div>
               <div className="farm-form-row">
                 <label>Latitude<input type="number" step="any" name="latitude" value={formData.latitude ?? ''} onChange={updateForm} /></label>

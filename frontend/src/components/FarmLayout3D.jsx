@@ -56,7 +56,7 @@ function Terrain({ width, depth }) {
   return <group><mesh position={[0, -.3, 0]} receiveShadow castShadow><boxGeometry args={[width, .6, depth]} /><meshStandardMaterial color="#8b623b" roughness={1} /></mesh><mesh position={[0, .04, 0]} receiveShadow><boxGeometry args={[width - .12, .1, depth - .12]} /><meshStandardMaterial color="#9b7545" roughness={1} /></mesh><mesh position={[0, .11, 0]} receiveShadow><boxGeometry args={[width - .45, .06, depth - .45]} /><meshStandardMaterial color="#547c3f" roughness={1} /></mesh></group>;
 }
 
-function Scene({ layout, showMain, showIntercrop, selectedCrop, onSelectCrop, resetToken }) {
+function Scene({ layout, showMain, showIntercrop, selectedCrop, onSelectCrop, resetToken, cameraPreset = 'isometric' }) {
   const controlsRef = useRef(null);
   const sceneRef = useRef(null);
   const { camera, size } = useThree();
@@ -83,6 +83,29 @@ function Scene({ layout, showMain, showIntercrop, selectedCrop, onSelectCrop, re
     const aspect = size.width / size.height;
     const verticalFov = THREE.MathUtils.degToRad(camera.fov);
     const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * aspect);
+
+    if (cameraPreset === 'topdown') {
+      camera.position.set(center.x, 13.5, center.z + 0.001);
+      camera.lookAt(center);
+      camera.near = 0.1;
+      camera.far = 100;
+      camera.updateProjectionMatrix();
+      controlsRef.current.target.copy(center);
+      controlsRef.current.update();
+      return;
+    }
+
+    if (cameraPreset === 'canopy') {
+      camera.position.set(center.x + 4.2, 1.35, center.z + 3.2);
+      camera.lookAt(center.x, 1.2, center.z);
+      camera.near = 0.1;
+      camera.far = 100;
+      camera.updateProjectionMatrix();
+      controlsRef.current.target.set(center.x, 1.2, center.z);
+      controlsRef.current.update();
+      return;
+    }
+
     const direction = new THREE.Vector3(1, .78, 1).normalize();
     camera.position.copy(center).addScaledVector(direction, 10);
     camera.lookAt(center);
@@ -110,18 +133,18 @@ function Scene({ layout, showMain, showIntercrop, selectedCrop, onSelectCrop, re
     controlsRef.current.minDistance = Math.max(2, distance * .55);
     controlsRef.current.maxDistance = Math.max(12, distance * 2.2);
     controlsRef.current.update();
-  }, [camera, size.height, size.width]);
+  }, [camera, cameraPreset, size.height, size.width]);
 
   useEffect(() => {
     const frameId = requestAnimationFrame(frameTerrain);
     return () => cancelAnimationFrame(frameId);
-  }, [frameTerrain, layout.main_crop, layout.intercrop, resetToken]);
+  }, [frameTerrain, layout.main_crop, layout.intercrop, resetToken, cameraPreset]);
 
-  return <><color attach="background" args={['#dfe9d7']} /><ambientLight intensity={1.4} /><directionalLight castShadow position={[5, 9, 4]} intensity={3} shadow-mapSize={[1024, 1024]} shadow-camera-left={-10} shadow-camera-right={10} shadow-camera-top={10} shadow-camera-bottom={-10} /><group ref={sceneRef}><Terrain width={width} depth={depth} />{layout.irrigation_line_layout && <mesh position={[0, .24, -.1]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[7.7, .045]} /><meshStandardMaterial color="#397f9a" roughness={.55} /></mesh>}<group>{planting.map((plant, index) => { const visible = plant.crop === 'main' ? showMain : showIntercrop; const selected = selectedCrop === plant.crop; if (!visible) return null; return <group key={`${plant.crop}-${index}`} position={plant.position} onClick={(event) => { event.stopPropagation(); onSelectCrop(plant.crop); }}><CropModel crop={plant.crop === 'main' ? layout.main_crop : layout.intercrop} scale={plant.crop === 'main' ? (selected ? .75 : .62) : (selected ? .42 : .34)} /></group>; })}</group></group><ContactShadows position={[0, .02, 0]} opacity={.28} scale={10} blur={2.2} far={7} /><OrbitControls ref={controlsRef} makeDefault enablePan={false} minPolarAngle={.65} maxPolarAngle={1.32} /></>;
+  return <><color attach="background" args={['#dfe9d7']} /><ambientLight intensity={1.4} /><directionalLight castShadow position={[5, 9, 4]} intensity={3} shadow-mapSize={[1024, 1024]} shadow-camera-left={-10} shadow-camera-right={10} shadow-camera-top={10} shadow-camera-bottom={-10} /><group ref={sceneRef}><Terrain width={width} depth={depth} />{layout.irrigation_line_layout && <mesh position={[0, .24, -.1]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[7.7, .045]} /><meshStandardMaterial color="#397f9a" roughness={.55} /></mesh>}<group>{planting.map((plant, index) => { const visible = plant.crop === 'main' ? showMain : showIntercrop; const selected = selectedCrop === plant.crop; if (!visible) return null; return <group key={`${plant.crop}-${index}`} position={plant.position} onClick={(event) => { event.stopPropagation(); onSelectCrop(plant.crop); }}><CropModel crop={plant.crop === 'main' ? layout.main_crop : layout.intercrop} scale={plant.crop === 'main' ? (selected ? .75 : .62) : (selected ? .42 : .34)} /></group>; })}</group></group><ContactShadows position={[0, .02, 0]} opacity={.28} scale={10} blur={2.2} far={7} /><OrbitControls ref={controlsRef} makeDefault enablePan={false} minPolarAngle={cameraPreset === 'topdown' ? 0.05 : 0.65} maxPolarAngle={1.45} /></>;
 }
 
-export default function FarmLayout3D({ layout, showMain, showIntercrop, selectedCrop, onSelectCrop, resetToken }) {
+export default function FarmLayout3D({ layout, showMain, showIntercrop, selectedCrop, onSelectCrop, resetToken, cameraPreset = 'isometric' }) {
   const hasWebGL = typeof document === 'undefined' || Boolean(document.createElement('canvas').getContext('webgl'));
   if (!hasWebGL) return <div className="layout-webgl-fallback">3D rendering is unavailable in this browser. Switch to the 2D plan view.</div>;
-  return <Canvas className="farm-layout-canvas" shadows camera={{ position: [9, 7.5, 9], fov: 36 }} dpr={[1, 1.6]} fallback={<div className="layout-webgl-fallback">3D rendering is unavailable. Switch to the 2D plan view.</div>}><Suspense fallback={null}><Scene layout={layout} showMain={showMain} showIntercrop={showIntercrop} selectedCrop={selectedCrop} onSelectCrop={onSelectCrop} resetToken={resetToken} /></Suspense></Canvas>;
+  return <Canvas className="farm-layout-canvas" shadows camera={{ position: [9, 7.5, 9], fov: 36 }} dpr={[1, 1.6]} fallback={<div className="layout-webgl-fallback">3D rendering is unavailable. Switch to the 2D plan view.</div>}><Suspense fallback={null}><Scene layout={layout} showMain={showMain} showIntercrop={showIntercrop} selectedCrop={selectedCrop} onSelectCrop={onSelectCrop} resetToken={resetToken} cameraPreset={cameraPreset} /></Suspense></Canvas>;
 }

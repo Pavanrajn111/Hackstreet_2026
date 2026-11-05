@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -506,6 +506,133 @@
   .impact-image { min-height: 320px; border-radius: 24px; }
 }
 
+/* --- AGR002 Dashboard Arrival & Pitch Dynamics --- */
+@keyframes cardArrive {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-arrive {
+  animation: cardArrive 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 110ms; }
+.stagger-3 { animation-delay: 180ms; }
+.stagger-4 { animation-delay: 260ms; }
+.stagger-5 { animation-delay: 340ms; }
+
+@keyframes pulseGlowEmerald {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes pulseGlowSky {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(14, 165, 233, 0);
+  }
+}
+
+.pulse-glow-emerald {
+  animation: pulseGlowEmerald 2.5s infinite ease-in-out;
+}
+
+.pulse-glow-sky {
+  animation: pulseGlowSky 3s infinite ease-in-out;
+}
+
+.hover-elevate {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+}
+.hover-elevate:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -10px rgba(16, 37, 27, 0.12);
+}
+
+.radar-dot {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.radar-dot::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background-color: inherit;
+  opacity: 0.75;
+  animation: radarPing 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes radarPing {
+  75%, 100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+
+@keyframes floatSubtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float-subtle {
+  animation: floatSubtle 4s ease-in-out infinite;
+}
+
+@keyframes counterGlow {
+  0%, 100% {
+    text-shadow: 0 0 0 rgba(16, 185, 129, 0);
+  }
+  50% {
+    text-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
+  }
+}
+
+.counter-glow {
+  animation: counterGlow 3s ease-in-out infinite;
+}
+
+@keyframes gradientShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-shimmer {
+  background-size: 200% 200%;
+  animation: gradientShimmer 6s ease infinite;
+}
+
+.tab-pane-transition {
+  transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .public-nav { padding: 20px; }.public-links { display: none; position: absolute; left: 15px; right: 15px; top: 75px; padding: 15px; border-radius: 18px; background: #173f2a; }.public-links.is-open { display: grid; gap: 15px; }.public-menu { display: block; }.public-nav-actions .public-signin, .public-nav-actions .pill-button { display: none; }.public-hero { min-height: 760px; padding: 150px 20px 32px; }.hero-caption { right: 20px; bottom: 30px; left: 20px; justify-content: space-between; }.hero-actions { align-items: flex-start; flex-direction: column; gap: 17px; }.intro-grid, .section-heading-row, .editorial-split, .story-section { grid-template-columns: 1fr; gap: 40px; }.platform-cards, .signal-grid { grid-template-columns: 1fr; }.platform-card { min-height: 420px; }.editorial-photo, .story-image { min-height: 480px; }.impact-grid { grid-template-columns: 1fr; gap: 25px; }.impact-grid > div, .impact-grid > div:not(:first-child) { padding: 22px 0 0; border-right: 0; border-top: 1px solid rgba(16,37,27,.22); }.footer-links { justify-content: flex-start; margin: 60px 0; gap: 45px; }.auth-page { grid-template-columns: 1fr; }.auth-visual { min-height: 320px; }.auth-quote { margin-top: 50px; }.auth-quote h2 { font-size: 48px; }.auth-panel { min-height: 650px; }.product-header-inner, .product-main, .product-footer { width: calc(100% - 32px); }.product-nav { display: none; }.product-menu { display: inline-flex; padding: 7px; border: 0; background: transparent; color: #10251b; }.product-mobile-nav { display: grid; gap: 4px; padding: 10px 16px 16px; border-top: 1px solid rgba(16,37,27,.12); }.product-mobile-link { display: flex; align-items: center; gap: 10px; padding: 13px; color: rgba(16,37,27,.65); text-decoration: none; font-size: 13px; border-radius: 10px; }.product-mobile-link.is-active { color: #173f2a; background: #dde9d4; }.product-main { padding-top: 40px; }.workspace-heading { align-items: flex-start; flex-direction: column; gap: 22px; }.signal-card { min-height: 300px; }.settings-layout { grid-template-columns: 1fr; gap: 20px; }.settings-menu { display: flex; overflow-x: auto; }.settings-menu button { white-space: nowrap; }.product-footer { display: grid; gap: 9px; }
   .dashboard-intro, .decision-panel, .dashboard-section-heading { align-items: flex-start; flex-direction: column; }.dashboard-intro { gap: 20px; }.decision-panel { padding: 28px 22px; }.decision-action { width: 100%; align-items: flex-start; flex-direction: row; }.measure-row { grid-template-columns: 1fr; gap: 22px; margin-bottom: 45px; }.measure-row > div, .measure-row > div:first-child { padding: 0 0 20px; border-right: 0; border-bottom: 1px solid rgba(16,37,27,.15); }.measure-row > div:last-child { padding-bottom: 0; border-bottom: 0; }.empty-workspace h1 { font-size: 50px; }.empty-workspace > div { flex-direction: column; align-items: flex-start; }
@@ -607,6 +734,133 @@
   .public-links.is-open a { color: rgba(255,255,255,.82); }
   .public-cta { background-position: center 55%; }
 }
+/* --- AGR002 Dashboard Arrival & Pitch Dynamics --- */
+@keyframes cardArrive {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-arrive {
+  animation: cardArrive 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 110ms; }
+.stagger-3 { animation-delay: 180ms; }
+.stagger-4 { animation-delay: 260ms; }
+.stagger-5 { animation-delay: 340ms; }
+
+@keyframes pulseGlowEmerald {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes pulseGlowSky {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(14, 165, 233, 0);
+  }
+}
+
+.pulse-glow-emerald {
+  animation: pulseGlowEmerald 2.5s infinite ease-in-out;
+}
+
+.pulse-glow-sky {
+  animation: pulseGlowSky 3s infinite ease-in-out;
+}
+
+.hover-elevate {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+}
+.hover-elevate:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -10px rgba(16, 37, 27, 0.12);
+}
+
+.radar-dot {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.radar-dot::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background-color: inherit;
+  opacity: 0.75;
+  animation: radarPing 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes radarPing {
+  75%, 100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+
+@keyframes floatSubtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float-subtle {
+  animation: floatSubtle 4s ease-in-out infinite;
+}
+
+@keyframes counterGlow {
+  0%, 100% {
+    text-shadow: 0 0 0 rgba(16, 185, 129, 0);
+  }
+  50% {
+    text-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
+  }
+}
+
+.counter-glow {
+  animation: counterGlow 3s ease-in-out infinite;
+}
+
+@keyframes gradientShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-shimmer {
+  background-size: 200% 200%;
+  animation: gradientShimmer 6s ease infinite;
+}
+
+.tab-pane-transition {
+  transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   .reveal-on-scroll, .stagger-reveal > * { opacity: 1; transform: none; }
