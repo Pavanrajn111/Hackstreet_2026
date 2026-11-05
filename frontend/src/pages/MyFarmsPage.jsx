@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, ArrowRight, Check, ChevronRight, MapPin, Pencil, Plus, Ruler, Sprout, Trash2, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { isMockMode, getFarms, saveFarm, updateSavedFarm, deleteSavedFarm } from '../services/api';
-import { createFarm, deleteFarm, getFarm, listFarms, updateFarm } from '../services/farmService';
+import { createFarm, deleteFarm, getFarm, listFarms, updateFarm, getOfflineQueue, enqueueOfflineFarmMutation, replayOfflineFarmQueue } from '../services/farmService';
 import { defaultFarm } from '../data/mockFarm';
 import { getActiveFarmId, setActiveFarmId } from '../services/farmSelection';
 import LoadingState from '../components/LoadingState';
@@ -47,6 +47,38 @@ export default function MyFarmsPage() {
   const [formError, setFormError] = useState('');
   const [operationError, setOperationError] = useState('');
   const [operationSuccess, setOperationSuccess] = useState('');
+  const [offlineQueue, setOfflineQueue] = useState(getOfflineQueue());
+
+  const refreshQueue = () => setOfflineQueue(getOfflineQueue());
+
+  useEffect(() => {
+    const handleOnline = async () => {
+      try {
+        const res = await replayOfflineFarmQueue();
+        refreshQueue();
+        if (res.replayed > 0) {
+          setOperationSuccess(`Synced ${res.replayed} offline farm mutation(s) with the server.`);
+          await loadFarms();
+        }
+      } catch (e) {
+        console.warn('Offline sync replay error:', e);
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    if (navigator.onLine) {
+      handleOnline();
+    }
+    return () => window.removeEventListener('online', handleOnline);
+  }, []);
+
+  const isPendingSync = (farm) => {
+    return offlineQueue.some((item) => (
+      (item.farmId && String(item.farmId) === String(farm?.id)) ||
+      (farm?._queued) ||
+      (item.payload?.farm_name && item.payload?.farm_name === farm?.farm_name)
+    ));
+  };
 
   const loadFarms = async () => {
     setLoading(true);
@@ -144,9 +176,13 @@ export default function MyFarmsPage() {
     } catch (deleteError) {
       const canUseOfflineFallback = deleteError?.code === 'NETWORK_ERROR' || deleteError?.code === 'TIMEOUT';
       if (canUseOfflineFallback) {
+        if (deletingFarm.id !== undefined) {
+          enqueueOfflineFarmMutation({ action: 'delete', farmId: deletingFarm.id });
+          refreshQueue();
+        }
         deleteSavedFarm();
         setDeletingFarm(null);
-        setOperationSuccess('The farm was removed from this device. It will remain on the server until connectivity is restored.');
+        setOperationSuccess('The farm was removed on this device. It will sync deletion when connectivity is restored.');
         await loadFarms();
       } else {
         setOperationError(deleteError?.message || 'The farm could not be deleted.');
@@ -201,11 +237,14 @@ export default function MyFarmsPage() {
         setFormError(createError?.message || 'The farm could not be saved.');
       } else {
         try {
-          const offlineCreated = await saveFarm(formData);
+          enqueueOfflineFarmMutation({ action: 'create', payload: formData });
+          refreshQueue();
+          const offlineCreated = await saveFarm({ ...formData, _queued: true });
           await loadFarms();
           if (offlineCreated?.id !== undefined) handleSelect(offlineCreated);
           setShowForm(false);
           setFormData(EMPTY_FORM);
+          setOperationSuccess('Farm saved offline. It will automatically sync when you reconnect.');
         } catch (fallbackError) {
           console.error('Failed to create farm:', fallbackError);
           setFormError('The farm could not be saved offline. Please try again.');
@@ -243,6 +282,8 @@ export default function MyFarmsPage() {
     } catch (updateError) {
       const canUseOfflineFallback = updateError?.code === 'NETWORK_ERROR' || updateError?.code === 'TIMEOUT';
       if (canUseOfflineFallback) {
+        enqueueOfflineFarmMutation({ action: 'update', farmId: editingFarm.id, payload: getFarmPayload(formData) });
+        refreshQueue();
         updateSavedFarm(formData);
         setEditingFarm(null);
         setFormData(EMPTY_FORM);
@@ -303,6 +344,7 @@ export default function MyFarmsPage() {
                   <div className="farm-card-top">
                     <span className="farm-card-index">{String(farms.indexOf(farm) + 1).padStart(2, '0')}</span>
                     {isActive && <span className="farm-active-label"><Check size={12} /> Active field</span>}
+                    {isPendingSync(farm) && <span className="pending-sync-badge" title="Changes queued locally, will sync when online">Pending Sync</span>}
                   </div>
                   <h2>{farm.farm_name || 'Unnamed farm'}</h2>
                   <p className="farm-location"><MapPin size={14} /> {farm.district || 'Location not recorded'}</p>

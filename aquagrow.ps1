@@ -1,6 +1,12 @@
-﻿# AquaGrow AI - Backend + Frontend Launcher
+# AquaGrow AI - Backend + Frontend Launcher
 
-$ProjectRoot = "C:\Users\Admin\Documents\Lakshya"
+$ProjectRoot = $PSScriptRoot
+if (-not $ProjectRoot) {
+    $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
+}
+if (-not $ProjectRoot) {
+    $ProjectRoot = (Get-Location).Path
+}
 
 $BackendPath = Join-Path $ProjectRoot "backend"
 $FrontendPath = Join-Path $ProjectRoot "frontend"
@@ -18,12 +24,12 @@ if (!(Test-Path $PythonExe)) {
 
 # Validate folders
 if (!(Test-Path $BackendPath)) {
-    Write-Host "Backend folder not found!" -ForegroundColor Red
+    Write-Host "Backend folder not found at: $BackendPath" -ForegroundColor Red
     exit 1
 }
 
 if (!(Test-Path $FrontendPath)) {
-    Write-Host "Frontend folder not found!" -ForegroundColor Red
+    Write-Host "Frontend folder not found at: $FrontendPath" -ForegroundColor Red
     exit 1
 }
 

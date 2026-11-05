@@ -6,10 +6,10 @@ BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.core.database import engine, Base
+from app.core.database import engine, Base, run_lightweight_migrations, check_db_health, get_last_backup_info
 from app.api.api_v1 import api_router, api_v1_router
 
 # Ensure all database models are registered with Base metadata
@@ -17,7 +17,7 @@ import app.models.farm
 import app.models.community_water
 
 # Initialize database tables (SQLite)
-Base.metadata.create_all(bind=engine)
+run_lightweight_migrations(engine, Base)
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -52,12 +52,21 @@ def root():
 
 
 @app.get("/health", tags=["Root"])
-def health_check():
+def health_check(response: Response):
     """Health status endpoint for monitoring and smoke testing."""
+    from app.services.ml_bridge import get_ml_status
+    from app.core import database
+    db_ok, db_msg = database.check_db_health()
+    if not db_ok:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
     return {
-        "status": "healthy",
+        "status": "healthy" if db_ok else "unhealthy",
         "environment": settings.APP_ENV,
-        "database": "sqlite_ready",
+        "database": "sqlite_ready" if db_ok else "unavailable",
+        "database_details": db_msg,
+        "backup": database.get_last_backup_info(),
+        "ml": get_ml_status(),
     }
 
 

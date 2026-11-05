@@ -12,6 +12,12 @@ class ScheduleDayItem(BaseModel):
     water_volume_litres: float
     runtime_minutes: int
     rain_note: Optional[str] = None
+    et0_mm: Optional[float] = None
+    etc_mm: Optional[float] = None
+    rainfall_mm: Optional[float] = None
+    simulated_depletion_mm: Optional[float] = None
+    raw_mm: Optional[float] = None
+    soil_water_status_pct: Optional[float] = None
 
 
 class WeatherDayItem(BaseModel):
@@ -24,6 +30,8 @@ class WeatherDayItem(BaseModel):
     rain_probability_pct: Optional[int] = 0
     et0_mm: float
     condition: str
+    wind_m_s: Optional[float] = None
+    solar_mj_m2: Optional[float] = None
 
 
 class AlertItem(BaseModel):

@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Response, status
+from app.core.database import check_db_health, get_last_backup_info
 from app.core.config import settings
 from app.api.routes.crops import router as crops_router
 from app.api.routes.soils import router as soils_router
@@ -15,25 +16,54 @@ api_router = APIRouter(prefix="/api")
 api_v1_router = APIRouter(prefix="/api/v1")
 
 
+from app.services.ml_bridge import get_ml_status
+
+
 @api_router.get("/health", tags=["Health"])
-def api_health_check():
+def api_health_check(response: Response):
     """Health check endpoint under /api prefix."""
+    from app.core import database
+    db_ok, db_msg = database.check_db_health()
+    if not db_ok:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     return {
-        "status": "healthy",
+        "status": "healthy" if db_ok else "unhealthy",
         "environment": settings.APP_ENV,
-        "database": "sqlite_ready",
+        "database": "sqlite_ready" if db_ok else "unavailable",
+        "database_details": db_msg,
+        "backup": database.get_last_backup_info(),
+        "ml": get_ml_status(),
     }
 
 
 @api_v1_router.get("/health", tags=["Health"])
-def api_v1_health_check():
+def api_v1_health_check(response: Response):
     """Health check endpoint under /api/v1 prefix."""
+    from app.core import database
+    db_ok, db_msg = database.check_db_health()
+    if not db_ok:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     return {
-        "status": "healthy",
+        "status": "healthy" if db_ok else "unhealthy",
         "environment": settings.APP_ENV,
-        "database": "sqlite_ready",
+        "database": "sqlite_ready" if db_ok else "unavailable",
+        "database_details": db_msg,
         "api_version": "v1",
+        "backup": database.get_last_backup_info(),
+        "ml": get_ml_status(),
     }
+
+
+@api_router.get("/ml/status", tags=["ML"])
+def get_ml_status_api():
+    """Current ML subsystem status, loaded models, and framework versions."""
+    return get_ml_status()
+
+
+@api_v1_router.get("/ml/status", tags=["ML"])
+def get_ml_v1_status_api():
+    """Current ML subsystem status, loaded models, and framework versions."""
+    return get_ml_status()
 
 
 # Mount all route modules on /api

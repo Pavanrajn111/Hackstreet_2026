@@ -147,9 +147,10 @@ def generate_water_shortage_action_plan(
         max_radius_km=req.max_community_search_radius_km,
     )
 
-    # 6. ML Model Signal Integration (via ml.model_interface)
+    # 6. ML Model Signal Integration (via app.services.ml_bridge)
     ml_insights = _fetch_ml_signals(
-        crop_name, soil_type, growth_stage_str, current_kc, recommended_depth_mm, lat, lon
+        crop_name, soil_type, growth_stage_str, current_kc, recommended_depth_mm, lat, lon,
+        rec_req=rec_req, engine_rec=engine_rec
     )
 
     # 7. Synthesize 4-Tier Resilience Roadmap
@@ -329,41 +330,52 @@ def generate_water_shortage_action_plan(
 
 
 def _fetch_ml_signals(
-    crop: str, soil: str, stage: str, kc: float, depth_mm: float, lat: float, lon: float
+    crop: str,
+    soil: str,
+    stage: str,
+    kc: float,
+    depth_mm: float,
+    lat: float,
+    lon: float,
+    rec_req: Optional[Any] = None,
+    engine_rec: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """
-    Safely queries the ML model interface without modifying ML files or breaking on fallback.
+    Safely queries the ML model bridge using real weather features and avoids fabricated risk values.
     """
     try:
-        from ml.model_interface import predict_irrigation_adjustment
+        from app.services.ml_bridge import predict_irrigation_adjustment, build_irrigation_features
 
-        features = {
-            "crop": crop.lower(),
-            "soil": soil.lower(),
-            "stage": stage.lower(),
-            "kc": kc,
-            "depletion_mm": depth_mm,
-            "taw_mm": 50.0,
-            "days_since_irrigation": 3,
-            "et0": 4.5,
-            "tmax": 32.0,
-            "tmin": 22.0,
-            "tmean": 27.0,
-            "rainfall": 0.0,
-            "humidity": 65.0,
-            "wind": 2.5,
-            "solar": 18.0,
-            "latitude": lat,
-            "longitude": lon,
-        }
+        if rec_req is not None and engine_rec is not None:
+            features = build_irrigation_features(rec_req, engine_rec)
+        else:
+            features = {
+                "crop": crop.lower(),
+                "soil": soil.lower(),
+                "stage": stage.lower(),
+                "kc": kc,
+                "depletion_mm": depth_mm,
+                "taw_mm": 50.0,
+                "days_since_irrigation": 3,
+                "et0": 4.5,
+                "tmax": 32.0,
+                "tmin": 22.0,
+                "tmean": 27.0,
+                "rainfall": 0.0,
+                "humidity": 65.0,
+                "wind": 2.5,
+                "solar": 20.0,
+                "latitude": lat,
+                "longitude": lon,
+            }
         pred = predict_irrigation_adjustment(features)
         ml_used = bool(pred.get("ml_adjustment_used", False))
         return {
             "ml_status": "available" if ml_used else "fallback_mode",
             "ml_model_used": ml_used,
             "risk_category": pred.get("risk_category", "Low"),
-            "under_irrigation_risk": pred.get("under_irrigation_risk", 0.0),
-            "over_irrigation_risk": pred.get("over_irrigation_risk", 0.0),
+            "under_irrigation_risk": pred.get("under_irrigation_risk") if ml_used else None,
+            "over_irrigation_risk": pred.get("over_irrigation_risk") if ml_used else None,
             "et0_forecast_mm": pred.get("et0_forecast_mm", []),
             "explanation_note": pred.get("explanation_note", "ML prediction guiding risk assessment."),
         }
@@ -372,8 +384,8 @@ def _fetch_ml_signals(
         return {
             "ml_status": "unavailable",
             "ml_model_used": False,
-            "risk_category": "Moderate",
-            "under_irrigation_risk": 0.35,
-            "over_irrigation_risk": 0.05,
+            "risk_category": "Low",
+            "under_irrigation_risk": None,
+            "over_irrigation_risk": None,
             "explanation_note": "ML model service unavailable; rule-based water resilience planner active.",
         }

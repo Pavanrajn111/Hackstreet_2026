@@ -113,6 +113,9 @@ class CommodityPriceForecastResponse(BaseModel):
     trend: str  # "Bullish", "Bearish", "Stable"
     mae: float
     naive_mae: Optional[float] = None
+    beats_naive: Optional[bool] = None
+    confidence: Optional[str] = "high"
+    data_source: str = "synthetic"
     forecast_12m: List[PriceForecastItem]
     recent_history: List[PriceHistoricalItem]
 
@@ -121,3 +124,4 @@ class AllPriceForecastsResponse(BaseModel):
     total_commodities: int
     commodities: Dict[str, Dict[str, Any]]
     model_family: str = "GradientBoostingRegressor"
+    data_source: str = "synthetic"

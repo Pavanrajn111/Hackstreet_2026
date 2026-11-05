@@ -11,7 +11,7 @@ Verifies:
 import os
 import sys
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 
 # Ensure root workspace and backend are in python path
@@ -38,7 +38,7 @@ def setup_test_farms():
         longitude=77.5800,
         crop="Tomato",
         soil_type="Red Sandy Loam",
-        sowing_date=datetime.utcnow().date() - timedelta(days=45),
+        sowing_date=datetime.now(timezone.utc).date() - timedelta(days=45),
         farm_area_hectares=2.0,
         irrigation_method="Drip Irrigation",
         pump_flow_rate_lpm=150.0,
@@ -51,7 +51,7 @@ def setup_test_farms():
         longitude=77.5950,
         crop="Coconut",
         soil_type="Red Sandy Loam",
-        sowing_date=datetime.utcnow().date() - timedelta(days=365),
+        sowing_date=datetime.now(timezone.utc).date() - timedelta(days=365),
         farm_area_hectares=1.5,
         irrigation_method="Surface / Flood Irrigation",
         pump_flow_rate_lpm=100.0,
@@ -144,8 +144,8 @@ def test_irrigation_compare_endpoint(setup_test_farms):
 
 def test_community_resource_registration_and_opt_in(setup_test_farms):
     f1_id, _ = setup_test_farms
-    start_dt = (datetime.utcnow() + timedelta(hours=1)).isoformat()
-    end_dt = (datetime.utcnow() + timedelta(days=10)).isoformat()
+    start_dt = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
+    end_dt = (datetime.now(timezone.utc) + timedelta(days=10)).isoformat()
 
     # 1. Register with is_discoverable=False (hidden by default)
     payload_hidden = {
@@ -203,8 +203,8 @@ def test_community_resource_date_validation(setup_test_farms):
         "owner_farm_id": f1_id,
         "resource_type": "borewell_slot",
         "available_quantity_litres": 20000.0,
-        "availability_start": (datetime.utcnow() + timedelta(days=5)).isoformat(),
-        "availability_end": (datetime.utcnow() + timedelta(days=2)).isoformat(),  # Invalid: end before start
+        "availability_start": (datetime.now(timezone.utc) + timedelta(days=5)).isoformat(),
+        "availability_end": (datetime.now(timezone.utc) + timedelta(days=2)).isoformat(),  # Invalid: end before start
         "latitude": 13.1220,
         "longitude": 77.5810,
     }
@@ -218,8 +218,8 @@ def test_community_resource_date_validation(setup_test_farms):
 
 def test_water_sharing_request_lifecycle(setup_test_farms):
     f1_id, f2_id = setup_test_farms
-    start_dt = datetime.utcnow() + timedelta(hours=2)
-    end_dt = datetime.utcnow() + timedelta(days=5)
+    start_dt = datetime.now(timezone.utc) + timedelta(hours=2)
+    end_dt = datetime.now(timezone.utc) + timedelta(days=5)
 
     # 1. Create discoverable resource from Farm 1 (Owner)
     res_resp = client.post("/api/v1/community-water/resources", json={
@@ -283,8 +283,8 @@ def test_water_sharing_request_lifecycle(setup_test_farms):
 
 def test_cannot_request_own_resource(setup_test_farms):
     f1_id, _ = setup_test_farms
-    start_dt = datetime.utcnow() + timedelta(hours=1)
-    end_dt = datetime.utcnow() + timedelta(days=3)
+    start_dt = datetime.now(timezone.utc) + timedelta(hours=1)
+    end_dt = datetime.now(timezone.utc) + timedelta(days=3)
 
     res_resp = client.post("/api/v1/community-water/resources", json={
         "owner_farm_id": f1_id,

@@ -11,7 +11,7 @@ Implements:
 
 import math
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Tuple
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -32,6 +32,18 @@ from app.schemas.community_water import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _is_available_now(start_val: Any, end_val: Any) -> bool:
+    if not start_val or not end_val:
+        return False
+    now = datetime.now(timezone.utc)
+    try:
+        s = start_val if getattr(start_val, "tzinfo", None) is not None else start_val.replace(tzinfo=timezone.utc)
+        e = end_val if getattr(end_val, "tzinfo", None) is not None else end_val.replace(tzinfo=timezone.utc)
+        return s <= now <= e
+    except Exception:
+        return False
 
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -150,7 +162,7 @@ def list_discoverable_resources(
     if not (include_non_discoverable_for_owner and requesting_farm_id is not None):
         query = query.filter(SharedWaterResourceModel.is_discoverable == True)
         query = query.filter(SharedWaterResourceModel.status == "active")
-        query = query.filter(SharedWaterResourceModel.availability_end >= datetime.utcnow())
+        query = query.filter(SharedWaterResourceModel.availability_end >= datetime.now(timezone.utc))
 
     if resource_type:
         query = query.filter(SharedWaterResourceModel.resource_type == resource_type.strip().lower())
@@ -549,7 +561,7 @@ def match_resources_for_shortage(
         .filter(
             SharedWaterResourceModel.is_discoverable == True,
             SharedWaterResourceModel.status == "active",
-            SharedWaterResourceModel.availability_end >= datetime.utcnow(),
+            SharedWaterResourceModel.availability_end >= datetime.now(timezone.utc),
         )
         .all()
     )
@@ -613,7 +625,7 @@ def match_resources_for_shortage(
             sharing_type=r.sharing_type.capitalize(),
             cost_summary=cost_sum,
             match_explanation=explanations,
-            is_available_now=bool(r.availability_start <= datetime.utcnow() <= r.availability_end),
+            is_available_now=_is_available_now(r.availability_start, r.availability_end),
             approx_location=f"{r.approx_village_or_area or 'Local Area'}, {r.approx_district or 'Bengaluru'}",
         )
         matches.append((match_score, item))

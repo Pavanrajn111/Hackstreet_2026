@@ -166,6 +166,8 @@ export default function MarketIntelligencePage() {
               <p><span>Currency</span><strong>{detail.currency || 'Unavailable'}</strong></p>
               <p><span>Forecast error (MAE)</span><strong>{formatPrice(detail.mae, detail.currency)}</strong></p>
               {detail.naive_mae !== null && detail.naive_mae !== undefined && <p><span>Naive baseline MAE</span><strong>{formatPrice(detail.naive_mae, detail.currency)}</strong></p>}
+              {detail.confidence && <p><span>Model confidence</span><strong style={{ textTransform: 'capitalize' }}>{detail.confidence}{detail.beats_naive === false ? ' (High MAE)' : ''}</strong></p>}
+              {detail.data_source && <p><span>Data source</span><strong style={{ textTransform: 'capitalize' }}>{detail.data_source}</strong></p>}
               <p><span>Historical observations</span><strong>{detail.recent_history?.length ?? 0}</strong></p>
             </div>
           </>

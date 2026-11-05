@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import logging
 import math
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional
 
@@ -110,8 +110,8 @@ def _fallback_response(message: str) -> Dict[str, Any]:
         "irrigate_now": False,
         "irrigation_probability": 0.0,
         "irrigation_amount_mm": 0.0,
-        "over_irrigation_risk": 0.0,
-        "under_irrigation_risk": 0.0,
+        "over_irrigation_risk": None,
+        "under_irrigation_risk": None,
         "risk_category": "Low",
         "et0_forecast_mm": [0.0] * 7,
         "explanation_note": message,
@@ -132,7 +132,7 @@ class MLModelManager:
     def _load_feature_manifest(self) -> None:
         manifest_path = self.model_dir / "features.json"
         if not manifest_path.exists():
-            logger.warning("Model feature manifest missing at %s; ML fallback will remain active.", manifest_path)
+            logger.info("Model feature manifest not found at %s; ML fallback will remain active.", manifest_path)
             return
 
         try:
@@ -151,18 +151,30 @@ class MLModelManager:
             logger.warning("joblib is unavailable; ML inference is disabled.")
             return
 
+        missing_models: List[str] = []
         for key, file_name in MODEL_FILES.items():
             path = self.model_dir / file_name
             if not path.exists():
-                logger.warning("ML artifact missing: %s. Entering fallback mode for %s.", path, key)
+                missing_models.append(key)
                 continue
 
             try:
                 self.models[key] = joblib.load(path)
-                logger.info("Loaded ML artifact %s from %s", key, path)
+                version = getattr(self.models[key], "__version__", None)
+                version_str = f" (v{version})" if version else ""
+                logger.info("Loaded ML artifact %s%s from %s", key, version_str, path)
             except Exception as exc:  # pragma: no cover - runtime compatibility can vary by environment.
                 logger.warning("Failed to load %s from %s: %s", key, path, exc)
                 self.models.pop(key, None)
+
+        if missing_models:
+            logger.info(
+                "ML artifacts missing in %s (%d/%d): %s. Running in fallback mode.",
+                self.model_dir,
+                len(missing_models),
+                len(MODEL_FILES),
+                ", ".join(missing_models),
+            )
 
     def is_model_available(self) -> bool:
         required = [
@@ -275,48 +287,72 @@ class MLModelManager:
         return frame
 
     def _predict_with_booster(self, model_name: str, features_frame: pd.DataFrame, model_kind: str) -> float:
-        if xgb is None:
-            raise RuntimeError("xgboost is not installed; ML inference is unavailable.")
-
         if model_name not in self.models:
             raise ValueError(f"Model '{model_name}' is not loaded.")
 
         model = self.models[model_name]
-        named_steps = getattr(model, "named_steps", None)
 
-        if named_steps is not None and "preprocessor" in named_steps:
-            preprocessor = named_steps["preprocessor"]
-            transformed = preprocessor.transform(features_frame)
-            feature_names = preprocessor.get_feature_names_out()
-            dmatrix = xgb.DMatrix(transformed, feature_names=feature_names)
-
-            estimator_name = "classifier" if model_kind == "classifier" else "regressor"
-            if estimator_name not in named_steps:
-                raise ValueError(f"Model '{model_name}' does not include the expected estimator step '{estimator_name}'.")
-
-            base_model = named_steps[estimator_name]
-            booster = getattr(base_model, "_Booster", base_model)
-            prediction = booster.predict(dmatrix)
-            values = np.asarray(prediction, dtype=float).ravel()
-            return float(values[0]) if len(values) else math.nan
-
-        booster = getattr(model, "_Booster", None)
-        if booster is not None:
-            feature_names = list(getattr(model, "feature_names_in_", features_frame.columns))
-            prediction = booster.predict(
-                xgb.DMatrix(features_frame, feature_names=feature_names)
-            )
-            values = np.asarray(prediction, dtype=float).ravel()
-            return float(values[0]) if len(values) else math.nan
-
-        if hasattr(model, "predict"):
-            if model_kind == "classifier" and hasattr(model, "predict_proba"):
+        # Prefer standard scikit-learn / XGBoost estimator interfaces first
+        if model_kind == "classifier" and hasattr(model, "predict_proba"):
+            try:
                 prediction = model.predict_proba(features_frame)
                 values = np.asarray(prediction, dtype=float)
                 if values.ndim > 1 and values.shape[1] > 1:
                     values = values[:, 1]
                 return float(np.asarray(values, dtype=float).ravel()[0]) if values.size else math.nan
+            except Exception:
+                pass
 
+        if model_kind != "classifier" and hasattr(model, "predict"):
+            try:
+                prediction = model.predict(features_frame)
+                values = np.asarray(prediction, dtype=float).ravel()
+                return float(values[0]) if len(values) and math.isfinite(values[0]) else math.nan
+            except Exception:
+                pass
+
+        # Handle pipelines with preprocessor + estimator
+        named_steps = getattr(model, "named_steps", None)
+        if named_steps is not None and "preprocessor" in named_steps:
+            preprocessor = named_steps["preprocessor"]
+            transformed = preprocessor.transform(features_frame)
+            estimator_name = "classifier" if model_kind == "classifier" else "regressor"
+            if estimator_name in named_steps:
+                estimator = named_steps[estimator_name]
+                if model_kind == "classifier" and hasattr(estimator, "predict_proba"):
+                    prediction = estimator.predict_proba(transformed)
+                    values = np.asarray(prediction, dtype=float)
+                    if values.ndim > 1 and values.shape[1] > 1:
+                        values = values[:, 1]
+                    return float(np.asarray(values, dtype=float).ravel()[0]) if values.size else math.nan
+                if hasattr(estimator, "predict"):
+                    prediction = estimator.predict(transformed)
+                    values = np.asarray(prediction, dtype=float).ravel()
+                    return float(values[0]) if len(values) else math.nan
+
+                # Fall back to Booster if estimator wraps a Booster
+                booster = getattr(estimator, "_Booster", estimator)
+                if xgb is not None and hasattr(booster, "predict"):
+                    feature_names = None
+                    if hasattr(preprocessor, "get_feature_names_out"):
+                        feature_names = list(preprocessor.get_feature_names_out())
+                    dmatrix = xgb.DMatrix(transformed, feature_names=feature_names)
+                    prediction = booster.predict(dmatrix)
+                    values = np.asarray(prediction, dtype=float).ravel()
+                    return float(values[0]) if len(values) else math.nan
+
+        # Raw Booster fallback
+        booster = getattr(model, "_Booster", None)
+        if booster is not None:
+            if xgb is None:
+                raise RuntimeError("xgboost is not installed; raw Booster inference is unavailable.")
+            feature_names = list(getattr(model, "feature_names_in_", features_frame.columns))
+            dmatrix = xgb.DMatrix(features_frame, feature_names=feature_names)
+            prediction = booster.predict(dmatrix)
+            values = np.asarray(prediction, dtype=float).ravel()
+            return float(values[0]) if len(values) else math.nan
+
+        if hasattr(model, "predict"):
             prediction = model.predict(features_frame)
             values = np.asarray(prediction, dtype=float).ravel()
             return float(values[0]) if len(values) else math.nan
@@ -351,6 +387,8 @@ class MLModelManager:
                 et0_model_name = f"et0_day_{day_index}"
                 if et0_model_name not in self.models:
                     break
+                forecast_date = date.today() + timedelta(days=day_index)
+                month_angle = (forecast_date.month - 1) * (2 * math.pi / 12.0)
                 et0_features = {
                     "tmax": features.get("tmax", 0.0),
                     "tmin": features.get("tmin", 0.0),
@@ -361,8 +399,8 @@ class MLModelManager:
                     "solar": features.get("solar", 0.0),
                     "latitude": features.get("latitude", 0.0),
                     "longitude": features.get("longitude", 0.0),
-                    "month_sin": math.sin(((date.today().month - 1 + day_index) % 12) * (2 * math.pi / 12.0)),
-                    "month_cos": math.cos(((date.today().month - 1 + day_index) % 12) * (2 * math.pi / 12.0)),
+                    "month_sin": math.sin(month_angle),
+                    "month_cos": math.cos(month_angle),
                 }
                 et0_frame = self._prepare_et0_features(et0_features)
                 et0_value = self._predict_with_booster(et0_model_name, et0_frame, "regressor")
@@ -388,9 +426,24 @@ class MLModelManager:
             return _fallback_response(f"ML inference failed ({exc}); using the deterministic FAO-56 calculation.")
 
 
-model_manager = MLModelManager()
+_lazy_model_manager: Optional[MLModelManager] = None
+
+
+def get_default_model_manager() -> MLModelManager:
+    global _lazy_model_manager
+    if _lazy_model_manager is None:
+        _lazy_model_manager = MLModelManager()
+    return _lazy_model_manager
+
+
+class _LazyManagerProxy:
+    def __getattr__(self, name: str) -> Any:
+        return getattr(get_default_model_manager(), name)
+
+
+model_manager = _LazyManagerProxy()
 
 
 def predict_irrigation_adjustment(features: Mapping[str, Any]) -> Dict[str, Any]:
     """Convenience wrapper for backend imports."""
-    return model_manager.predict(features)
+    return get_default_model_manager().predict(features)

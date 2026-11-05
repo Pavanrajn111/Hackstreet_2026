@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from sqlalchemy import Column, Integer, String, Float, Date, DateTime, Boolean, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -19,7 +19,7 @@ class FarmModel(Base):
     irrigation_method = Column(String(50), nullable=False, default="Drip Irrigation")
     last_irrigation_date = Column(Date, nullable=True)
     pump_flow_rate_lpm = Column(Float, nullable=True, default=120.0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships with cascade deletion
     irrigation_logs = relationship(
@@ -55,7 +55,7 @@ class IrrigationLogModel(Base):
     was_recommended = Column(Boolean, default=True)
     water_saved_litres = Column(Float, nullable=True, default=0.0)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     farm = relationship("FarmModel", back_populates="irrigation_logs")
 
@@ -67,7 +67,7 @@ class RecommendationHistoryModel(Base):
     farm_id = Column(Integer, ForeignKey("farms.id", ondelete="CASCADE"), nullable=True, index=True)
     farm_name = Column(String(100), nullable=False)
     crop = Column(String(50), nullable=False)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     irrigate_today = Column(Boolean, nullable=False)
     depth_mm = Column(Float, nullable=False)
     volume_litres = Column(Float, nullable=False)
@@ -94,6 +94,6 @@ class HybridPlanModel(Base):
     net_profit_expected_inr = Column(Float, nullable=True, default=0.0)
     roi_pct = Column(Float, nullable=True, default=0.0)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     farm = relationship("FarmModel", back_populates="hybrid_plans")

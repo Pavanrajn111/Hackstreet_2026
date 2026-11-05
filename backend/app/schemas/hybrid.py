@@ -85,6 +85,8 @@ class LayoutResponse(BaseModel):
     irrigation_line_layout: str
     planting_calendar: List[Dict[str, str]]
     limitations: List[str]
+    spatial_pattern_3d: Optional[Dict[str, Any]] = None
+    spatial_grid_coordinates: Optional[List[Dict[str, Any]]] = None
 
 
 # --- Phase 5: Cultivation Guide ---

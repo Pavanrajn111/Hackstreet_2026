@@ -86,3 +86,32 @@ The FastAPI middleware automatically splits this comma-separated string into per
 1. **Agronomic Scope:** FAO-56 Penman-Monteith single-coefficient equations provide generalized guidance. Local micro-climates, soil compaction, and salinization require physical ground-truth soil sensors for certified field use.
 2. **Database:** SQLite is used for zero-configuration hackathon deployment. For enterprise multi-tenant concurrency, transition `DATABASE_URL` to PostgreSQL.
 3. **Offline Mode:** The frontend caches the last recommendation and farm profile in `localStorage` and provides an offline banner when disconnected.
+
+---
+
+## 7. Database Management, Backups, and Restores
+
+The backend uses SQLite configured with **Write-Ahead Logging (WAL mode)**, a 5000 ms busy timeout, and foreign key enforcement to ensure concurrent read/write stability.
+
+### Automated Backups
+To create an atomic, integrity-verified online backup:
+```bash
+python backend/scripts/backup_db.py --keep 5
+```
+Options:
+- `--dir <path>`: Directory to save backups (defaults to `backend/backups/`).
+- `--keep <N>`: Retain latest N backup snapshots and automatically rotate older ones (default: 5).
+
+### Safe Database Restores
+To restore from the latest backup (or a specified backup):
+```bash
+# Restore latest available backup
+python backend/scripts/restore_db.py
+
+# Restore a specific backup snapshot
+python backend/scripts/restore_db.py --file backend/backups/irrigation_backup_20261105_222618.db
+```
+Safety features:
+1. Validates `PRAGMA integrity_check` on the backup snapshot *before* touching the target database.
+2. Automatically creates a safety pre-restore snapshot (`.pre_restore_<timestamp>`) of the live database before overwriting.
+3. Re-verifies integrity on the restored destination file.

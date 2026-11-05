@@ -67,6 +67,187 @@ function CandidateCard({ candidate, ranked }) {
   );
 }
 
+function Spatial3DVisualizer({ layout }) {
+  const [viewMode, setViewMode] = useState('canopy');
+  const spatial3d = layout?.spatial_pattern_3d;
+  const gridCoords = layout?.spatial_grid_coordinates || [];
+
+  if (!spatial3d && gridCoords.length === 0) return null;
+
+  const overstorey = spatial3d?.overstorey || {};
+  const understorey = spatial3d?.understorey || {};
+
+  return (
+    <div className="bg-slate-900 text-white rounded-2xl p-5 shadow-sm space-y-4 my-4 border border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">3D STRATIFICATION & SPATIAL PATTERN</span>
+          <h3 className="text-base font-bold text-white mt-0.5">Multi-Tier Field Architecture</h3>
+          <p className="text-xs text-slate-400">Vertical canopy levels, root separation and spatial coordinates</p>
+        </div>
+        <div className="inline-flex bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+          <button
+            type="button"
+            className={`px-3 py-1.5 rounded-lg transition-all ${viewMode === 'canopy' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'}`}
+            onClick={() => setViewMode('canopy')}
+          >
+            3D Canopy Strata
+          </button>
+          <button
+            type="button"
+            className={`px-3 py-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'}`}
+            onClick={() => setViewMode('grid')}
+          >
+            Field Sowing Grid
+          </button>
+        </div>
+      </div>
+
+      {viewMode === 'canopy' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-slate-800/80 rounded-xl p-4 border border-slate-700/60">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">{overstorey.layer || 'Overstorey'}</span>
+                <span className="text-xs bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-800 font-mono">
+                  +{overstorey.canopy_height_m || 10}m height
+                </span>
+              </div>
+              <h4 className="text-lg font-black text-white">{layout.main_crop}</h4>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-300">
+                <p><span className="text-slate-500 block">Crown Spread</span><strong>{overstorey.crown_diameter_m || 5}m</strong></p>
+                <p><span className="text-slate-500 block">Root Depth</span><strong>-{overstorey.root_depth_m || 1.8}m</strong></p>
+                <p><span className="text-slate-500 block">Light Filtering</span><strong>{overstorey.light_transmission_pct || 55}%</strong></p>
+                <p><span className="text-slate-500 block">Spacing</span><strong>{layout.main_crop_spacing?.row_spacing_m || 7.5}m × {layout.main_crop_spacing?.plant_spacing_m || 7.5}m</strong></p>
+              </div>
+            </div>
+
+            <div className="bg-slate-800/80 rounded-xl p-4 border border-slate-700/60">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">{understorey.layer || 'Understorey'}</span>
+                <span className="text-xs bg-amber-950 text-amber-300 px-2 py-0.5 rounded-full border border-amber-800 font-mono">
+                  +{understorey.canopy_height_m || 0.8}m height
+                </span>
+              </div>
+              <h4 className="text-lg font-black text-white">{layout.intercrop}</h4>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-300">
+                <p><span className="text-slate-500 block">Crown Spread</span><strong>{understorey.crown_diameter_m || 0.6}m</strong></p>
+                <p><span className="text-slate-500 block">Root Depth</span><strong>-{understorey.root_depth_m || 0.35}m</strong></p>
+                <p><span className="text-slate-500 block">Light Need</span><strong>{understorey.shade_preference || 'Partial Shade'}</strong></p>
+                <p><span className="text-slate-500 block">Root Clearance</span><strong>{spatial3d?.spatial_root_separation_m || 1.45}m gap</strong></p>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative bg-slate-950 rounded-xl p-5 border border-slate-800 overflow-hidden">
+            <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 mb-3">
+              <span>CANOPY ELEVATION (+Z)</span>
+              <span>GROUND ZERO</span>
+              <span>RHIZOSPHERE (-Z)</span>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <span className="w-24 text-right text-xs font-bold text-emerald-400 shrink-0">{layout.main_crop}</span>
+                <div className="flex-1 bg-slate-800 h-6 rounded-lg relative overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-600 rounded-lg flex items-center px-2 text-[11px] font-bold text-white"
+                    style={{ width: `${Math.min(100, ((overstorey.canopy_height_m || 10) / 15) * 100)}%` }}
+                  >
+                    Canopy fronds: +{overstorey.canopy_height_m || 10}m
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="w-24 text-right text-xs font-bold text-amber-400 shrink-0">{layout.intercrop}</span>
+                <div className="flex-1 bg-slate-800 h-6 rounded-lg relative overflow-hidden">
+                  <div
+                    className="h-full bg-amber-500 rounded-lg flex items-center px-2 text-[11px] font-bold text-slate-950"
+                    style={{ width: `${Math.min(100, Math.max(15, ((understorey.canopy_height_m || 0.8) / 15) * 100))}%` }}
+                  >
+                    Understorey: +{understorey.canopy_height_m || 0.8}m
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-dashed border-slate-700 my-2 pt-2">
+                <div className="flex items-center gap-3">
+                  <span className="w-24 text-right text-xs text-sky-400 shrink-0">Subsoil Roots</span>
+                  <div className="flex-1 flex gap-2">
+                    <span className="text-[11px] bg-slate-800 text-emerald-300 px-2.5 py-1 rounded-md border border-slate-700">
+                      {layout.main_crop} Taproots: deep at {overstorey.root_depth_m || 1.8}m
+                    </span>
+                    <span className="text-[11px] bg-slate-800 text-amber-300 px-2.5 py-1 rounded-md border border-slate-700">
+                      {layout.intercrop} Feeder Roots: top {understorey.root_depth_m || 0.35}m
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewMode === 'grid' && (
+        <div className="bg-slate-950 rounded-xl p-4 border border-slate-800">
+          <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
+            <span>Representative 30m × 30m Field Cell</span>
+            <span className="flex items-center gap-3">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> {layout.main_crop}</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400"></span> {layout.intercrop}</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-sky-400 inline-block"></span> Drip Lateral</span>
+            </span>
+          </div>
+
+          <div className="w-full aspect-[16/9] max-h-64 bg-slate-900 rounded-lg relative overflow-hidden border border-slate-800 flex items-center justify-center">
+            <svg viewBox="0 0 300 300" className="w-full h-full p-2">
+              <defs>
+                <pattern id="grid" width="25" height="25" patternUnits="userSpaceOnUse">
+                  <path d="M 25 0 L 0 0 0 25" fill="none" stroke="#1e293b" strokeWidth="0.5" />
+                </pattern>
+              </defs>
+              <rect width="300" height="300" fill="url(#grid)" />
+              <rect x="5" y="5" width="290" height="290" fill="none" stroke="#334155" strokeWidth="1.5" strokeDasharray="4 2" />
+
+              <line x1="15" y1="75" x2="285" y2="75" stroke="#0ea5e9" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
+              <line x1="15" y1="150" x2="285" y2="150" stroke="#0ea5e9" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
+              <line x1="15" y1="225" x2="285" y2="225" stroke="#0ea5e9" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
+
+              {gridCoords.map((pt, i) => {
+                const cx = (pt.x / 30.0) * 280 + 10;
+                const cy = (pt.y / 30.0) * 280 + 10;
+                if (pt.type === 'main_crop') {
+                  return (
+                    <g key={`main-${i}`}>
+                      <circle cx={cx} cy={cy} r="16" fill="#15803d" opacity="0.35" />
+                      <circle cx={cx} cy={cy} r="8" fill="#16a34a" />
+                      <circle cx={cx} cy={cy} r="3" fill="#ffffff" />
+                    </g>
+                  );
+                }
+                return (
+                  <circle
+                    key={`inter-${i}`}
+                    cx={cx}
+                    cy={cy}
+                    r="4"
+                    fill={pt.color || '#eab308'}
+                    opacity="0.9"
+                  />
+                );
+              })}
+            </svg>
+          </div>
+          <p className="text-[11px] text-slate-400 mt-2 text-center">
+            Calculated from backend spacing geometry: {layout.usable_cultivated_area_sqm} m² usable area ({layout.main_crop_plant_count} {layout.main_crop} + {layout.intercrop_plant_count} {layout.intercrop} plants)
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LayoutResult({ layout }) {
   const formatObject = (value) => value && typeof value === 'object'
     ? Object.entries(value).map(([key, entry]) => `${key.replaceAll('_', ' ')}: ${entry}`).join(' · ')
@@ -92,6 +273,7 @@ function LayoutResult({ layout }) {
         <article className="hybrid-layout-card"><Ruler size={17} /><div><span className="workspace-eyebrow">SPACING</span><h3>Crop-wise spacing</h3><p><strong>{layout.main_crop}</strong> · {formatObject(layout.main_crop_spacing)}</p><p><strong>{layout.intercrop}</strong> · {formatObject(layout.intercrop_spacing)}</p></div></article>
         <article className="hybrid-layout-card"><Sprout size={17} /><div><span className="workspace-eyebrow">ARRANGEMENT</span><h3>Row arrangement</h3><p>{formatObject(layout.row_arrangement)}</p><p>{displayValue(layout.irrigation_line_layout)}</p></div></article>
       </div>
+      <Spatial3DVisualizer layout={layout} />
       <div className="hybrid-calendar">
         <div><span className="workspace-eyebrow">PLANTING CALENDAR</span><h3>Plan milestones.</h3></div>
         {layout.planting_calendar?.length ? layout.planting_calendar.map((entry, index) => <div key={`${entry.stage || entry.date || index}`} className="hybrid-calendar-row"><strong>{entry.stage || entry.activity || entry.date || `Step ${index + 1}`}</strong><span>{Object.entries(entry).filter(([key]) => !['stage', 'activity', 'date'].includes(key)).map(([key, value]) => `${key.replaceAll('_', ' ')}: ${value}`).join(' · ') || entry.date || 'Details unavailable'}</span></div>) : <p className="text-sm text-slate-500">No planting calendar was returned.</p>}

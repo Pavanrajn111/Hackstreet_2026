@@ -304,6 +304,7 @@
   .farm-card-top, .farm-card-actions, .farm-modal-header, .farm-modal-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .farm-card-index, .farm-active-label { color: #537b47; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
   .farm-active-label { display: inline-flex; align-items: center; gap: 4px; color: #25553b; }
+  .pending-sync-badge { display: inline-flex; align-items: center; gap: 4px; color: #92400e; background: #fef3c7; border: 1px solid #fcd34d; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
   .farm-card h2, .farm-active-panel h2 { margin: 22px 0 6px; color: #10251b; font-size: 24px; letter-spacing: -.04em; }
   .farm-location, .farm-card-facts span { display: inline-flex; align-items: center; gap: 6px; color: rgba(16,37,27,.65); font-size: 12px; }
   .farm-card-facts { display: flex; flex-wrap: wrap; gap: 14px; margin: 24px 0 12px; }

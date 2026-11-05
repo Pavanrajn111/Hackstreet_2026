@@ -7,7 +7,7 @@ Defines:
   3. WaterActionPlanAuditModel - History of generated water shortage action plans
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import (
     Column,
     Integer,
@@ -50,7 +50,7 @@ class SharedWaterResourceModel(Base):
     suitability_notes = Column(Text, nullable=True)
 
     # Availability Window
-    availability_start = Column(DateTime, nullable=False, default=datetime.utcnow)
+    availability_start = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     availability_end = Column(DateTime, nullable=False)
 
     # Commercial / Sharing Terms (free, paid, negotiable, cost_sharing)
@@ -71,8 +71,8 @@ class SharedWaterResourceModel(Base):
     status = Column(String(30), nullable=False, default="active")    # active, paused, exhausted, closed
     is_demo_sample = Column(Boolean, nullable=False, default=False)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relationships
     farm = relationship("FarmModel", backref="shared_resources")
@@ -113,8 +113,8 @@ class WaterSharingRequestModel(Base):
     completion_confirmed_by_requester = Column(Boolean, default=False)
     completion_confirmed_by_owner = Column(Boolean, default=False)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relationships
     requester_farm = relationship("FarmModel", backref="water_requests_made")
@@ -134,6 +134,6 @@ class WaterActionPlanAuditModel(Base):
     shortage_severity = Column(String(30), default="moderate")
     recommended_action_summary = Column(Text, nullable=True)
     ml_risk_signal = Column(String(50), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     farm = relationship("FarmModel", backref="water_action_plans")

@@ -400,6 +400,72 @@ def generate_farm_layout(req: LayoutRequest) -> LayoutResponse:
         "Reserve 3.0m peripheral boundary tracks for farm machinery, tractor spraying, and tractor harvest cart movement.",
     ]
 
+    # Generate 3D spatial canopy strata and representative coordinate points for 3D visualization
+    canopy_strata = {
+        "overstorey": {
+            "crop": req.main_crop,
+            "layer": "Overstorey Canopy",
+            "canopy_height_m": 12.0 if "coconut" in main_clean else (8.0 if "arecanut" in main_clean else 6.0),
+            "crown_diameter_m": 5.0 if "coconut" in main_clean else (2.5 if "arecanut" in main_clean else 3.5),
+            "root_depth_m": 1.8 if "coconut" in main_clean else 1.2,
+            "light_transmission_pct": 55.0 if "coconut" in main_clean else 40.0,
+        },
+        "understorey": {
+            "crop": req.intercrop,
+            "layer": "Understorey / Inter-row Shrub & Rhizosphere",
+            "canopy_height_m": 0.8 if "turmeric" in inter_clean or "ginger" in inter_clean else (2.5 if "banana" in inter_clean else 1.5),
+            "crown_diameter_m": 0.6 if "turmeric" in inter_clean or "ginger" in inter_clean else 2.0,
+            "root_depth_m": 0.35 if "turmeric" in inter_clean or "ginger" in inter_clean else 0.6,
+            "shade_preference": "Partial to High Shade",
+        },
+        "spatial_root_separation_m": round(abs((1.8 if "coconut" in main_clean else 1.2) - (0.35 if "turmeric" in inter_clean or "ginger" in inter_clean else 0.6)), 2),
+        "competition_index": "Low (Root zones vertically partitioned)",
+    }
+
+    # Generate sample 3D coordinates for a 30m x 30m field cell
+    cell_w = 30.0
+    cell_l = 30.0
+    main_row_spacing = float(main_spacing.get("row_spacing_m", 7.5))
+    main_plant_spacing = float(main_spacing.get("plant_spacing_m", 7.5))
+
+    grid_coords = []
+    # Main crop stations
+    x = main_row_spacing / 2.0
+    while x < cell_w:
+        y = main_plant_spacing / 2.0
+        while y < cell_l:
+            grid_coords.append({
+                "type": "main_crop",
+                "crop": req.main_crop,
+                "x": round(x, 2),
+                "y": round(y, 2),
+                "z": canopy_strata["overstorey"]["canopy_height_m"],
+                "root_z": -canopy_strata["overstorey"]["root_depth_m"],
+                "color": "#15803d",
+            })
+            y += main_plant_spacing
+        x += main_row_spacing
+
+    # Intercrop stations in alleys
+    inter_row_spacing = float(inter_spacing.get("row_spacing_m", 1.0))
+    buffer = float(inter_spacing.get("buffer_from_main_m", 1.5))
+
+    x = main_row_spacing / 2.0 + buffer
+    while x < cell_w - buffer:
+        y = 1.0
+        while y < cell_l - 1.0:
+            grid_coords.append({
+                "type": "intercrop",
+                "crop": req.intercrop,
+                "x": round(x, 2),
+                "y": round(y, 2),
+                "z": canopy_strata["understorey"]["canopy_height_m"],
+                "root_z": -canopy_strata["understorey"]["root_depth_m"],
+                "color": "#eab308" if "turmeric" in inter_clean else "#10b981",
+            })
+            y += max(inter_row_spacing * 2.0, 1.5)
+        x += max(main_row_spacing / 2.0, 2.5)
+
     return LayoutResponse(
         main_crop=req.main_crop,
         intercrop=req.intercrop,
@@ -420,6 +486,8 @@ def generate_farm_layout(req: LayoutRequest) -> LayoutResponse:
         irrigation_line_layout=irrigation_layout,
         planting_calendar=planting_calendar,
         limitations=limitations,
+        spatial_pattern_3d=canopy_strata,
+        spatial_grid_coordinates=grid_coords,
     )
 
 

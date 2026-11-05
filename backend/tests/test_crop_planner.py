@@ -180,3 +180,63 @@ def test_crop_planner_service_edge_cases():
     suit = predict_crop_suitability(n=0, p=0, k=0, temperature=15, humidity=20, ph=3.5, rainfall=10)
     assert suit["recommended_crop"] is not None
     assert suit["confidence"] > 0
+
+
+def test_rainfall_scaling_consistency():
+    """Verify shared rainfall scaling helper behaves consistently for annual vs monthly inputs."""
+    from app.services.crop_planner_service import scale_rainfall_for_ml
+
+    # Annual rainfall (e.g. 1200 mm/yr) scales down to ~100 mm
+    assert scale_rainfall_for_ml(1200.0) == 100.0
+    assert scale_rainfall_for_ml(2400.0) == 200.0
+
+    # Monthly / already-scaled rainfall (e.g. 120 mm) is preserved
+    assert scale_rainfall_for_ml(120.0) == 120.0
+    assert scale_rainfall_for_ml(45.0) == 45.0
+
+    # Edge cases
+    assert scale_rainfall_for_ml(0.0) == 0.0
+    assert scale_rainfall_for_ml(-5.0) == 0.0
+
+
+def test_price_summary_beats_naive():
+    """Verify weak models (Arecanut, Coconut) are marked beats_naive=False and low confidence."""
+    # Arecanut has model MAE > naive MAE
+    arecanut = get_commodity_price_forecast("Arecanut")
+    assert arecanut["beats_naive"] is False
+    assert arecanut["confidence"] == "low"
+    assert arecanut["data_source"] == "synthetic"
+
+    # Coconut has model MAE > naive MAE
+    coconut = get_commodity_price_forecast("Coconut")
+    assert coconut["beats_naive"] is False
+    assert coconut["confidence"] == "low"
+
+    # Turmeric has model MAE < naive MAE
+    turmeric = get_commodity_price_forecast("Turmeric")
+    assert turmeric["beats_naive"] is True
+    assert turmeric["confidence"] == "high"
+
+
+def test_viability_threshold_constant():
+    """Verify minimum agronomic fit threshold is consistently 0.50 across all recommendations."""
+    from app.services.crop_planner_service import MIN_VIABILITY_FIT, plan_extra_crops
+
+    assert MIN_VIABILITY_FIT == 0.5
+
+    payload = {
+        "ph": 6.5,
+        "rainfall_mm_yr": 1200.0,
+        "temp_c": 28.0,
+        "humidity": 70.0,
+        "n": 50.0,
+        "p": 40.0,
+        "k": 30.0,
+        "soil": "Red",
+        "shade_level": 0.3,
+        "boundary_m": 360.0,
+        "area_acre": 2.0,
+    }
+    plan = plan_extra_crops(payload)
+    for rec in plan["recommendations"]:
+        assert rec["fit"] >= MIN_VIABILITY_FIT

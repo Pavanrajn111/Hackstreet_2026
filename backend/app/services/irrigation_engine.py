@@ -320,9 +320,9 @@ def simulate_water_balance(
             w_item = forecast_list[i]
             day_date = w_item.get("date", (date.today() + timedelta(days=i)).isoformat())
             day_label = w_item.get("day", "Today" if i == 0 else "Day")
-            rain_mm = w_item.get("rainfall_mm", 0.0)
-            p_prob = w_item.get("rain_probability_pct", 0)
-            et0_val = w_item.get("et0_mm", 4.2)
+            rain_mm = float(w_item.get("rainfall_mm", 0.0))
+            p_prob = int(w_item.get("rain_probability_pct", 0))
+            et0_val = float(w_item.get("et0_mm", 4.2))
         else:
             d_obj = date.today() + timedelta(days=i)
             day_date = d_obj.isoformat()
@@ -332,21 +332,25 @@ def simulate_water_balance(
             et0_val = 4.2
 
         p_eff = calculate_effective_rainfall(rain_mm)
-        etc_day = et0_val * current_kc
+        etc_day = round(et0_val * current_kc, 2)
         is_rain_pause = (rain_mm >= 4.0) or (p_prob >= 75)
 
         if i == 0 and irrigate_today:
             sched_irrigate = True
             action = "Irrigate"
             depth = gross_depth_mm
+            recorded_depletion = simulated_depletion
             simulated_depletion = 0.0
         elif is_rain_pause:
             sched_irrigate = False
             action = "Rain Pause"
             depth = 0.0
             simulated_depletion = max(0.0, simulated_depletion - p_eff)
+            recorded_depletion = simulated_depletion
         else:
             simulated_depletion += etc_day
+            simulated_depletion = min(taw_mm, simulated_depletion)
+            recorded_depletion = simulated_depletion
             if simulated_depletion >= raw_mm:
                 sched_irrigate = True
                 action = "Irrigate"
@@ -360,6 +364,11 @@ def simulate_water_balance(
         vol = round(depth * payload.farm_area_hectares * 10000.0, 1)
         r_mins = int(round(vol / pump_flow)) if (sched_irrigate and pump_flow > 0 and depth > 0) else 0
         rain_note = f"Rain: {rain_mm} mm ({p_prob}% prob)" if rain_mm > 0 else "Clear / dry"
+        if sched_irrigate and pump_flow <= 0 and depth > 0:
+            rain_note += " · Pump flow not set"
+
+        remaining_raw = max(0.0, raw_mm - recorded_depletion)
+        soil_pct = round((remaining_raw / raw_mm) * 100.0, 1) if raw_mm > 0 else 100.0
 
         seven_day_schedule.append(
             ScheduleDayItem(
@@ -371,6 +380,12 @@ def simulate_water_balance(
                 water_volume_litres=vol,
                 runtime_minutes=r_mins,
                 rain_note=rain_note,
+                et0_mm=round(et0_val, 2),
+                etc_mm=etc_day,
+                rainfall_mm=round(rain_mm, 2),
+                simulated_depletion_mm=round(recorded_depletion, 2),
+                raw_mm=round(raw_mm, 2),
+                soil_water_status_pct=soil_pct,
             )
         )
 
@@ -405,6 +420,8 @@ def simulate_water_balance(
                 rain_probability_pct=p_prob_val,
                 et0_mm=et0_val,
                 condition=cond_val,
+                wind_m_s=w.get("wind_m_s", 2.5) if i < len(forecast_list) else 2.5,
+                solar_mj_m2=w.get("solar_mj_m2", 20.0) if i < len(forecast_list) else 20.0,
             )
         )
 

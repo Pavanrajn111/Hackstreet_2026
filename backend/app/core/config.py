@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     # ML settings
     ML_MODEL_ENABLED: bool = False
+    ML_MODEL_DIR: str = "../ml/models"
     ML_MODEL_PATH: str = "../ml/models/irrigation_model.joblib"
 
     @property

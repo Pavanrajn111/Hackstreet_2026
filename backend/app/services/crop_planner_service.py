@@ -12,6 +12,7 @@ Implements safe fallbacks to ensure backend stability even if ML artifacts are m
 """
 
 import os
+import re
 import json
 import logging
 import math
@@ -174,23 +175,23 @@ class CropPlannerModelManager:
             logger.warning("joblib not installed; ML prediction will use rule-based fallback.")
             return
 
-        # Load Random Forest suitability model
-        rf_path = self.data_dir / "crop_suitability_rf.joblib"
-        if rf_path.exists():
-            try:
+        # Load Random Forest suitability model safely
+        try:
+            rf_path = self.data_dir / "crop_suitability_rf.joblib"
+            if rf_path.exists():
                 self.suitability_model = joblib.load(rf_path)
                 logger.info("Loaded crop_suitability_rf model successfully.")
-            except Exception as e:
-                logger.warning("Failed to load crop_suitability_rf.joblib: %s", e)
+        except Exception as e:
+            logger.warning("Failed to load crop_suitability_rf.joblib: %s", e)
 
-        # Load GradientBoosting price models
-        pm_path = self.data_dir / "price_models.joblib"
-        if pm_path.exists():
-            try:
+        # Load GradientBoosting price models safely
+        try:
+            pm_path = self.data_dir / "price_models.joblib"
+            if pm_path.exists():
                 self.price_models = joblib.load(pm_path)
                 logger.info("Loaded price_models for %d commodities.", len(self.price_models))
-            except Exception as e:
-                logger.warning("Failed to load price_models.joblib: %s", e)
+        except Exception as e:
+            logger.warning("Failed to load price_models.joblib: %s", e)
 
     @property
     def is_rf_available(self) -> bool:
@@ -207,6 +208,20 @@ manager = CropPlannerModelManager()
 # -------------------------------------------------------------------------
 # Core Helper Algorithms (matching planner_functions.py + enhancements)
 # -------------------------------------------------------------------------
+
+MIN_VIABILITY_FIT: float = 0.5
+
+
+def scale_rainfall_for_ml(rainfall_input: float) -> float:
+    """
+    Normalizes rainfall to the ML model's expected scale (~20-300 mm).
+    If annual rainfall is provided (> 300 mm/year), converts it to an approximate
+    monthly equivalent (/ 12.0). Otherwise preserves the value directly.
+    """
+    r = float(rainfall_input)
+    if r > 300.0:
+        return r / 12.0
+    return max(0.0, r)
 
 def range_score(v: float, lo: float, hi: float, tol: float = 0.25) -> float:
     """1.0 inside [lo, hi]; decays linearly to 0 at tol*(hi-lo) outside."""
@@ -226,10 +241,20 @@ def fit_score(farm: Dict[str, Any], row: Any) -> Tuple[float, List[str]]:
     parts["rainfall"] = range_score(float(farm.get("rainfall_mm_yr", 1200.0)), row.rain_min, row.rain_max)
     parts["temp"] = range_score(float(farm.get("temp_c", 28.0)), row.temp_min, row.temp_max)
 
-    # Soil match
-    farm_soil = str(farm.get("soil", "Red")).strip().capitalize()
-    soil_list = getattr(row, "soil_list", [s.strip() for s in str(row.soils).split("|")])
-    parts["soil"] = 1.0 if any(farm_soil.lower() in s.lower() or s.lower() in farm_soil.lower() for s in soil_list) else 0.4
+    # Soil match (robust tokenized matching for compound soil names)
+    farm_soil_raw = str(farm.get("soil", "Red")).strip().lower()
+    farm_tokens = [t.strip() for t in re.split(r"[\s,\-/]+", farm_soil_raw) if t.strip()]
+    soil_list = getattr(row, "soil_list", [s.strip().lower() for s in str(row.soils).split("|")])
+    match_found = False
+    for s in soil_list:
+        s_lower = s.lower()
+        if farm_soil_raw in s_lower or s_lower in farm_soil_raw:
+            match_found = True
+            break
+        if any(tok in s_lower or s_lower in tok for tok in farm_tokens):
+            match_found = True
+            break
+    parts["soil"] = 1.0 if match_found else 0.4
 
     # Shade match
     shade = float(farm.get("shade_level", 0.3))
@@ -262,9 +287,8 @@ def ml_score(farm: Dict[str, Any], crop: str) -> Optional[float]:
         return None
 
     try:
-        # Scale annual rainfall (e.g. 1200mm/yr) down to monthly/dataset scale (~100-200mm) if needed
         rain_input = float(farm.get("rainfall_mm_yr", 1200.0))
-        rain_val = (rain_input / 12.0) if rain_input > 300.0 else rain_input
+        rain_val = scale_rainfall_for_ml(rain_input)
 
         feat_df = pd.DataFrame([{
             "n": float(farm.get("n", 50.0)),
@@ -342,9 +366,10 @@ def predict_crop_suitability(n: float, p: float, k: float, temperature: float, h
     """
     Direct ML inference using Random Forest on 22 standard crop categories.
     """
+    scaled_rainfall = scale_rainfall_for_ml(rainfall)
     input_feats = {
         "n": n, "p": p, "k": k, "temperature": temperature,
-        "humidity": humidity, "ph": ph, "rainfall": rainfall,
+        "humidity": humidity, "ph": ph, "rainfall": scaled_rainfall,
     }
 
     if not manager.is_rf_available or pd is None:
@@ -443,8 +468,14 @@ def plan_extra_crops(farm_dict: Dict[str, Any], years: int = 15, top: int = 8) -
             "unit": getattr(r, "unit", None),
         })
 
-    # Filter by minimum agronomic fit >= 0.50 and sort by fit-weighted total NPV
-    viable = [x for x in out if x["fit"] >= 0.45]
+    # Filter by minimum agronomic fit >= MIN_VIABILITY_FIT (0.50) and sort by fit-weighted total NPV
+    viable = [x for x in out if x["fit"] >= MIN_VIABILITY_FIT]
+    if not viable and out:
+        # Fallback with relaxed viability threshold and agronomic remediation guidance
+        viable = [x for x in out if x["fit"] >= 0.25]
+        for item in viable:
+            if "Agronomic conditioning needed" not in item["notes"]:
+                item["notes"] += " · Requires targeted soil/irrigation amendment"
     viable.sort(key=lambda x: x["npv_total"], reverse=True)
 
     # Layout diversity: pick top 2 per layout group, then sort overall
@@ -538,6 +569,11 @@ def get_commodity_price_forecast(commodity_query: str) -> Dict[str, Any]:
 
     crop_name = COMMODITY2CROP.get(commodity, commodity.lower())
 
+    beats_naive_val = summary_entry.get("beats_naive")
+    if beats_naive_val is None and naive_mae is not None:
+        beats_naive_val = bool(mae < float(naive_mae))
+    confidence_val = summary_entry.get("confidence", "high" if beats_naive_val else "low")
+
     return {
         "commodity": commodity,
         "crop_name": crop_name,
@@ -548,6 +584,9 @@ def get_commodity_price_forecast(commodity_query: str) -> Dict[str, Any]:
         "trend": trend,
         "mae": round(mae, 2),
         "naive_mae": round(float(naive_mae), 2) if naive_mae is not None else None,
+        "beats_naive": beats_naive_val,
+        "confidence": confidence_val,
+        "data_source": "synthetic",
         "forecast_12m": [{"month": str(f.get("month", "")), "forecast_price": round(float(f.get("forecast_price", 0.0)), 2)} for f in forecast_list],
         "recent_history": hist_records,
     }
@@ -563,6 +602,7 @@ def get_all_price_forecasts() -> Dict[str, Any]:
         "total_commodities": len(results),
         "commodities": results,
         "model_family": "GradientBoostingRegressor",
+        "data_source": "synthetic",
     }
 
 
