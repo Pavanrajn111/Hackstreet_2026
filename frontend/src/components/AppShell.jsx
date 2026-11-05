@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart3, CalendarDays, ChevronDown, Database, Globe2, History, LayoutDashboard,
   LogOut, Menu, Settings2, Share2, ShieldCheck, Sprout, X, Waves, BrainCircuit,
@@ -8,6 +8,7 @@ import {
 import { useI18n } from '../i18n';
 import { isMockMode, setMockMode } from '../services/api';
 import BrandLogo from './BrandLogo';
+import useAuth from '../auth/useAuth';
 
 const intelligenceItems = [
   { to: '/app/intelligence/crop-suitability', label: 'Crop Suitability', icon: BrainCircuit },
@@ -32,6 +33,8 @@ const menuIsActive = (pathname, items) => items.some((item) => pathname === item
 export default function AppShell() {
   const { lang, setLang } = useI18n();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
   const headerRef = useRef(null);
   const hoverTimers = useRef({});
   const closeTimer = useRef(null);
@@ -89,6 +92,16 @@ export default function AppShell() {
     const nextState = !mockActive;
     setMockMode(nextState);
     setMockActive(nextState);
+  };
+
+  const logout = async () => {
+    try {
+      await signOut();
+      ['agr002_saved_farm', 'agr002_cached_recommendation', 'agr002_cached_time', 'agr002_local_history', 'agr002_active_farm_id'].forEach((key) => localStorage.removeItem(key));
+      navigate('/login', { replace: true });
+    } catch (logoutError) {
+      console.error('Unable to sign out:', logoutError);
+    }
   };
 
   const cancelHoverClose = (key) => {
@@ -200,7 +213,7 @@ export default function AppShell() {
         )}
       </header>
       <main className="product-main"><Outlet /></main>
-      <footer className="product-footer"><span>AQUAGROW AI / FIELD INTELLIGENCE</span><span>© 2026 WATER-WISE FARMING</span><Link to="/"><LogOut size={13} /> Exit workspace</Link></footer>
+      <footer className="product-footer"><span>AQUAGROW AI / FIELD INTELLIGENCE</span><span>© 2026 WATER-WISE FARMING</span><button type="button" className="product-logout" onClick={logout}><LogOut size={13} /> Sign out</button></footer>
     </div>
   );
 }

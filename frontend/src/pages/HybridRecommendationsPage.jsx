@@ -1,11 +1,12 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, ChevronDown, ChevronUp, Droplets, FlaskConical, Leaf, RefreshCw, Ruler, Sprout, TrendingUp, Waves } from 'lucide-react';
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { AlertCircle, Box, ChevronDown, ChevronUp, Droplets, Eye, EyeOff, FlaskConical, Leaf, RefreshCw, Ruler, RotateCcw, Sprout, TrendingUp, Waves, ZoomIn, ZoomOut } from 'lucide-react';
 import { getFarms, isMockMode } from '../services/api';
 import { listFarms } from '../services/farmService';
 import { calculateHybridIrrigation, compareHybridProfit, estimateHybridProfit, generateFarmLayout, getCultivationGuide, getHybridPlan, listHybridPlans, listValueAddedProducts, recommendHybridCrops, saveHybridPlan } from '../services/hybridService';
 import { getActiveFarmId } from '../services/farmSelection';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
+const FarmLayout3D = lazy(() => import('../components/FarmLayout3D'));
 
 const EMPTY_FORM = {
   main_crop_age_years: 8,
@@ -67,217 +68,67 @@ function CandidateCard({ candidate, ranked }) {
   );
 }
 
-function Spatial3DVisualizer({ layout }) {
-  const [viewMode, setViewMode] = useState('canopy');
-  const spatial3d = layout?.spatial_pattern_3d;
-  const gridCoords = layout?.spatial_grid_coordinates || [];
-
-  if (!spatial3d && gridCoords.length === 0) return null;
-
-  const overstorey = spatial3d?.overstorey || {};
-  const understorey = spatial3d?.understorey || {};
-
-  return (
-    <div className="bg-slate-900 text-white rounded-2xl p-5 shadow-sm space-y-4 my-4 border border-slate-800">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
-        <div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">3D STRATIFICATION & SPATIAL PATTERN</span>
-          <h3 className="text-base font-bold text-white mt-0.5">Multi-Tier Field Architecture</h3>
-          <p className="text-xs text-slate-400">Vertical canopy levels, root separation and spatial coordinates</p>
-        </div>
-        <div className="inline-flex bg-slate-800 p-1 rounded-xl text-xs font-semibold">
-          <button
-            type="button"
-            className={`px-3 py-1.5 rounded-lg transition-all ${viewMode === 'canopy' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'}`}
-            onClick={() => setViewMode('canopy')}
-          >
-            3D Canopy Strata
-          </button>
-          <button
-            type="button"
-            className={`px-3 py-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'}`}
-            onClick={() => setViewMode('grid')}
-          >
-            Field Sowing Grid
-          </button>
-        </div>
-      </div>
-
-      {viewMode === 'canopy' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-slate-800/80 rounded-xl p-4 border border-slate-700/60">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">{overstorey.layer || 'Overstorey'}</span>
-                <span className="text-xs bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-800 font-mono">
-                  +{overstorey.canopy_height_m || 10}m height
-                </span>
-              </div>
-              <h4 className="text-lg font-black text-white">{layout.main_crop}</h4>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-300">
-                <p><span className="text-slate-500 block">Crown Spread</span><strong>{overstorey.crown_diameter_m || 5}m</strong></p>
-                <p><span className="text-slate-500 block">Root Depth</span><strong>-{overstorey.root_depth_m || 1.8}m</strong></p>
-                <p><span className="text-slate-500 block">Light Filtering</span><strong>{overstorey.light_transmission_pct || 55}%</strong></p>
-                <p><span className="text-slate-500 block">Spacing</span><strong>{layout.main_crop_spacing?.row_spacing_m || 7.5}m × {layout.main_crop_spacing?.plant_spacing_m || 7.5}m</strong></p>
-              </div>
-            </div>
-
-            <div className="bg-slate-800/80 rounded-xl p-4 border border-slate-700/60">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">{understorey.layer || 'Understorey'}</span>
-                <span className="text-xs bg-amber-950 text-amber-300 px-2 py-0.5 rounded-full border border-amber-800 font-mono">
-                  +{understorey.canopy_height_m || 0.8}m height
-                </span>
-              </div>
-              <h4 className="text-lg font-black text-white">{layout.intercrop}</h4>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-300">
-                <p><span className="text-slate-500 block">Crown Spread</span><strong>{understorey.crown_diameter_m || 0.6}m</strong></p>
-                <p><span className="text-slate-500 block">Root Depth</span><strong>-{understorey.root_depth_m || 0.35}m</strong></p>
-                <p><span className="text-slate-500 block">Light Need</span><strong>{understorey.shade_preference || 'Partial Shade'}</strong></p>
-                <p><span className="text-slate-500 block">Root Clearance</span><strong>{spatial3d?.spatial_root_separation_m || 1.45}m gap</strong></p>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative bg-slate-950 rounded-xl p-5 border border-slate-800 overflow-hidden">
-            <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 mb-3">
-              <span>CANOPY ELEVATION (+Z)</span>
-              <span>GROUND ZERO</span>
-              <span>RHIZOSPHERE (-Z)</span>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <span className="w-24 text-right text-xs font-bold text-emerald-400 shrink-0">{layout.main_crop}</span>
-                <div className="flex-1 bg-slate-800 h-6 rounded-lg relative overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-600 rounded-lg flex items-center px-2 text-[11px] font-bold text-white"
-                    style={{ width: `${Math.min(100, ((overstorey.canopy_height_m || 10) / 15) * 100)}%` }}
-                  >
-                    Canopy fronds: +{overstorey.canopy_height_m || 10}m
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <span className="w-24 text-right text-xs font-bold text-amber-400 shrink-0">{layout.intercrop}</span>
-                <div className="flex-1 bg-slate-800 h-6 rounded-lg relative overflow-hidden">
-                  <div
-                    className="h-full bg-amber-500 rounded-lg flex items-center px-2 text-[11px] font-bold text-slate-950"
-                    style={{ width: `${Math.min(100, Math.max(15, ((understorey.canopy_height_m || 0.8) / 15) * 100))}%` }}
-                  >
-                    Understorey: +{understorey.canopy_height_m || 0.8}m
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-dashed border-slate-700 my-2 pt-2">
-                <div className="flex items-center gap-3">
-                  <span className="w-24 text-right text-xs text-sky-400 shrink-0">Subsoil Roots</span>
-                  <div className="flex-1 flex gap-2">
-                    <span className="text-[11px] bg-slate-800 text-emerald-300 px-2.5 py-1 rounded-md border border-slate-700">
-                      {layout.main_crop} Taproots: deep at {overstorey.root_depth_m || 1.8}m
-                    </span>
-                    <span className="text-[11px] bg-slate-800 text-amber-300 px-2.5 py-1 rounded-md border border-slate-700">
-                      {layout.intercrop} Feeder Roots: top {understorey.root_depth_m || 0.35}m
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {viewMode === 'grid' && (
-        <div className="bg-slate-950 rounded-xl p-4 border border-slate-800">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
-            <span>Representative 30m × 30m Field Cell</span>
-            <span className="flex items-center gap-3">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> {layout.main_crop}</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400"></span> {layout.intercrop}</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-sky-400 inline-block"></span> Drip Lateral</span>
-            </span>
-          </div>
-
-          <div className="w-full aspect-[16/9] max-h-64 bg-slate-900 rounded-lg relative overflow-hidden border border-slate-800 flex items-center justify-center">
-            <svg viewBox="0 0 300 300" className="w-full h-full p-2">
-              <defs>
-                <pattern id="grid" width="25" height="25" patternUnits="userSpaceOnUse">
-                  <path d="M 25 0 L 0 0 0 25" fill="none" stroke="#1e293b" strokeWidth="0.5" />
-                </pattern>
-              </defs>
-              <rect width="300" height="300" fill="url(#grid)" />
-              <rect x="5" y="5" width="290" height="290" fill="none" stroke="#334155" strokeWidth="1.5" strokeDasharray="4 2" />
-
-              <line x1="15" y1="75" x2="285" y2="75" stroke="#0ea5e9" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
-              <line x1="15" y1="150" x2="285" y2="150" stroke="#0ea5e9" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
-              <line x1="15" y1="225" x2="285" y2="225" stroke="#0ea5e9" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
-
-              {gridCoords.map((pt, i) => {
-                const cx = (pt.x / 30.0) * 280 + 10;
-                const cy = (pt.y / 30.0) * 280 + 10;
-                if (pt.type === 'main_crop') {
-                  return (
-                    <g key={`main-${i}`}>
-                      <circle cx={cx} cy={cy} r="16" fill="#15803d" opacity="0.35" />
-                      <circle cx={cx} cy={cy} r="8" fill="#16a34a" />
-                      <circle cx={cx} cy={cy} r="3" fill="#ffffff" />
-                    </g>
-                  );
-                }
-                return (
-                  <circle
-                    key={`inter-${i}`}
-                    cx={cx}
-                    cy={cy}
-                    r="4"
-                    fill={pt.color || '#eab308'}
-                    opacity="0.9"
-                  />
-                );
-              })}
-            </svg>
-          </div>
-          <p className="text-[11px] text-slate-400 mt-2 text-center">
-            Calculated from backend spacing geometry: {layout.usable_cultivated_area_sqm} m² usable area ({layout.main_crop_plant_count} {layout.main_crop} + {layout.intercrop_plant_count} {layout.intercrop} plants)
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function LayoutResult({ layout }) {
+  const [view, setView] = useState('2d');
+  const [showMain, setShowMain] = useState(true);
+  const [showIntercrop, setShowIntercrop] = useState(true);
+  const [selectedCrop, setSelectedCrop] = useState(null);
+  const [zoom, setZoom] = useState(1);
+  const [resetToken, setResetToken] = useState(0);
   const formatObject = (value) => value && typeof value === 'object'
     ? Object.entries(value).map(([key, entry]) => `${key.replaceAll('_', ' ')}: ${entry}`).join(' · ')
     : displayValue(value);
+  const numericSpacing = (value, fallback) => {
+    const numbers = String(value || '').match(/\d+(?:\.\d+)?/g);
+    return numbers?.length ? Number(numbers[0]) : fallback;
+  };
+  const mainRowSpacing = numericSpacing(layout.main_crop_spacing?.row_spacing_m, 7.5);
+  const plantSpacing = numericSpacing(layout.main_crop_spacing?.plant_spacing_m, 7.5);
+  const buffer = numericSpacing(layout.row_arrangement?.buffer_zone_m || layout.intercrop_spacing?.buffer_from_main_m, 1.5);
+  const mainRows = Math.max(3, Math.min(7, Math.round(32 / mainRowSpacing)));
+  const plantsPerRow = Math.max(4, Math.min(12, Math.round(62 / plantSpacing)));
+  const field = { x: 70, y: 58, width: 860, height: 444 };
+  const mainAllocation = Number(layout.main_crop_allocated_area_sqm) || 0;
+  const intercropAllocation = Number(layout.intercrop_allocated_area_sqm) || 0;
+  const allocationRatio = mainAllocation + intercropAllocation > 0 ? mainAllocation / (mainAllocation + intercropAllocation) : 0.7;
+  const rowGap = field.height / (mainRows + 1);
+  const cropShortName = (crop) => String(crop || '').split(' ').map((word) => word[0]).join('').slice(0, 3).toUpperCase();
+  const mainSymbol = (x, y, index) => <g key={`main-${index}`} className="layout-plant layout-main-plant" onMouseEnter={() => setSelectedCrop('main')} onClick={() => setSelectedCrop('main')}><ellipse cx={x} cy={y + 13} rx="17" ry="5" fill="#9a713e" opacity=".34" /><path d={`M ${x} ${y + 12} C ${x - 3} ${y + 3}, ${x - 3} ${y - 7}, ${x} ${y - 15}`} stroke="#6b4a2d" strokeWidth="4" fill="none" /><circle cx={x - 8} cy={y - 12} r="12" fill="#2f6539" /><circle cx={x + 7} cy={y - 10} r="13" fill="#3f7b43" /><circle cx={x} cy={y - 20} r="11" fill="#548d4b" /></g>;
+  const intercropSymbol = (x, y, index) => <g key={`inter-${index}`} className="layout-plant layout-intercrop-plant" onMouseEnter={() => setSelectedCrop('intercrop')} onClick={() => setSelectedCrop('intercrop')}><ellipse cx={x} cy={y + 8} rx="11" ry="4" fill="#9a713e" opacity=".3" /><path d={`M ${x} ${y + 8} C ${x - 2} ${y}, ${x + 3} ${y - 6}, ${x} ${y - 15}`} stroke="#3d6c38" strokeWidth="2.5" fill="none" /><path d={`M ${x} ${y - 5} Q ${x - 10} ${y - 12} ${x - 11} ${y - 3} Q ${x - 4} ${y + 1} ${x} ${y - 5} M ${x + 1} ${y - 9} Q ${x + 10} ${y - 16} ${x + 11} ${y - 7} Q ${x + 5} ${y - 3} ${x + 1} ${y - 9}`} fill="#6b9b48" /></g>;
+  const schematicPlants = [];
+  for (let row = 1; row <= mainRows; row += 1) {
+    const y = field.y + rowGap * row;
+    if (showMain) for (let plant = 0; plant < plantsPerRow; plant += 1) schematicPlants.push(mainSymbol(field.x + 45 + plant * ((field.width - 90) / (plantsPerRow - 1)), y, `${row}-${plant}`));
+    if (showIntercrop) {
+      const intercropY = y + rowGap / 2;
+      for (let plant = 0; plant < plantsPerRow * 2 - 1; plant += 1) schematicPlants.push(intercropSymbol(field.x + 45 + plant * ((field.width - 90) / (plantsPerRow * 2 - 2)), intercropY, `${row}-${plant}`));
+    }
+  }
+  const selectedDetails = selectedCrop === 'main'
+    ? { name: layout.main_crop, count: layout.main_crop_plant_count, area: layout.main_crop_allocated_area_sqm, spacing: layout.main_crop_spacing, role: 'Main crop' }
+    : selectedCrop === 'intercrop'
+      ? { name: layout.intercrop, count: layout.intercrop_plant_count, area: layout.intercrop_allocated_area_sqm, spacing: layout.intercrop_spacing, role: 'Intercrop' }
+      : null;
 
   return (
     <section className="hybrid-results">
       <div className="hybrid-result-summary">
-        <div>
-          <span className="workspace-eyebrow">GENERATED FARM LAYOUT</span>
-          <h2>{layout.main_crop} + {layout.intercrop}.</h2>
-          <p>{displayValue(layout.planting_pattern_summary)}</p>
-        </div>
+        <div><span className="workspace-eyebrow">GENERATED FARM LAYOUT</span><h2>{layout.main_crop} + {layout.intercrop}.</h2><p>{displayValue(layout.planting_pattern_summary)}</p></div>
         <div className="hybrid-result-stat"><strong>{displayValue(layout.usable_cultivated_area_sqm, ' m²')}</strong><span>usable cultivated area</span></div>
       </div>
-      <div className="hybrid-layout-stats">
-        <div><span>Total farm area</span><strong>{displayValue(layout.total_farm_area_sqm, ' m²')}</strong></div>
-        <div><span>Main crop allocation</span><strong>{displayValue(layout.main_crop_allocated_area_sqm, ' m²')}</strong></div>
-        <div><span>Intercrop allocation</span><strong>{displayValue(layout.intercrop_allocated_area_sqm, ' m²')}</strong></div>
-        <div><span>Plant counts</span><strong>{displayValue(layout.main_crop_plant_count)} / {displayValue(layout.intercrop_plant_count)}</strong><small>Main / intercrop</small></div>
+      <div className="hybrid-layout-visual-card">
+        <div className="hybrid-layout-visual-toolbar">
+          <div><span className="workspace-eyebrow">SCHEMATIC FIELD VIEW</span><p>Representative arrangement based on returned spacing and row data. It is not a geographic boundary or exact plant map.</p></div>
+          <div className="layout-view-switcher" role="group" aria-label="Farm layout view"><button type="button" className={view === '2d' ? 'is-active' : ''} onClick={() => setView('2d')}><Ruler size={14} />2D plan</button><button type="button" className={view === '3d' ? 'is-active' : ''} onClick={() => setView('3d')}><Box size={14} />3D isometric</button></div>
+        </div>
+        <div className="layout-visual-controls"><button type="button" onClick={() => setShowMain((value) => !value)} className={showMain ? 'is-on' : ''}>{showMain ? <Eye size={14} /> : <EyeOff size={14} />} {cropShortName(layout.main_crop)}</button><button type="button" onClick={() => setShowIntercrop((value) => !value)} className={showIntercrop ? 'is-on' : ''}>{showIntercrop ? <Eye size={14} /> : <EyeOff size={14} />} {cropShortName(layout.intercrop)}</button>{view === '2d' && <span className="layout-zoom-controls"><button type="button" onClick={() => setZoom((value) => Math.max(.85, value - .1))} aria-label="Zoom out"><ZoomOut size={14} /></button><strong>{Math.round(zoom * 100)}%</strong><button type="button" onClick={() => setZoom((value) => Math.min(1.25, value + .1))} aria-label="Zoom in"><ZoomIn size={14} /></button></span>}{view === '3d' && <button type="button" className="layout-reset-button" onClick={() => setResetToken((value) => value + 1)}><RotateCcw size={14} /> Reset view</button>}</div>
+        <div className={`layout-viewport layout-view-${view}`}>{view === '2d' ? <svg className="layout-svg" viewBox="0 0 1000 560" role="img" aria-label={`Top-down schematic of ${layout.main_crop} and ${layout.intercrop} planting`}><g transform={`scale(${zoom}) translate(${(1 - zoom) * 500 / zoom}, ${(1 - zoom) * 280 / zoom})`}><rect x={field.x} y={field.y} width={field.width} height={field.height} rx="22" fill="#b28a52" opacity=".55" /><path d={`M ${field.x + field.width * allocationRatio} ${field.y} V ${field.y + field.height}`} stroke="#e8d2a4" strokeDasharray="7 7" opacity=".7" />{Array.from({ length: mainRows }, (_, index) => <line key={`row-${index}`} x1={field.x + 24} x2={field.x + field.width - 24} y1={field.y + rowGap * (index + 1)} y2={field.y + rowGap * (index + 1)} stroke="#7ea163" strokeDasharray="3 8" opacity=".55" />)}{showIntercrop && <path d={`M ${field.x + 20} ${field.y + field.height - 25} H ${field.x + field.width - 20}`} stroke="#6b9b48" strokeWidth="5" opacity=".65" />}{showMain && schematicPlants.filter((plant) => plant.key?.startsWith('main-'))}{showIntercrop && schematicPlants.filter((plant) => plant.key?.startsWith('inter-'))}<rect x={field.x} y={field.y} width={field.width} height={field.height} rx="22" fill="none" stroke="#315a2b" strokeWidth="4" />{layout.irrigation_line_layout && <g className="layout-irrigation"><path d={`M ${field.x + 18} ${field.y + 18} H ${field.x + field.width - 18}`} stroke="#4b8aa3" strokeWidth="3" strokeDasharray="8 7" /><text x="84" y="42" fill="#326b83" fontSize="13">Irrigation layout returned</text></g>}</g></svg> : <Suspense fallback={<div className="layout-webgl-fallback">Loading the 3D farm renderer...</div>}><FarmLayout3D layout={layout} showMain={showMain} showIntercrop={showIntercrop} selectedCrop={selectedCrop} onSelectCrop={setSelectedCrop} resetToken={resetToken} /></Suspense>}</div>
+        <div className="layout-legend"><span><i className="layout-legend-main" />{layout.main_crop}</span><span><i className="layout-legend-inter" />{layout.intercrop}</span>{layout.irrigation_line_layout && <span><i className="layout-legend-water" />Irrigation lines</span>}<span><i className="layout-legend-boundary" />Field boundary</span></div>
+        {selectedDetails && <div className="layout-selected-details"><div><span className="workspace-eyebrow">SELECTED CROP</span><h3>{selectedDetails.name}</h3></div><div><span>Role</span><strong>{selectedDetails.role}</strong></div><div><span>Plant count</span><strong>{displayValue(selectedDetails.count)}</strong></div><div><span>Allocated area</span><strong>{displayValue(selectedDetails.area, ' m²')}</strong></div><div><span>Spacing</span><strong>{formatObject(selectedDetails.spacing)}</strong></div></div>}
       </div>
-      <div className="hybrid-layout-grid">
-        <article className="hybrid-layout-card"><Ruler size={17} /><div><span className="workspace-eyebrow">SPACING</span><h3>Crop-wise spacing</h3><p><strong>{layout.main_crop}</strong> · {formatObject(layout.main_crop_spacing)}</p><p><strong>{layout.intercrop}</strong> · {formatObject(layout.intercrop_spacing)}</p></div></article>
-        <article className="hybrid-layout-card"><Sprout size={17} /><div><span className="workspace-eyebrow">ARRANGEMENT</span><h3>Row arrangement</h3><p>{formatObject(layout.row_arrangement)}</p><p>{displayValue(layout.irrigation_line_layout)}</p></div></article>
-      </div>
-      <Spatial3DVisualizer layout={layout} />
-      <div className="hybrid-calendar">
-        <div><span className="workspace-eyebrow">PLANTING CALENDAR</span><h3>Plan milestones.</h3></div>
-        {layout.planting_calendar?.length ? layout.planting_calendar.map((entry, index) => <div key={`${entry.stage || entry.date || index}`} className="hybrid-calendar-row"><strong>{entry.stage || entry.activity || entry.date || `Step ${index + 1}`}</strong><span>{Object.entries(entry).filter(([key]) => !['stage', 'activity', 'date'].includes(key)).map(([key, value]) => `${key.replaceAll('_', ' ')}: ${value}`).join(' · ') || entry.date || 'Details unavailable'}</span></div>) : <p className="text-sm text-slate-500">No planting calendar was returned.</p>}
-      </div>
+      <div className="hybrid-layout-stats"><div><span>Total farm area</span><strong>{displayValue(layout.total_farm_area_sqm, ' m²')}</strong></div><div><span>Main crop allocation</span><strong>{displayValue(layout.main_crop_allocated_area_sqm, ' m²')}</strong></div><div><span>Intercrop allocation</span><strong>{displayValue(layout.intercrop_allocated_area_sqm, ' m²')}</strong></div><div><span>Plant counts</span><strong>{displayValue(layout.main_crop_plant_count)} / {displayValue(layout.intercrop_plant_count)}</strong><small>Main / intercrop</small></div></div>
+      <div className="hybrid-layout-grid"><article className="hybrid-layout-card"><Ruler size={17} /><div><span className="workspace-eyebrow">SPACING</span><h3>Crop-wise spacing</h3><p><strong>{layout.main_crop}</strong> · {formatObject(layout.main_crop_spacing)}</p><p><strong>{layout.intercrop}</strong> · {formatObject(layout.intercrop_spacing)}</p></div></article><article className="hybrid-layout-card"><Sprout size={17} /><div><span className="workspace-eyebrow">ARRANGEMENT</span><h3>Row arrangement</h3><p>{formatObject(layout.row_arrangement)}</p><p>{displayValue(layout.irrigation_line_layout)}</p></div></article></div>
+      <div className="hybrid-calendar"><div><span className="workspace-eyebrow">PLANTING CALENDAR</span><h3>Plan milestones.</h3></div>{layout.planting_calendar?.length ? layout.planting_calendar.map((entry, index) => <div key={`${entry.stage || entry.date || index}`} className="hybrid-calendar-row"><strong>{entry.stage || entry.activity || entry.date || `Step ${index + 1}`}</strong><span>{Object.entries(entry).filter(([key]) => !['stage', 'activity', 'date'].includes(key)).map(([key, value]) => `${key.replaceAll('_', ' ')}: ${value}`).join(' · ') || entry.date || 'Details unavailable'}</span></div>) : <p className="text-sm text-slate-500">No planting calendar was returned.</p>}</div>
       <div className="hybrid-limitations"><AlertCircle size={17} /><div><span className="workspace-eyebrow">LIMITATIONS</span>{layout.limitations?.length ? <ul>{layout.limitations.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}</ul> : <p>No limitations were returned.</p>}</div></div>
     </section>
   );
