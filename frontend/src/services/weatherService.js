@@ -8,7 +8,7 @@ export const getRecommendationWeather = (recommendation) => ({
 export const getWeatherStatus = (source) => {
   if (source === 'open-meteo') return 'live';
   if (source === 'open-meteo-cache' || source === 'open-meteo-stale-cache') return 'cached';
-  if (source === 'fallback') return 'fallback';
+  if (source === 'fallback' || source === 'offline-baseline') return 'fallback';
   return 'unknown';
 };
 
