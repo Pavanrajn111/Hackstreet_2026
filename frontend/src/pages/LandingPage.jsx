@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowDownRight, ArrowRight, Check, Leaf, Menu, Sprout, X } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, Check, Leaf, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import BrandLogo from '../components/BrandLogo';
 
 const image = (id, width = 1400) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${width}&q=85`;
 
@@ -52,7 +53,7 @@ export default function LandingPage() {
   return (
     <div className="public-site">
       <header className={`public-nav ${scrolled ? 'is-scrolled' : ''}`}>
-        <Link to="/" className="public-brand"><span className="public-brand-mark"><Sprout size={20} /></span><strong>AquaGrow</strong></Link>
+        <Link to="/" className="public-brand"><BrandLogo theme="light" size="small" /></Link>
         <nav className={menuOpen ? 'public-links is-open' : 'public-links'}>
           <a href="#platform" onClick={() => setMenuOpen(false)}>Platform</a><a href="#approach" onClick={() => setMenuOpen(false)}>Our approach</a><a href="#impact" onClick={() => setMenuOpen(false)}>Impact</a><a href="#stories" onClick={() => setMenuOpen(false)}>Stories</a>
         </nav>
@@ -99,17 +100,17 @@ export default function LandingPage() {
         </section>
 
         <section id="approach" className="editorial-split section-light reveal-on-scroll">
-          <div className="editorial-photo" style={{ backgroundImage: `url(${image('photo-1500382017468-9049fed80a4d')})` }}><span className="photo-label">AQUAGROW / FIELD NOTE 001</span></div>
+          <div className="editorial-photo" style={{ backgroundImage: "url('/photos/4approach.jpg')" }}><span className="photo-label">AQUAGROW / FIELD NOTE 001</span></div>
           <div className="editorial-copy"><span className="section-marker">04 / OUR APPROACH</span><h2>Precision can feel<br /><em>natural.</em></h2><p className="lead">The best technology does not add noise to a grower's day. It makes the next decision feel obvious.</p><div className="check-list"><p><Check size={17} /> Built around your crop and your soil</p><p><Check size={17} /> Designed for changing weather</p><p><Check size={17} /> Clear enough to use in the field</p></div><Link to="/app" className="arrow-link">Explore the field console <span><ArrowRight size={15} /></span></Link></div>
         </section>
 
-        <section id="impact" className="impact-section section-cream reveal-on-scroll"><div className="section-marker">05 / MEASURED IMPACT</div><h2>Small decisions.<br /><em>Lasting change.</em></h2><div className="impact-grid"><div><strong>35<span>%</span></strong><p>potential water saved with responsive irrigation</p></div><div><strong>7</strong><p>days of weather-aware planning at a glance</p></div><div><strong>01</strong><p>clear recommendation for your next action</p></div></div></section>
+        <section id="impact" className="impact-section section-cream reveal-on-scroll"><div className="section-marker">05 / MEASURED IMPACT</div><div className="impact-layout"><div className="impact-image" role="img" aria-label="Sustainable farmland with water conservation" /><div className="impact-content"><h2>Small decisions.<br /><em>Lasting change.</em></h2><div className="impact-grid"><div><strong>35<span>%</span></strong><p>potential water saved with responsive irrigation</p></div><div><strong>7</strong><p>days of weather-aware planning at a glance</p></div><div><strong>01</strong><p>clear recommendation for your next action</p></div></div></div></div></section>
 
-        <section id="stories" className="story-section section-light reveal-on-scroll"><div className="story-image" style={{ backgroundImage: `url(${image('photo-1592982537447-6f7a30c7f7f8')})` }} /><div className="story-copy"><span className="section-marker">06 / GROWER STORY</span><blockquote>“The field feels quieter now. I know when to water, and I know why.”</blockquote><p className="story-person">Sample story / Lakshmi R.<br /><span>Tomato grower, Bengaluru Rural</span></p><span className="sample-note">SAMPLE CONTENT FOR PRODUCT DEMONSTRATION</span></div></section>
+        <section id="stories" className="story-section section-light reveal-on-scroll"><div className="story-image" style={{ backgroundImage: "url('/photos/farm-field.jpg')" }} /><div className="story-copy"><span className="section-marker">06 / GROWER STORY</span><blockquote>“The field feels quieter now. I know when to water, and I know why.”</blockquote><p className="story-person">Sample story / Lakshmi R.<br /><span>Tomato grower, Bengaluru Rural</span></p><span className="sample-note">SAMPLE CONTENT FOR PRODUCT DEMONSTRATION</span></div></section>
 
         <section className="public-cta section-forest"><Leaf size={31} /><span className="public-eyebrow">THE NEXT FIELD NOTE</span><h2>Better growing<br /><em>starts here.</em></h2><Link to="/register" className="pill-button cream">Build your field record <ArrowRight size={16} /></Link></section>
       </main>
-      <footer className="public-footer"><div className="footer-brand"><span className="public-brand-mark"><Sprout size={20} /></span><h3>AquaGrow</h3><p>Field intelligence for a more water-wise future.</p></div><div className="footer-links"><div><span>EXPLORE</span><a href="#platform">Platform</a><a href="#approach">Our approach</a><a href="#impact">Impact</a></div><div><span>WORKSPACE</span><Link to="/login">Sign in</Link><Link to="/register">Create account</Link><Link to="/app">Demo console</Link></div></div><div className="footer-bottom"><span>© 2026 AquaGrow AI</span><span>SOIL / WEATHER / WATER</span></div></footer>
+      <footer className="public-footer"><div className="footer-brand"><BrandLogo theme="light" size="medium" /><p>Field intelligence for a more water-wise future.</p></div><div className="footer-links"><div><span>EXPLORE</span><a href="#platform">Platform</a><a href="#approach">Our approach</a><a href="#impact">Impact</a></div><div><span>WORKSPACE</span><Link to="/login">Sign in</Link><Link to="/register">Create account</Link><Link to="/app">Demo console</Link></div></div><div className="footer-bottom"><span>© 2026 AquaGrow AI</span><span>SOIL / WEATHER / WATER</span></div></footer>
     </div>
   );
 }

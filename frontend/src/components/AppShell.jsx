@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
-import { CalendarDays, Database, Globe2, History, LayoutDashboard, LogOut, Menu, Settings2, Sprout, X, Waves } from 'lucide-react';
+import { CalendarDays, Database, Globe2, History, LayoutDashboard, LogOut, Menu, Settings2, X, Waves } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { isMockMode, setMockMode } from '../services/api';
+import BrandLogo from './BrandLogo';
 
 export default function AppShell() {
   const { lang, setLang, t } = useI18n();
@@ -33,8 +34,8 @@ export default function AppShell() {
       <header className="product-header">
         <div className="product-header-inner">
           <Link to="/app" className="product-brand" onClick={() => setMenuOpen(false)}>
-            <span className="product-brand-mark"><Sprout size={19} /></span>
-            <span><strong>AquaGrow</strong><small>FIELD OPERATING SYSTEM</small></span>
+            <BrandLogo theme="dark" size="small" />
+            <small>FIELD OPERATING SYSTEM</small>
           </Link>
           <nav className="product-nav">
             {navItems.map(({ to, label, icon: Icon, end }) => (
