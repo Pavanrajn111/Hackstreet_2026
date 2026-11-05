@@ -183,6 +183,22 @@
   .hybrid-stage p { margin: 0; color: rgba(16,37,27,.64); font-size: 12px; line-height: 1.6; }
   .hybrid-irrigation-panel { margin-top: 8px; }
   .hybrid-irrigation-results { margin-top: 8px; }
+  .hybrid-profit-panel { margin-top: 8px; }
+  .hybrid-profit-results { margin-top: 8px; }
+  .hybrid-comparison-panel { margin-top: 8px; }
+  .hybrid-profit-scenarios { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .hybrid-profit-scenarios article { padding: 17px; border: 1px solid rgba(16,37,27,.12); border-radius: 18px; background: rgba(255,255,255,.7); }
+  .hybrid-profit-scenarios article.is-expected { border-color: #b89345; box-shadow: 0 10px 24px rgba(145,108,38,.1); }
+  .hybrid-profit-scenarios strong { display: block; margin-top: 10px; color: #315a2b; font-size: 23px; }
+  .hybrid-profit-scenarios p { margin: 8px 0 0; color: rgba(16,37,27,.62); font-size: 11px; line-height: 1.5; }
+  .hybrid-financial-lines { display: grid; gap: 6px; margin-top: 14px; padding-top: 10px; border-top: 1px solid #edf1ec; color: rgba(16,37,27,.55); font-size: 11px; }
+  .hybrid-financial-lines span { display: flex; justify-content: space-between; gap: 8px; }
+  .hybrid-financial-lines b { color: #10251b; }
+  .hybrid-profit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .hybrid-profit-grid .hybrid-layout-card p { display: flex; justify-content: space-between; gap: 12px; }
+  .hybrid-profit-grid .hybrid-layout-card strong { color: #10251b; }
+  .hybrid-principles ul { margin: 8px 0 10px; padding-left: 18px; font-size: 12px; line-height: 1.7; }
+  @media (max-width: 800px) { .hybrid-profit-scenarios, .hybrid-profit-grid { grid-template-columns: 1fr; } }
   @media (max-width: 800px) { .hybrid-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hybrid-candidate-grid { grid-template-columns: 1fr; } }
   @media (max-width: 680px) { .hybrid-layout-stats, .hybrid-layout-grid { grid-template-columns: 1fr 1fr; } .hybrid-calendar-row { display: grid; gap: 4px; } .hybrid-calendar-row span { text-align: left; } }
   @media (max-width: 560px) { .hybrid-guide-form, .hybrid-guide-overview { grid-template-columns: 1fr; } }

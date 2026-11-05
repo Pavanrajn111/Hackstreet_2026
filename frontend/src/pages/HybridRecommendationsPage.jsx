@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, ChevronDown, ChevronUp, Droplets, FlaskConical, Leaf, RefreshCw, Ruler, Sprout, Waves } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp, Droplets, FlaskConical, Leaf, RefreshCw, Ruler, Sprout, TrendingUp, Waves } from 'lucide-react';
 import { getFarms, isMockMode } from '../services/api';
 import { listFarms } from '../services/farmService';
-import { calculateHybridIrrigation, generateFarmLayout, getCultivationGuide, recommendHybridCrops } from '../services/hybridService';
+import { calculateHybridIrrigation, compareHybridProfit, estimateHybridProfit, generateFarmLayout, getCultivationGuide, recommendHybridCrops } from '../services/hybridService';
 import { getActiveFarmId } from '../services/farmSelection';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
@@ -11,6 +11,11 @@ const EMPTY_FORM = {
   main_crop_age_years: 8,
   water_availability: 'Adequate',
   available_sunlight: 'Partial Shade',
+};
+
+const updateComparisonForm = (event) => {
+  const { name, value, type } = event.target;
+  setComparisonForm((current) => ({ ...current, [name]: type === 'number' && value !== '' ? Number(value) : value }));
 };
 
 const displayValue = (value, suffix = '') => (
@@ -172,6 +177,49 @@ function IrrigationResult({ irrigation }) {
   );
 }
 
+function ProfitResult({ profit }) {
+  const money = (value) => value === null || value === undefined ? 'Unavailable' : `₹${Number(value).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+  const number = (value, suffix = '') => value === null || value === undefined ? 'Unavailable' : `${value}${suffix}`;
+
+  return (
+    <section className="hybrid-results hybrid-profit-results">
+      <div className="hybrid-result-summary">
+        <div>
+          <span className="workspace-eyebrow">PROFIT ESTIMATE</span>
+          <h2>{profit.main_crop}{profit.intercrop ? ` + ${profit.intercrop}` : ''} economics.</h2>
+          <p>{number(profit.farm_area_hectares, ' ha')} · backend scenario estimates</p>
+        </div>
+        <div className="hybrid-result-stat"><strong>{money(profit.scenarios?.expected_realistic?.net_profit_inr)}</strong><span>expected net profit</span></div>
+      </div>
+      <div className="hybrid-layout-stats">
+        <div><span>Initial investment</span><strong>{money(profit.initial_capital_investment_inr)}</strong></div>
+        <div><span>Expected revenue</span><strong>{money(profit.scenarios?.expected_realistic?.total_gross_revenue_inr)}</strong></div>
+        <div><span>Profit / hectare</span><strong>{money(profit.scenarios?.expected_realistic?.profit_per_hectare_inr)}</strong></div>
+        <div><span>Expected ROI</span><strong>{number(profit.scenarios?.expected_realistic?.roi_pct, '%')}</strong></div>
+      </div>
+      <div className="hybrid-profit-scenarios">
+        {Object.entries(profit.scenarios || {}).map(([key, scenario]) => (
+          <article key={key} className={key === 'expected_realistic' ? 'is-expected' : ''}>
+            <span className="workspace-eyebrow">{scenario.scenario_name}</span>
+            <strong>{money(scenario.net_profit_inr)}</strong>
+            <p>Revenue {money(scenario.total_gross_revenue_inr)} · Expenses {money(scenario.total_operating_expenses_inr)}</p>
+            <p>{number(scenario.profit_per_acre_inr, ' / acre')} · {number(scenario.roi_pct, '% ROI')} · {number(scenario.break_even_months, ' months to break even')}</p>
+            <div className="hybrid-financial-lines">
+              <span>Main crop revenue <b>{money(scenario.main_crop_revenue_inr)}</b></span>
+              <span>Intercrop revenue <b>{money(scenario.intercrop_revenue_inr)}</b></span>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="hybrid-profit-grid">
+        <article className="hybrid-layout-card"><TrendingUp size={17} /><div><span className="workspace-eyebrow">OPERATING EXPENSES</span><h3>Cost breakdown.</h3>{Object.entries(profit.operating_expenses_breakdown || {}).map(([key, value]) => <p key={key}>{key.replaceAll('_', ' ')} <strong>{money(value)}</strong></p>)}</div></article>
+        <article className="hybrid-layout-card"><Leaf size={17} /><div><span className="workspace-eyebrow">MONOCULTURE COMPARISON</span><h3>Incremental gain.</h3><p>Monoculture net profit <strong>{money(profit.hybrid_gain_vs_monoculture?.monoculture_net_profit_inr)}</strong></p><p>Hybrid net profit <strong>{money(profit.hybrid_gain_vs_monoculture?.hybrid_net_profit_inr)}</strong></p><p>Additional profit <strong>{money(profit.hybrid_gain_vs_monoculture?.additional_net_profit_inr)}</strong></p><p>Income increase <strong>{number(profit.hybrid_gain_vs_monoculture?.percentage_income_increase, '%')}</strong></p></div></article>
+      </div>
+      <div className="hybrid-principles"><TrendingUp size={18} /><div><span className="workspace-eyebrow">ASSUMPTIONS</span>{profit.financial_assumptions?.length ? <ul>{profit.financial_assumptions.map((assumption, index) => <li key={`${assumption}-${index}`}>{assumption}</li>)}</ul> : <p>No assumptions were returned.</p>}<small>{profit.hybrid_gain_vs_monoculture?.summary || 'Comparison summary unavailable.'}</small></div></div>
+    </section>
+  );
+}
+
 export default function HybridRecommendationsPage() {
   const [farms, setFarms] = useState([]);
   const [farmKey, setFarmKey] = useState('');
@@ -208,6 +256,32 @@ export default function HybridRecommendationsPage() {
   const [irrigationResult, setIrrigationResult] = useState(null);
   const [irrigationLoading, setIrrigationLoading] = useState(false);
   const [irrigationError, setIrrigationError] = useState('');
+  const [profitForm, setProfitForm] = useState({
+    main_crop: '',
+    intercrop: '',
+    farm_area_hectares: '',
+    custom_main_yield_kg: '',
+    custom_main_price_per_kg: '',
+    custom_inter_yield_kg: '',
+    custom_inter_price_per_kg: '',
+    custom_additional_investment_inr: '',
+  });
+  const [profitResult, setProfitResult] = useState(null);
+  const [profitLoading, setProfitLoading] = useState(false);
+  const [profitError, setProfitError] = useState('');
+  const [comparisonForm, setComparisonForm] = useState({
+    main_crop: '',
+    intercrop: '',
+    farm_area_hectares: '',
+    custom_main_yield_kg: '',
+    custom_main_price_per_kg: '',
+    custom_inter_yield_kg: '',
+    custom_inter_price_per_kg: '',
+    custom_additional_investment_inr: '',
+  });
+  const [comparisonResult, setComparisonResult] = useState(null);
+  const [comparisonLoading, setComparisonLoading] = useState(false);
+  const [comparisonError, setComparisonError] = useState('');
   const requestSequence = useRef(0);
   const layoutRequestSequence = useRef(0);
 
@@ -243,6 +317,16 @@ export default function HybridRecommendationsPage() {
           soil_type: active.soil_type || '',
           irrigation_method: active.irrigation_method || '',
           pump_flow_rate_lpm: active.pump_flow_rate_lpm ?? '',
+        }));
+        setProfitForm((current) => ({
+          ...current,
+          main_crop: active.crop || '',
+          farm_area_hectares: active.farm_area_hectares || '',
+        }));
+        setComparisonForm((current) => ({
+          ...current,
+          main_crop: active.crop || '',
+          farm_area_hectares: active.farm_area_hectares || '',
         }));
       }
     } catch (loadError) {
@@ -288,6 +372,8 @@ export default function HybridRecommendationsPage() {
       irrigation_method: farm?.irrigation_method || '',
       pump_flow_rate_lpm: farm?.pump_flow_rate_lpm ?? '',
     }));
+    setProfitForm((current) => ({ ...current, main_crop: farm?.crop || '', farm_area_hectares: farm?.farm_area_hectares || '' }));
+    setComparisonForm((current) => ({ ...current, main_crop: farm?.crop || '', farm_area_hectares: farm?.farm_area_hectares || '' }));
   };
 
   const updateForm = (event) => {
@@ -303,6 +389,73 @@ export default function HybridRecommendationsPage() {
   const updateIrrigationForm = (event) => {
     const { name, value, type } = event.target;
     setIrrigationForm((current) => ({ ...current, [name]: type === 'number' && value !== '' ? Number(value) : value }));
+  };
+
+  const updateProfitForm = (event) => {
+    const { name, value, type } = event.target;
+    setProfitForm((current) => ({ ...current, [name]: type === 'number' && value !== '' ? Number(value) : value }));
+  };
+
+  const loadGuide = async (event) => {
+    event.preventDefault();
+    if (guideLoading) return;
+    if (!guideCrop.trim()) {
+      setGuideError('Select or enter a crop before loading its guide.');
+      return;
+    }
+    if (isMockMode()) {
+      setGuideError('Cultivation guides require Live API mode. Switch off Demo Mode to request the backend guide.');
+      return;
+    }
+    setGuideLoading(true);
+    setGuideError('');
+    setGuideResult(null);
+    try {
+      setGuideResult(await getCultivationGuide(guideCrop.trim()));
+    } catch (requestError) {
+      setGuideError(requestError?.message || 'Could not load the cultivation guide.');
+    } finally {
+      setGuideLoading(false);
+    }
+  };
+
+  const generateIrrigation = async (event) => {
+    event.preventDefault();
+    if (irrigationLoading) return;
+    const required = ['main_crop', 'intercrop', 'farm_area_hectares', 'latitude', 'longitude'];
+    if (required.some((field) => irrigationForm[field] === '' || irrigationForm[field] === null || irrigationForm[field] === undefined)) {
+      setIrrigationError('Main crop, intercrop, farm area, latitude, and longitude are required.');
+      return;
+    }
+    if (Number(irrigationForm.farm_area_hectares) <= 0 || Number(irrigationForm.latitude) < -90 || Number(irrigationForm.latitude) > 90 || Number(irrigationForm.longitude) < -180 || Number(irrigationForm.longitude) > 180) {
+      setIrrigationError('Enter a positive farm area and coordinates within the supported ranges.');
+      return;
+    }
+    if (isMockMode()) {
+      setIrrigationError('Hybrid irrigation requires Live API mode. Switch off Demo Mode to request the backend calculation.');
+      return;
+    }
+    setIrrigationLoading(true);
+    setIrrigationError('');
+    setIrrigationResult(null);
+    try {
+      const payload = {
+        ...(selectedFarm?.id !== undefined ? { farm_id: selectedFarm.id } : {}),
+        farm_area_hectares: Number(irrigationForm.farm_area_hectares),
+        main_crop: irrigationForm.main_crop.trim(),
+        intercrop: irrigationForm.intercrop.trim(),
+        latitude: Number(irrigationForm.latitude),
+        longitude: Number(irrigationForm.longitude),
+        soil_type: irrigationForm.soil_type || undefined,
+        irrigation_method: irrigationForm.irrigation_method || undefined,
+        pump_flow_rate_lpm: irrigationForm.pump_flow_rate_lpm === '' ? undefined : Number(irrigationForm.pump_flow_rate_lpm),
+      };
+      setIrrigationResult(await calculateHybridIrrigation(payload));
+    } catch (requestError) {
+      setIrrigationError(requestError?.message || 'Could not calculate hybrid irrigation.');
+    } finally {
+      setIrrigationLoading(false);
+    }
   };
 
   const generateLayout = async (event) => {
@@ -332,77 +485,81 @@ export default function HybridRecommendationsPage() {
         planting_system: layoutForm.planting_system || undefined,
         custom_unusable_area_pct: layoutForm.custom_unusable_area_pct === '' ? undefined : Number(layoutForm.custom_unusable_area_pct),
       };
-
-      const loadGuide = async (event) => {
-        event.preventDefault();
-        if (guideLoading) return;
-        if (!guideCrop.trim()) {
-          setGuideError('Select or enter a crop before loading its guide.');
-          return;
-        }
-        if (isMockMode()) {
-          setGuideError('Cultivation guides require Live API mode. Switch off Demo Mode to request the backend guide.');
-          return;
-        }
-        setGuideLoading(true);
-        setGuideError('');
-        setGuideResult(null);
-        try {
-          setGuideResult(await getCultivationGuide(guideCrop.trim()));
-        } catch (requestError) {
-          setGuideError(requestError?.message || 'Could not load the cultivation guide.');
-        } finally {
-          setGuideLoading(false);
-        }
-      };
-
-      const generateIrrigation = async (event) => {
-        event.preventDefault();
-        if (irrigationLoading) return;
-        const required = ['main_crop', 'intercrop', 'farm_area_hectares', 'latitude', 'longitude'];
-        if (required.some((field) => irrigationForm[field] === '' || irrigationForm[field] === null || irrigationForm[field] === undefined)) {
-          setIrrigationError('Main crop, intercrop, farm area, latitude, and longitude are required.');
-          return;
-        }
-        if (Number(irrigationForm.farm_area_hectares) <= 0 || Number(irrigationForm.latitude) < -90 || Number(irrigationForm.latitude) > 90 || Number(irrigationForm.longitude) < -180 || Number(irrigationForm.longitude) > 180) {
-          setIrrigationError('Enter a positive farm area and coordinates within the supported ranges.');
-          return;
-        }
-        if (isMockMode()) {
-          setIrrigationError('Hybrid irrigation requires Live API mode. Switch off Demo Mode to request the backend calculation.');
-          return;
-        }
-        setIrrigationLoading(true);
-        setIrrigationError('');
-        setIrrigationResult(null);
-        try {
-          const payload = {
-            ...(selectedFarm?.id !== undefined ? { farm_id: selectedFarm.id } : {}),
-            farm_area_hectares: Number(irrigationForm.farm_area_hectares),
-            main_crop: irrigationForm.main_crop.trim(),
-            intercrop: irrigationForm.intercrop.trim(),
-            latitude: Number(irrigationForm.latitude),
-            longitude: Number(irrigationForm.longitude),
-            soil_type: irrigationForm.soil_type || undefined,
-            irrigation_method: irrigationForm.irrigation_method || undefined,
-            pump_flow_rate_lpm: irrigationForm.pump_flow_rate_lpm === '' ? undefined : Number(irrigationForm.pump_flow_rate_lpm),
-          };
-          setIrrigationResult(await calculateHybridIrrigation(payload));
-        } catch (requestError) {
-          setIrrigationError(requestError?.message || 'Could not calculate hybrid irrigation.');
-        } finally {
-          setIrrigationLoading(false);
-        }
-      };
       const response = await generateFarmLayout(payload);
       if (requestId === layoutRequestSequence.current) {
         setLayoutResult(response);
         setIrrigationForm((current) => ({ ...current, intercrop: current.intercrop || response.intercrop }));
+        setProfitForm((current) => ({ ...current, intercrop: current.intercrop || response.intercrop }));
+        setComparisonForm((current) => ({ ...current, intercrop: current.intercrop || response.intercrop }));
       }
     } catch (requestError) {
       if (requestId === layoutRequestSequence.current) setLayoutError(requestError?.message || 'Could not generate the farm layout.');
     } finally {
       if (requestId === layoutRequestSequence.current) setLayoutSubmitting(false);
+    }
+  };
+
+  const generateProfit = async (event) => {
+    event.preventDefault();
+    if (profitLoading) return;
+    if (!profitForm.main_crop?.trim() || !profitForm.farm_area_hectares || Number(profitForm.farm_area_hectares) <= 0) {
+      setProfitError('Main crop and a positive farm area are required.');
+      return;
+    }
+    if (isMockMode()) {
+      setProfitError('Profit estimates require Live API mode. Switch off Demo Mode to request the backend calculation.');
+      return;
+    }
+    setProfitLoading(true);
+    setProfitError('');
+    setProfitResult(null);
+    try {
+      const optionalFields = ['custom_main_yield_kg', 'custom_main_price_per_kg', 'custom_inter_yield_kg', 'custom_inter_price_per_kg', 'custom_additional_investment_inr'];
+      const payload = {
+        farm_area_hectares: Number(profitForm.farm_area_hectares),
+        main_crop: profitForm.main_crop.trim(),
+        intercrop: profitForm.intercrop?.trim() || undefined,
+      };
+      optionalFields.forEach((field) => {
+        if (profitForm[field] !== '' && profitForm[field] !== undefined && profitForm[field] !== null) payload[field] = Number(profitForm[field]);
+      });
+      setProfitResult(await estimateHybridProfit(payload));
+    } catch (requestError) {
+      setProfitError(requestError?.message || 'Could not calculate the profit estimate.');
+    } finally {
+      setProfitLoading(false);
+    }
+  };
+
+  const generateComparison = async (event) => {
+    event.preventDefault();
+    if (comparisonLoading) return;
+    if (!comparisonForm.main_crop?.trim() || !comparisonForm.intercrop?.trim() || !comparisonForm.farm_area_hectares || Number(comparisonForm.farm_area_hectares) <= 0) {
+      setComparisonError('Main crop, intercrop, and a positive farm area are required for comparison.');
+      return;
+    }
+    if (isMockMode()) {
+      setComparisonError('Profit comparison requires Live API mode. Switch off Demo Mode to request the backend comparison.');
+      return;
+    }
+    setComparisonLoading(true);
+    setComparisonError('');
+    setComparisonResult(null);
+    try {
+      const optionalFields = ['custom_main_yield_kg', 'custom_main_price_per_kg', 'custom_inter_yield_kg', 'custom_inter_price_per_kg', 'custom_additional_investment_inr'];
+      const payload = {
+        farm_area_hectares: Number(comparisonForm.farm_area_hectares),
+        main_crop: comparisonForm.main_crop.trim(),
+        intercrop: comparisonForm.intercrop.trim(),
+      };
+      optionalFields.forEach((field) => {
+        if (comparisonForm[field] !== '' && comparisonForm[field] !== undefined && comparisonForm[field] !== null) payload[field] = Number(comparisonForm[field]);
+      });
+      setComparisonResult(await compareHybridProfit(payload));
+    } catch (requestError) {
+      setComparisonError(requestError?.message || 'Could not compare hybrid profit.');
+    } finally {
+      setComparisonLoading(false);
     }
   };
 
@@ -438,7 +595,11 @@ export default function HybridRecommendationsPage() {
       if (requestId === requestSequence.current) {
         setResult(response);
         const firstCandidate = response?.recommendations?.[0];
-        if (firstCandidate) setIrrigationForm((current) => ({ ...current, intercrop: current.intercrop || firstCandidate.crop_id }));
+        if (firstCandidate) {
+          setIrrigationForm((current) => ({ ...current, intercrop: current.intercrop || firstCandidate.crop_id }));
+          setProfitForm((current) => ({ ...current, intercrop: current.intercrop || firstCandidate.crop_id }));
+          setComparisonForm((current) => ({ ...current, intercrop: current.intercrop || firstCandidate.crop_id }));
+        }
       }
     } catch (requestError) {
       if (requestId === requestSequence.current) setError(requestError?.message || 'Could not generate hybrid recommendations.');
@@ -551,6 +712,50 @@ export default function HybridRecommendationsPage() {
       {irrigationError && <div className="history-notice"><AlertCircle size={16} />{irrigationError}<button type="button" onClick={() => setIrrigationError('')} aria-label="Dismiss irrigation error">Dismiss</button></div>}
       {!irrigationResult && !irrigationError && <div className="hybrid-empty-result">Enter both crops and the farm location to calculate hybrid irrigation.</div>}
       {irrigationResult && <IrrigationResult irrigation={irrigationResult} />}
+
+      <section className="hybrid-input-panel hybrid-profit-panel">
+        <div className="hybrid-panel-heading">
+          <div className="hybrid-icon"><TrendingUp size={20} /></div>
+          <div><span className="workspace-eyebrow">PROFIT / 05</span><h2>Understand the upside.</h2><p>Compare backend-generated conservative, expected, and optimistic financial scenarios.</p></div>
+        </div>
+        <form onSubmit={generateProfit} className="hybrid-form">
+          <label>Main crop<input name="main_crop" value={profitForm.main_crop} onChange={updateProfitForm} placeholder="Required" required /></label>
+          <label>Intercrop<input name="intercrop" list="hybrid-profit-crops" value={profitForm.intercrop} onChange={updateProfitForm} placeholder="Optional" /><datalist id="hybrid-profit-crops">{result?.recommendations?.map((candidate) => <option key={candidate.crop_id} value={candidate.crop_id}>{candidate.crop_name}</option>)}{layoutResult?.intercrop && <option value={layoutResult.intercrop} />}</datalist></label>
+          <label>Farm area (hectares)<input name="farm_area_hectares" type="number" min="0.01" step="0.01" value={profitForm.farm_area_hectares} onChange={updateProfitForm} required /></label>
+          <label>Main yield (kg)<input name="custom_main_yield_kg" type="number" min="0" step="0.01" value={profitForm.custom_main_yield_kg} onChange={updateProfitForm} placeholder="Backend default" /></label>
+          <label>Main price (₹/kg)<input name="custom_main_price_per_kg" type="number" min="0" step="0.01" value={profitForm.custom_main_price_per_kg} onChange={updateProfitForm} placeholder="Backend default" /></label>
+          <label>Intercrop yield (kg)<input name="custom_inter_yield_kg" type="number" min="0" step="0.01" value={profitForm.custom_inter_yield_kg} onChange={updateProfitForm} placeholder="Backend default" /></label>
+          <label>Intercrop price (₹/kg)<input name="custom_inter_price_per_kg" type="number" min="0" step="0.01" value={profitForm.custom_inter_price_per_kg} onChange={updateProfitForm} placeholder="Backend default" /></label>
+          <label>Additional investment (₹)<input name="custom_additional_investment_inr" type="number" min="0" step="0.01" value={profitForm.custom_additional_investment_inr} onChange={updateProfitForm} placeholder="Backend default" /></label>
+          <button type="submit" className="auth-submit hybrid-submit" disabled={profitLoading}><TrendingUp size={16} />{profitLoading ? 'Calculating...' : 'Generate profit estimate'}</button>
+        </form>
+      </section>
+
+      {profitError && <div className="history-notice"><AlertCircle size={16} />{profitError}<button type="button" onClick={() => setProfitError('')} aria-label="Dismiss profit error">Dismiss</button></div>}
+      {!profitResult && !profitError && <div className="hybrid-empty-result">Enter a main crop and farm area to compare hybrid farming scenarios.</div>}
+      {profitResult && <ProfitResult profit={profitResult} />}
+
+      <section className="hybrid-input-panel hybrid-comparison-panel">
+        <div className="hybrid-panel-heading">
+          <div className="hybrid-icon"><TrendingUp size={20} /></div>
+          <div><span className="workspace-eyebrow">COMPARISON / 06</span><h2>Compare one hybrid combination.</h2><p>The backend compares this main crop and intercrop against the main crop grown alone.</p></div>
+        </div>
+        <form onSubmit={generateComparison} className="hybrid-form">
+          <label>Main crop<input name="main_crop" value={comparisonForm.main_crop} onChange={updateComparisonForm} placeholder="Required" required /></label>
+          <label>Intercrop<input name="intercrop" list="hybrid-comparison-crops" value={comparisonForm.intercrop} onChange={updateComparisonForm} placeholder="Required" required /><datalist id="hybrid-comparison-crops">{result?.recommendations?.map((candidate) => <option key={candidate.crop_id} value={candidate.crop_id}>{candidate.crop_name}</option>)}{layoutResult?.intercrop && <option value={layoutResult.intercrop} />}</datalist></label>
+          <label>Farm area (hectares)<input name="farm_area_hectares" type="number" min="0.01" step="0.01" value={comparisonForm.farm_area_hectares} onChange={updateComparisonForm} required /></label>
+          <label>Main yield (kg)<input name="custom_main_yield_kg" type="number" min="0" step="0.01" value={comparisonForm.custom_main_yield_kg} onChange={updateComparisonForm} placeholder="Backend default" /></label>
+          <label>Main price (₹/kg)<input name="custom_main_price_per_kg" type="number" min="0" step="0.01" value={comparisonForm.custom_main_price_per_kg} onChange={updateComparisonForm} placeholder="Backend default" /></label>
+          <label>Intercrop yield (kg)<input name="custom_inter_yield_kg" type="number" min="0" step="0.01" value={comparisonForm.custom_inter_yield_kg} onChange={updateComparisonForm} placeholder="Backend default" /></label>
+          <label>Intercrop price (₹/kg)<input name="custom_inter_price_per_kg" type="number" min="0" step="0.01" value={comparisonForm.custom_inter_price_per_kg} onChange={updateComparisonForm} placeholder="Backend default" /></label>
+          <label>Additional investment (₹)<input name="custom_additional_investment_inr" type="number" min="0" step="0.01" value={comparisonForm.custom_additional_investment_inr} onChange={updateComparisonForm} placeholder="Backend default" /></label>
+          <button type="submit" className="auth-submit hybrid-submit" disabled={comparisonLoading}><TrendingUp size={16} />{comparisonLoading ? 'Comparing...' : 'Compare profitability'}</button>
+        </form>
+      </section>
+
+      {comparisonError && <div className="history-notice"><AlertCircle size={16} />{comparisonError}<button type="button" onClick={() => setComparisonError('')} aria-label="Dismiss comparison error">Dismiss</button></div>}
+      {!comparisonResult && !comparisonError && <div className="hybrid-empty-result">Choose a main crop and intercrop to compare the hybrid combination with monoculture.</div>}
+      {comparisonResult && <ProfitResult profit={comparisonResult} />}
     </div>
   );
 }
