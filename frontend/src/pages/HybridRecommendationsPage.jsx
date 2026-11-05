@@ -654,87 +654,6 @@ export default function HybridRecommendationsPage() {
         intercrop: comparisonForm.intercrop.trim(),
       };
 
-      const loadProducts = async (event) => {
-        event.preventDefault();
-        if (productLoading) return;
-        if (!productCrop.trim()) {
-          setProductError('Select or enter a crop before loading product recommendations.');
-          return;
-        }
-        if (isMockMode()) {
-          setProductError('Product recommendations require Live API mode. Switch off Demo Mode to request backend products.');
-          return;
-        }
-        setProductLoading(true);
-        setProductError('');
-        setProductResults(null);
-        try {
-          const products = await listValueAddedProducts(productCrop.trim());
-          setProductResults(Array.isArray(products) ? products : []);
-        } catch (requestError) {
-          setProductError(requestError?.message || 'Could not load crop product recommendations.');
-        } finally {
-          setProductLoading(false);
-        }
-      };
-
-      const updatePlanForm = (event) => {
-        const { name, value, type } = event.target;
-        setPlanForm((current) => ({ ...current, [name]: type === 'number' && value !== '' ? Number(value) : value }));
-      };
-
-      const savePlan = async (event) => {
-        event.preventDefault();
-        if (savingPlan) return;
-        if (!planForm.plan_name.trim() || !planForm.main_crop.trim() || !planForm.intercrop.trim() || !planForm.farm_area_hectares || Number(planForm.farm_area_hectares) <= 0) {
-          setPlansError('Plan name, main crop, intercrop, and a positive farm area are required.');
-          setPlanSuccess('');
-          return;
-        }
-        if (isMockMode()) {
-          setPlansError('Saved farming plans require Live API mode. Switch off Demo Mode to save a backend plan.');
-          setPlanSuccess('');
-          return;
-        }
-        setSavingPlan(true);
-        setPlansError('');
-        setPlanSuccess('');
-        try {
-          const payload = {
-            ...(selectedFarm?.id !== undefined ? { farm_id: selectedFarm.id } : {}),
-            plan_name: planForm.plan_name.trim(),
-            main_crop: planForm.main_crop.trim(),
-            intercrop: planForm.intercrop.trim(),
-            farm_area_hectares: Number(planForm.farm_area_hectares),
-            plant_count_summary: planForm.plant_count_summary.trim() || undefined,
-            net_profit_expected_inr: planForm.net_profit_expected_inr === '' ? undefined : Number(planForm.net_profit_expected_inr),
-            roi_pct: planForm.roi_pct === '' ? undefined : Number(planForm.roi_pct),
-            notes: planForm.notes.trim() || undefined,
-          };
-          const saved = await saveHybridPlan(payload);
-          setSavedPlans((current) => [saved, ...current]);
-          setPlanSuccess(`Saved "${saved.plan_name || payload.plan_name}".`);
-          setPlanForm((current) => ({ ...current, plan_name: '', notes: '' }));
-        } catch (saveError) {
-          setPlansError(saveError?.message || 'Could not save this farming plan.');
-        } finally {
-          setSavingPlan(false);
-        }
-      };
-
-      const loadPlanDetails = async (plan) => {
-        setPlanDetailsError('');
-        setSelectedPlan(plan);
-        if (plan?.id === undefined) return;
-        setPlanDetailsLoading(true);
-        try {
-          setSelectedPlan(await getHybridPlan(plan.id));
-        } catch (detailsError) {
-          setPlanDetailsError(detailsError?.message || 'Could not load plan details.');
-        } finally {
-          setPlanDetailsLoading(false);
-        }
-      };
       optionalFields.forEach((field) => {
         if (comparisonForm[field] !== '' && comparisonForm[field] !== undefined && comparisonForm[field] !== null) payload[field] = Number(comparisonForm[field]);
       });
@@ -743,6 +662,88 @@ export default function HybridRecommendationsPage() {
       setComparisonError(requestError?.message || 'Could not compare hybrid profit.');
     } finally {
       setComparisonLoading(false);
+    }
+  };
+
+  const loadProducts = async (event) => {
+    event.preventDefault();
+    if (productLoading) return;
+    if (!productCrop.trim()) {
+      setProductError('Select or enter a crop before loading product recommendations.');
+      return;
+    }
+    if (isMockMode()) {
+      setProductError('Product recommendations require Live API mode. Switch off Demo Mode to request backend products.');
+      return;
+    }
+    setProductLoading(true);
+    setProductError('');
+    setProductResults(null);
+    try {
+      const products = await listValueAddedProducts(productCrop.trim());
+      setProductResults(Array.isArray(products) ? products : []);
+    } catch (requestError) {
+      setProductError(requestError?.message || 'Could not load crop product recommendations.');
+    } finally {
+      setProductLoading(false);
+    }
+  };
+
+  const updatePlanForm = (event) => {
+    const { name, value, type } = event.target;
+    setPlanForm((current) => ({ ...current, [name]: type === 'number' && value !== '' ? Number(value) : value }));
+  };
+
+  const savePlan = async (event) => {
+    event.preventDefault();
+    if (savingPlan) return;
+    if (!planForm.plan_name.trim() || !planForm.main_crop.trim() || !planForm.intercrop.trim() || !planForm.farm_area_hectares || Number(planForm.farm_area_hectares) <= 0) {
+      setPlansError('Plan name, main crop, intercrop, and a positive farm area are required.');
+      setPlanSuccess('');
+      return;
+    }
+    if (isMockMode()) {
+      setPlansError('Saved farming plans require Live API mode. Switch off Demo Mode to save a backend plan.');
+      setPlanSuccess('');
+      return;
+    }
+    setSavingPlan(true);
+    setPlansError('');
+    setPlanSuccess('');
+    try {
+      const payload = {
+        ...(selectedFarm?.id !== undefined ? { farm_id: selectedFarm.id } : {}),
+        plan_name: planForm.plan_name.trim(),
+        main_crop: planForm.main_crop.trim(),
+        intercrop: planForm.intercrop.trim(),
+        farm_area_hectares: Number(planForm.farm_area_hectares),
+        plant_count_summary: planForm.plant_count_summary.trim() || undefined,
+        net_profit_expected_inr: planForm.net_profit_expected_inr === '' ? undefined : Number(planForm.net_profit_expected_inr),
+        roi_pct: planForm.roi_pct === '' ? undefined : Number(planForm.roi_pct),
+        notes: planForm.notes.trim() || undefined,
+      };
+      const saved = await saveHybridPlan(payload);
+      setSavedPlans((current) => [saved, ...current]);
+      setPlanSuccess(`Saved "${saved.plan_name || payload.plan_name}".`);
+      setPlanForm((current) => ({ ...current, plan_name: '', notes: '' }));
+    } catch (saveError) {
+      setPlansError(saveError?.message || 'Could not save this farming plan.');
+    } finally {
+      setSavingPlan(false);
+    }
+  };
+
+  const loadPlanDetails = async (plan) => {
+    setPlanDetailsError('');
+    setSelectedPlan(plan);
+    if (plan?.id === undefined) return;
+    setPlanDetailsLoading(true);
+    try {
+      setSelectedPlan(await getHybridPlan(plan.id));
+    } catch (detailsError) {
+      setPlanDetailsError(detailsError?.message || 'Could not load plan details.');
+    } finally {
+      setPlanDetailsLoading(false);
     }
   };
 
