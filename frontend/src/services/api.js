@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { defaultFarm, sampleCrops, sampleSoils } from '../data/mockFarm';
 import { mockRecommendation, mockHistory } from '../data/mockRecommendation';
+import apiClient from './apiClient';
 
 // Keys for local persistence
 const STORAGE_KEYS = {
@@ -31,17 +31,6 @@ export const setMockMode = (enabled) => {
     new CustomEvent('agr002_mock_mode_changed', { detail: { useMockData } })
   );
 };
-
-// Read base URL from Vite environment variable
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-
-const apiClient = axios.create({
-  baseURL: BASE_URL,
-  timeout: 6000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
 
 /**
  * Load Demo Preset (Bengaluru Tomato Farm)
