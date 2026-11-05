@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     ML_MODEL_DIR: str = "../ml/models"
     ML_MODEL_PATH: str = "../ml/models/irrigation_model.joblib"
 
+    # AI assistant settings
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-3.6-flash"
+    GEMINI_API_TIMEOUT_SECONDS: float = 25.0
+    GEMINI_MAX_OUTPUT_TOKENS: int = 2400
+
     @property
     def cors_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]

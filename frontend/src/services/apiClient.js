@@ -52,6 +52,9 @@ export const normalizeApiError = (error) => {
     const validationMessage = getValidationMessage(data?.detail);
     const message = validationMessage
       || (typeof data?.detail === 'string' ? data.detail : null)
+      || (status === 429 ? 'Gemini quota or rate limit exceeded. Please try again later.' : null)
+      || (status === 502 ? 'The AI provider rejected the request or is unavailable.' : null)
+      || (status === 504 ? 'The AI provider took too long to respond.' : null)
       || (status >= 500 ? 'The AquaGrow service is temporarily unavailable.' : 'The request could not be completed.');
 
     return new ApiError(message, {

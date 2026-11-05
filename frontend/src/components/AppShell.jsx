@@ -3,14 +3,16 @@ import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router-do
 import {
   BarChart3, CalendarDays, ChevronDown, Database, Globe2, History, LayoutDashboard,
   LogOut, Menu, Settings2, Share2, ShieldCheck, Sprout, X, Waves, BrainCircuit,
-  MapPinned, SlidersHorizontal, FlaskConical,
+  MapPinned, SlidersHorizontal, FlaskConical, MessageCircle,
 } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { isMockMode, setMockMode } from '../services/api';
 import BrandLogo from './BrandLogo';
 import useAuth from '../auth/useAuth';
+import ChatWidget from './ChatWidget';
 
 const intelligenceItems = [
+  { to: '/app/assistant', label: 'AquaGrow AI Assistant', icon: MessageCircle },
   { to: '/app/intelligence/crop-suitability', label: 'Crop Suitability', icon: BrainCircuit },
   { to: '/app/intelligence/crop-planner', label: 'Crop Planner', icon: MapPinned },
   { to: '/app/intelligence/market', label: 'Market Intelligence', icon: BarChart3 },
@@ -213,6 +215,7 @@ export default function AppShell() {
         )}
       </header>
       <main className="product-main"><Outlet /></main>
+      <ChatWidget />
       <footer className="product-footer"><span>AQUAGROW AI / FIELD INTELLIGENCE</span><span>© 2026 WATER-WISE FARMING</span><button type="button" className="product-logout" onClick={logout}><LogOut size={13} /> Sign out</button></footer>
     </div>
   );
