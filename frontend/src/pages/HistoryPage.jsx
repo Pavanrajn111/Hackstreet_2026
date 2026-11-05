@@ -34,11 +34,11 @@ export default function HistoryPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [historyData, farms] = await Promise.all([getHistory(), getFarms()]);
+      const farms = await getFarms();
+      const currentFarm = farms && farms.length > 0 ? farms[0] : null;
+      setFarm(currentFarm);
+      const historyData = await getHistory(currentFarm?.id);
       setHistoryList(historyData);
-      if (farms && farms.length > 0) {
-        setFarm(farms[0]);
-      }
     } catch (err) {
       console.error('Failed to load history:', err);
     } finally {

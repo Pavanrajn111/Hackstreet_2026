@@ -299,9 +299,25 @@ export default function DashboardPage() {
 
       {/* Field Recommendation Explanation */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-emerald-600" />
-          <h3 className="text-sm font-bold text-slate-900">{t('explanation_title')}</h3>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-emerald-600" />
+            <h3 className="text-sm font-bold text-slate-900">{t('explanation_title')}</h3>
+          </div>
+          <div className="flex items-center gap-2">
+            {ml_adjustment_used ? (
+              <span className="text-[11px] font-bold bg-purple-100 text-purple-900 border border-purple-300 px-2.5 py-0.5 rounded-full">
+                ML Fine-Tuned
+              </span>
+            ) : (
+              <span className="text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 rounded-full">
+                FAO-56 Baseline Engine
+              </span>
+            )}
+            <span className="text-[10px] text-slate-500 font-medium">
+              Weather: {recommendation?.weather_source || 'open-meteo'}
+            </span>
+          </div>
         </div>
         <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-normal">
           {explanation}

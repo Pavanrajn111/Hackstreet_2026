@@ -8,64 +8,122 @@
   "next_irrigation_date": "2026-11-08",
   "rain_warning": "Light showers predicted on day 4 (approx 8mm). Monitor soil before scheduling irrigation.",
   "risk_status": "Moderate",
+  "under_irrigation_risk": "Moderate",
+  "under_irrigation_note": "Soil moisture is approaching the stress threshold. Delaying irrigation past today may induce flower drop.",
+  "over_irrigation_risk": "Low",
+  "over_irrigation_note": "Sandy loam soil allows good drainage. Applying 18.5 mm will bring soil to field capacity without waterlogging.",
   "ml_adjustment_used": false,
+  "weather_source": "open-meteo",
   "explanation": "Your tomato crop is currently in the active vegetative/flowering stage. With recent dry weather and high evapotranspiration, soil moisture has dropped to 42%. We recommend irrigating 18.5 mm (approx. 277,500 L for 1.5 hectares) today using your drip system.",
+  "soil_moisture": {
+    "current_pct": 42.0,
+    "threshold_pct": 50.0,
+    "field_capacity_pct": 100.0,
+    "wilting_point_pct": 20.0,
+    "trend_history": [
+      { "day": "Day -5", "moisture_pct": 82.0, "threshold": 50.0 },
+      { "day": "Day -4", "moisture_pct": 74.0, "threshold": 50.0 },
+      { "day": "Day -3", "moisture_pct": 65.0, "threshold": 50.0 },
+      { "day": "Day -2", "moisture_pct": 57.0, "threshold": 50.0 },
+      { "day": "Day -1", "moisture_pct": 49.0, "threshold": 50.0 },
+      { "day": "Today", "moisture_pct": 42.0, "threshold": 50.0 }
+    ]
+  },
+  "water_savings": {
+    "traditional_flood_litres": 416000.0,
+    "recommended_drip_litres": 277500.0,
+    "litres_saved": 138500.0,
+    "pct_saved": 33.3,
+    "pump_hours_saved": 1.9,
+    "estimated_cost_saved_inr": 165.0,
+    "disclaimer": "Estimated savings comparing 90% efficient drip application to 60% standard flood irrigation baseline for 1.5 ha."
+  },
+  "alerts": [
+    {
+      "id": "alert-1",
+      "type": "warning",
+      "title": "Irrigation Due Today",
+      "message": "Soil moisture has depleted past 50% threshold. Irrigate during early morning or evening.",
+      "priority": "high"
+    },
+    {
+      "id": "alert-2",
+      "type": "info",
+      "title": "Upcoming Rain Forecast",
+      "message": "Showers expected on Sunday (8 mm, 74% probability). The schedule will auto-pause on rain day.",
+      "priority": "medium"
+    }
+  ],
   "seven_day_schedule": [
     {
       "date": "2026-11-05",
       "day": "Today",
+      "irrigate": true,
       "action": "Irrigate",
       "recommended_depth_mm": 18.5,
       "water_volume_litres": 277500.0,
-      "runtime_minutes": 231
+      "runtime_minutes": 231,
+      "rain_note": "No rain expected (0 mm)"
     },
     {
       "date": "2026-11-06",
       "day": "Fri",
+      "irrigate": false,
       "action": "Rest",
       "recommended_depth_mm": 0.0,
       "water_volume_litres": 0.0,
-      "runtime_minutes": 0
+      "runtime_minutes": 0,
+      "rain_note": "Clear sky (0 mm)"
     },
     {
       "date": "2026-11-07",
       "day": "Sat",
+      "irrigate": false,
       "action": "Rest",
       "recommended_depth_mm": 0.0,
       "water_volume_litres": 0.0,
-      "runtime_minutes": 0
+      "runtime_minutes": 0,
+      "rain_note": "Cloudy (1.5 mm)"
     },
     {
       "date": "2026-11-08",
       "day": "Sun",
+      "irrigate": true,
       "action": "Irrigate",
       "recommended_depth_mm": 15.0,
       "water_volume_litres": 225000.0,
-      "runtime_minutes": 188
+      "runtime_minutes": 188,
+      "rain_note": "Showers possible later in evening"
     },
     {
       "date": "2026-11-09",
       "day": "Mon",
+      "irrigate": false,
       "action": "Rain Pause",
       "recommended_depth_mm": 0.0,
       "water_volume_litres": 0.0,
-      "runtime_minutes": 0
+      "runtime_minutes": 0,
+      "rain_note": "Rain forecast: 4.2 mm (80% prob)"
     },
     {
       "date": "2026-11-10",
       "day": "Tue",
+      "irrigate": false,
       "action": "Rest",
       "recommended_depth_mm": 0.0,
       "water_volume_litres": 0.0,
-      "runtime_minutes": 0
+      "runtime_minutes": 0,
+      "rain_note": "Partly cloudy (0 mm)"
     },
     {
       "date": "2026-11-11",
       "day": "Wed",
+      "irrigate": true,
       "action": "Irrigate",
       "recommended_depth_mm": 16.0,
       "water_volume_litres": 240000.0,
-      "runtime_minutes": 200
+      "runtime_minutes": 200,
+      "rain_note": "Dry sunny day (0 mm)"
     }
   ],
   "seven_day_weather": [
@@ -76,6 +134,7 @@
       "temp_min_c": 19.0,
       "humidity_pct": 58,
       "rainfall_mm": 0.0,
+      "rain_probability_pct": 5,
       "et0_mm": 4.6,
       "condition": "Sunny"
     },
@@ -86,6 +145,7 @@
       "temp_min_c": 19.5,
       "humidity_pct": 55,
       "rainfall_mm": 0.0,
+      "rain_probability_pct": 10,
       "et0_mm": 4.8,
       "condition": "Clear"
     },
@@ -96,6 +156,7 @@
       "temp_min_c": 20.0,
       "humidity_pct": 68,
       "rainfall_mm": 1.5,
+      "rain_probability_pct": 35,
       "et0_mm": 4.1,
       "condition": "Partly Cloudy"
     },
@@ -106,6 +167,7 @@
       "temp_min_c": 19.0,
       "humidity_pct": 74,
       "rainfall_mm": 8.0,
+      "rain_probability_pct": 74,
       "et0_mm": 3.4,
       "condition": "Rainy"
     },
@@ -116,6 +178,7 @@
       "temp_min_c": 18.5,
       "humidity_pct": 80,
       "rainfall_mm": 4.2,
+      "rain_probability_pct": 80,
       "et0_mm": 3.2,
       "condition": "Scattered Showers"
     },
@@ -126,6 +189,7 @@
       "temp_min_c": 19.0,
       "humidity_pct": 65,
       "rainfall_mm": 0.0,
+      "rain_probability_pct": 20,
       "et0_mm": 4.0,
       "condition": "Partly Cloudy"
     },
@@ -136,6 +200,7 @@
       "temp_min_c": 19.5,
       "humidity_pct": 60,
       "rainfall_mm": 0.0,
+      "rain_probability_pct": 15,
       "et0_mm": 4.4,
       "condition": "Sunny"
     }

@@ -1,5 +1,5 @@
 from datetime import date
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 
 
@@ -7,9 +7,11 @@ class ScheduleDayItem(BaseModel):
     date: str
     day: str
     action: str
+    irrigate: Optional[bool] = False
     recommended_depth_mm: float
     water_volume_litres: float
     runtime_minutes: int
+    rain_note: Optional[str] = None
 
 
 class WeatherDayItem(BaseModel):
@@ -19,8 +21,17 @@ class WeatherDayItem(BaseModel):
     temp_min_c: float
     humidity_pct: int
     rainfall_mm: float
+    rain_probability_pct: Optional[int] = 0
     et0_mm: float
     condition: str
+
+
+class AlertItem(BaseModel):
+    id: str
+    type: str  # "warning", "info", "tip"
+    title: str
+    message: str
+    priority: str  # "high", "medium", "low"
 
 
 class RecommendRequest(BaseModel):
@@ -46,7 +57,15 @@ class RecommendResponse(BaseModel):
     next_irrigation_date: Optional[str] = None
     rain_warning: Optional[str] = None
     risk_status: str
-    ml_adjustment_used: bool
+    under_irrigation_risk: Optional[str] = "Low"
+    under_irrigation_note: Optional[str] = None
+    over_irrigation_risk: Optional[str] = "Low"
+    over_irrigation_note: Optional[str] = None
+    ml_adjustment_used: bool = False
+    weather_source: Optional[str] = "open-meteo"
     explanation: str
+    soil_moisture: Optional[Dict[str, Any]] = None
+    water_savings: Optional[Dict[str, Any]] = None
+    alerts: Optional[List[AlertItem]] = None
     seven_day_schedule: List[ScheduleDayItem]
     seven_day_weather: List[WeatherDayItem]

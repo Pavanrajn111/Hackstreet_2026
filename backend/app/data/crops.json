@@ -1,0 +1,129 @@
+{
+  "_metadata": {
+    "source": "FAO Irrigation and Drainage Paper No. 56 & ICAR Crop Water Guidelines",
+    "validation_status": "Agronomic heuristic configuration (not certified for commercial yield guarantees)",
+    "last_updated": "2026-11-05"
+  },
+  "crops": [
+    {
+      "id": "tomato",
+      "name": "Tomato",
+      "category": "Vegetable",
+      "duration_days": 110,
+      "root_depth_m": 0.7,
+      "max_allowable_depletion": 0.40,
+      "base_kc": 0.85,
+      "stages": [
+        { "name": "Initial / Establishment", "days": 20, "kc": 0.60 },
+        { "name": "Vegetative / Flowering", "days": 35, "kc": 0.85 },
+        { "name": "Mid-Season / Yield Formation", "days": 40, "kc": 1.15 },
+        { "name": "Late / Ripening", "days": 15, "kc": 0.80 }
+      ]
+    },
+    {
+      "id": "rice",
+      "name": "Rice",
+      "category": "Grain",
+      "duration_days": 130,
+      "root_depth_m": 0.4,
+      "max_allowable_depletion": 0.20,
+      "base_kc": 1.10,
+      "stages": [
+        { "name": "Initial / Transplanting", "days": 25, "kc": 1.05 },
+        { "name": "Vegetative / Tillering", "days": 35, "kc": 1.10 },
+        { "name": "Mid-Season / Panicle & Flowering", "days": 45, "kc": 1.20 },
+        { "name": "Late / Grain Fill & Maturity", "days": 25, "kc": 0.90 }
+      ]
+    },
+    {
+      "id": "wheat",
+      "name": "Wheat",
+      "category": "Grain",
+      "duration_days": 120,
+      "root_depth_m": 0.8,
+      "max_allowable_depletion": 0.55,
+      "base_kc": 0.75,
+      "stages": [
+        { "name": "Initial / Crown Root Initiation", "days": 20, "kc": 0.35 },
+        { "name": "Vegetative / Tillering & Jointing", "days": 35, "kc": 0.75 },
+        { "name": "Mid-Season / Flowering & Milking", "days": 45, "kc": 1.15 },
+        { "name": "Late / Dough & Ripening", "days": 20, "kc": 0.45 }
+      ]
+    },
+    {
+      "id": "maize",
+      "name": "Maize",
+      "category": "Grain",
+      "duration_days": 100,
+      "root_depth_m": 0.8,
+      "max_allowable_depletion": 0.50,
+      "base_kc": 0.80,
+      "stages": [
+        { "name": "Initial / Emergence", "days": 20, "kc": 0.40 },
+        { "name": "Vegetative / Rapid Growth", "days": 30, "kc": 0.80 },
+        { "name": "Mid-Season / Tasseling & Silking", "days": 35, "kc": 1.20 },
+        { "name": "Late / Denting & Maturity", "days": 15, "kc": 0.60 }
+      ]
+    },
+    {
+      "id": "sugarcane",
+      "name": "Sugarcane",
+      "category": "Commercial / Cash",
+      "duration_days": 330,
+      "root_depth_m": 1.3,
+      "max_allowable_depletion": 0.65,
+      "base_kc": 0.85,
+      "stages": [
+        { "name": "Initial / Sprouting & Tillering", "days": 40, "kc": 0.45 },
+        { "name": "Vegetative / Grand Growth", "days": 70, "kc": 0.85 },
+        { "name": "Mid-Season / Cane Elongation", "days": 150, "kc": 1.25 },
+        { "name": "Late / Ripening & Sucrose Accumulation", "days": 70, "kc": 0.75 }
+      ]
+    },
+    {
+      "id": "cotton",
+      "name": "Cotton",
+      "category": "Fiber / Cash",
+      "duration_days": 150,
+      "root_depth_m": 1.1,
+      "max_allowable_depletion": 0.65,
+      "base_kc": 0.75,
+      "stages": [
+        { "name": "Initial / Emergence", "days": 30, "kc": 0.40 },
+        { "name": "Vegetative / Squaring", "days": 40, "kc": 0.75 },
+        { "name": "Mid-Season / Boll Formation", "days": 55, "kc": 1.20 },
+        { "name": "Late / Boll Opening & Harvest", "days": 25, "kc": 0.65 }
+      ]
+    },
+    {
+      "id": "ragi",
+      "name": "Ragi",
+      "category": "Millet / Nutri-Cereal",
+      "duration_days": 105,
+      "root_depth_m": 0.6,
+      "max_allowable_depletion": 0.55,
+      "base_kc": 0.70,
+      "stages": [
+        { "name": "Initial / Seedling", "days": 20, "kc": 0.35 },
+        { "name": "Vegetative / Tillering", "days": 30, "kc": 0.70 },
+        { "name": "Mid-Season / Earhead & Grain Fill", "days": 35, "kc": 1.05 },
+        { "name": "Late / Maturation", "days": 20, "kc": 0.55 }
+      ]
+    },
+    {
+      "id": "groundnut",
+      "name": "Groundnut",
+      "category": "Oilseed / Legume",
+      "duration_days": 125,
+      "root_depth_m": 0.7,
+      "max_allowable_depletion": 0.50,
+      "base_kc": 0.75,
+      "stages": [
+        { "name": "Initial / Emergence", "days": 25, "kc": 0.40 },
+        { "name": "Vegetative / Flowering & Pegging", "days": 35, "kc": 0.75 },
+        { "name": "Mid-Season / Pod Development", "days": 45, "kc": 1.15 },
+        { "name": "Late / Pod Filling & Harvest", "days": 20, "kc": 0.60 }
+      ]
+    }
+  ]
+}

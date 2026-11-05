@@ -1,0 +1,49 @@
+{
+  "_metadata": {
+    "source": "FAO Soils Bulletin 55 & ICAR Regional Soil Classification",
+    "validation_status": "Pedological benchmark configuration (approximate physical hydraulic properties)",
+    "last_updated": "2026-11-05"
+  },
+  "soils": [
+    {
+      "id": "red-sandy-loam",
+      "name": "Red Sandy Loam",
+      "field_capacity_pct": 22.0,
+      "wilting_point_pct": 9.0,
+      "available_water_capacity_mm_per_m": 130.0,
+      "infiltration_rate_mm_hr": 25.0,
+      "description": "Southern Karnataka & Deccan plateau soil. Moderate water holding capacity, rapid percolation.",
+      "advice": "Best managed with drip irrigation applying short, frequent irrigation cycles."
+    },
+    {
+      "id": "clay-black",
+      "name": "Clay / Black Soil",
+      "field_capacity_pct": 36.0,
+      "wilting_point_pct": 18.0,
+      "available_water_capacity_mm_per_m": 180.0,
+      "infiltration_rate_mm_hr": 8.0,
+      "description": "High montmorillonite clay content (Vertisols). Excellent moisture retention, slow drainage.",
+      "advice": "Allow longer resting intervals between irrigation to prevent waterlogging and root hypoxia."
+    },
+    {
+      "id": "alluvial-loam",
+      "name": "Alluvial Loam",
+      "field_capacity_pct": 28.0,
+      "wilting_point_pct": 12.0,
+      "available_water_capacity_mm_per_m": 160.0,
+      "infiltration_rate_mm_hr": 18.0,
+      "description": "Deep fertile river plain soil. Balanced water retention, good aeration, and high fertility.",
+      "advice": "Versatile soil suitable for surface drip or sprinkler systems."
+    },
+    {
+      "id": "sandy-soil",
+      "name": "Sandy Soil",
+      "field_capacity_pct": 14.0,
+      "wilting_point_pct": 5.0,
+      "available_water_capacity_mm_per_m": 90.0,
+      "infiltration_rate_mm_hr": 45.0,
+      "description": "Coarse structure with low available moisture storage. High risk of leaching.",
+      "advice": "Requires low-volume, high-frequency drip pulses to keep moisture in the active root zone."
+    }
+  ]
+}

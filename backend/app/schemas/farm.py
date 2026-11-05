@@ -1,10 +1,11 @@
 from datetime import date, datetime
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict
 
 
 class FarmBase(BaseModel):
     farm_name: str = Field(..., max_length=100)
+    district: Optional[str] = Field(default="Bengaluru Rural", max_length=100)
     latitude: float = Field(..., ge=-90.0, le=90.0)
     longitude: float = Field(..., ge=-180.0, le=180.0)
     crop: str = Field(..., max_length=50)
@@ -13,7 +14,7 @@ class FarmBase(BaseModel):
     farm_area_hectares: float = Field(default=1.0, gt=0.0)
     irrigation_method: str = Field(default="Drip Irrigation")
     last_irrigation_date: Optional[date] = None
-    pump_flow_rate_lpm: Optional[float] = Field(default=100.0, ge=0.0)
+    pump_flow_rate_lpm: Optional[float] = Field(default=120.0, ge=0.0)
 
 
 class FarmCreate(FarmBase):

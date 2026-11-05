@@ -8,6 +8,7 @@ class FarmModel(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     farm_name = Column(String(100), nullable=False)
+    district = Column(String(100), nullable=True, default="Bengaluru Rural")
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     crop = Column(String(50), nullable=False)
@@ -16,7 +17,7 @@ class FarmModel(Base):
     farm_area_hectares = Column(Float, nullable=False, default=1.0)
     irrigation_method = Column(String(50), nullable=False, default="Drip Irrigation")
     last_irrigation_date = Column(Date, nullable=True)
-    pump_flow_rate_lpm = Column(Float, nullable=True, default=100.0)
+    pump_flow_rate_lpm = Column(Float, nullable=True, default=120.0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -25,10 +26,31 @@ class IrrigationLogModel(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     farm_id = Column(Integer, nullable=True)
+    crop = Column(String(50), nullable=True)
     irrigation_date = Column(Date, default=date.today)
     depth_applied_mm = Column(Float, nullable=False)
     volume_applied_litres = Column(Float, nullable=False)
     pump_runtime_minutes = Column(Integer, nullable=True)
     was_recommended = Column(Boolean, default=True)
+    water_saved_litres = Column(Float, nullable=True, default=0.0)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class RecommendationHistoryModel(Base):
+    __tablename__ = "recommendation_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    farm_id = Column(Integer, nullable=True)
+    farm_name = Column(String(100), nullable=False)
+    crop = Column(String(50), nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    irrigate_today = Column(Boolean, nullable=False)
+    depth_mm = Column(Float, nullable=False)
+    volume_litres = Column(Float, nullable=False)
+    runtime_minutes = Column(Integer, default=0)
+    growth_stage = Column(String(100), nullable=True)
+    risk_status = Column(String(50), nullable=True)
+    weather_source = Column(String(50), default="open-meteo")
+    ml_adjustment_used = Column(Boolean, default=False)
+    explanation = Column(Text, nullable=True)

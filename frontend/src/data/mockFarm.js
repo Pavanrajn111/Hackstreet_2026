@@ -31,6 +31,7 @@ export const karnatakaDistricts = [
   "Other / Custom",
 ];
 
+// All 8 planned crops with agronomic parameters
 export const sampleCrops = [
   {
     id: "tomato",
@@ -51,15 +52,6 @@ export const sampleCrops = [
     description: "Requires consistent shallow standing water or alternate wetting & drying.",
   },
   {
-    id: "maize",
-    name: "Maize",
-    category: "Grain",
-    icon: "🌽",
-    duration_days: 100,
-    water_need: "Medium",
-    description: "Critical moisture sensitivity at tasseling & silking stages.",
-  },
-  {
     id: "wheat",
     name: "Wheat",
     category: "Grain",
@@ -69,6 +61,24 @@ export const sampleCrops = [
     description: "Crown root initiation & flowering are critical irrigation periods.",
   },
   {
+    id: "maize",
+    name: "Maize",
+    category: "Grain",
+    icon: "🌽",
+    duration_days: 100,
+    water_need: "Medium",
+    description: "Critical moisture sensitivity at tasseling & silking stages.",
+  },
+  {
+    id: "sugarcane",
+    name: "Sugarcane",
+    category: "Commercial / Cash",
+    icon: "🎋",
+    duration_days: 330,
+    water_need: "Very High",
+    description: "Long-duration crop with heavy water demand during grand growth period.",
+  },
+  {
     id: "cotton",
     name: "Cotton",
     category: "Fiber / Cash",
@@ -76,6 +86,24 @@ export const sampleCrops = [
     duration_days: 150,
     water_need: "Medium",
     description: "Deep rooting, requires measured moisture during squaring & boll formation.",
+  },
+  {
+    id: "ragi",
+    name: "Ragi",
+    category: "Millet / Nutri-Cereal",
+    icon: "🥣",
+    duration_days: 105,
+    water_need: "Low-Medium",
+    description: "Hardy dryland staple crop with high drought tolerance and low water footprint.",
+  },
+  {
+    id: "groundnut",
+    name: "Groundnut",
+    category: "Oilseed / Legume",
+    icon: "🥜",
+    duration_days: 125,
+    water_need: "Medium",
+    description: "Critical moisture stages during pegging and pod development.",
   },
 ];
 
