@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowDownRight, ArrowRight, Check, Leaf, Menu, Sprout, X } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, Check, Leaf, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import BrandLogo from '../components/BrandLogo';
 
 const image = (id, width = 1400) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${width}&q=85`;
 
@@ -52,7 +53,7 @@ export default function LandingPage() {
   return (
     <div className="public-site">
       <header className={`public-nav ${scrolled ? 'is-scrolled' : ''}`}>
-        <Link to="/" className="public-brand"><span className="public-brand-mark"><Sprout size={20} /></span><strong>AquaGrow</strong></Link>
+        <Link to="/" className="public-brand"><BrandLogo theme="light" size="small" /></Link>
         <nav className={menuOpen ? 'public-links is-open' : 'public-links'}>
           <a href="#platform" onClick={() => setMenuOpen(false)}>Platform</a><a href="#approach" onClick={() => setMenuOpen(false)}>Our approach</a><a href="#impact" onClick={() => setMenuOpen(false)}>Impact</a><a href="#stories" onClick={() => setMenuOpen(false)}>Stories</a>
         </nav>
@@ -109,7 +110,7 @@ export default function LandingPage() {
 
         <section className="public-cta section-forest"><Leaf size={31} /><span className="public-eyebrow">THE NEXT FIELD NOTE</span><h2>Better growing<br /><em>starts here.</em></h2><Link to="/register" className="pill-button cream">Build your field record <ArrowRight size={16} /></Link></section>
       </main>
-      <footer className="public-footer"><div className="footer-brand"><span className="public-brand-mark"><Sprout size={20} /></span><h3>AquaGrow</h3><p>Field intelligence for a more water-wise future.</p></div><div className="footer-links"><div><span>EXPLORE</span><a href="#platform">Platform</a><a href="#approach">Our approach</a><a href="#impact">Impact</a></div><div><span>WORKSPACE</span><Link to="/login">Sign in</Link><Link to="/register">Create account</Link><Link to="/app">Demo console</Link></div></div><div className="footer-bottom"><span>© 2026 AquaGrow AI</span><span>SOIL / WEATHER / WATER</span></div></footer>
+      <footer className="public-footer"><div className="footer-brand"><BrandLogo theme="light" size="medium" /><p>Field intelligence for a more water-wise future.</p></div><div className="footer-links"><div><span>EXPLORE</span><a href="#platform">Platform</a><a href="#approach">Our approach</a><a href="#impact">Impact</a></div><div><span>WORKSPACE</span><Link to="/login">Sign in</Link><Link to="/register">Create account</Link><Link to="/app">Demo console</Link></div></div><div className="footer-bottom"><span>© 2026 AquaGrow AI</span><span>SOIL / WEATHER / WATER</span></div></footer>
     </div>
   );
 }
