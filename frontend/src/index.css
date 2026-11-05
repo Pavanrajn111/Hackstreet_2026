@@ -237,6 +237,10 @@
   .layout-zoom-controls strong { min-width: 32px; color: #315a2b; text-align: center; font-size: 10px; }
   .layout-viewport { min-height: 330px; overflow: hidden; border: 1px solid rgba(16,37,27,.12); border-radius: 18px; background: #e7eddc; }
   .layout-svg { display: block; width: 100%; min-width: 680px; height: auto; }
+  .layout-view-3d { height: 520px; min-height: 520px; }
+  .farm-layout-canvas { width: 100%; height: 100%; min-height: 520px; display: block; }
+  .layout-reset-button { display: inline-flex; align-items: center; gap: 5px; padding: 6px 9px; color: #173f2a !important; border: 1px solid rgba(16,37,27,.12) !important; border-radius: 999px; background: rgba(255,255,255,.62) !important; }
+  .layout-webgl-fallback { display: grid; min-height: 520px; place-items: center; padding: 24px; color: rgba(16,37,27,.62); font-size: 12px; text-align: center; }
   .layout-plant { cursor: pointer; transition: opacity .18s ease, filter .18s ease; }
   .layout-plant:hover { filter: drop-shadow(0 3px 2px rgba(16,37,27,.3)); }
   .layout-irrigation { pointer-events: none; }
@@ -319,7 +323,7 @@
   @media (max-width: 800px) { .hybrid-profit-scenarios, .hybrid-profit-grid { grid-template-columns: 1fr; } }
   @media (max-width: 800px) { .hybrid-form, .hybrid-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hybrid-candidate-grid { grid-template-columns: 1fr; } }
   @media (max-width: 800px) { .hybrid-layout-visual-toolbar { display: grid; } .layout-view-switcher { justify-self: start; } .layout-selected-details { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 680px) { .hybrid-layout-stats, .hybrid-layout-grid { grid-template-columns: 1fr 1fr; } .hybrid-calendar-row { display: grid; gap: 4px; } .hybrid-calendar-row span { text-align: left; } .hybrid-layout-visual-card { padding: 12px; } .layout-viewport { min-height: 245px; overflow-x: auto; } .layout-svg { min-width: 610px; } }
+  @media (max-width: 680px) { .hybrid-layout-stats, .hybrid-layout-grid { grid-template-columns: 1fr 1fr; } .hybrid-calendar-row { display: grid; gap: 4px; } .hybrid-calendar-row span { text-align: left; } .hybrid-layout-visual-card { padding: 12px; } .layout-viewport { min-height: 245px; overflow-x: auto; } .layout-svg { min-width: 610px; } .layout-view-3d, .farm-layout-canvas, .layout-webgl-fallback { min-height: 360px; height: 360px; } }
   @media (max-width: 480px) { .hybrid-layout-stats, .hybrid-layout-grid, .layout-selected-details { grid-template-columns: 1fr; } .layout-visual-controls { justify-content: flex-start; flex-wrap: wrap; } .layout-zoom-controls { margin-left: 0; } }
   @media (max-width: 560px) { .hybrid-guide-form, .hybrid-guide-overview, .hybrid-form-grid { grid-template-columns: 1fr; } }
   @media (max-width: 520px) { .history-filters { grid-template-columns: 1fr; } }
