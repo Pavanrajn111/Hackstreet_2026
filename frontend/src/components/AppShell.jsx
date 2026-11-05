@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
-import { CalendarDays, Database, Globe2, History, LayoutDashboard, LogOut, Menu, Settings2, X, Waves } from 'lucide-react';
+import { CalendarDays, Database, Globe2, History, LayoutDashboard, LogOut, Menu, Settings2, X, Waves, Sprout } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { isMockMode, setMockMode } from '../services/api';
 import BrandLogo from './BrandLogo';
@@ -18,6 +18,7 @@ export default function AppShell() {
 
   const navItems = [
     { to: '/app', label: 'Overview', icon: LayoutDashboard, end: true },
+    { to: '/app/farms', label: 'My Farms', icon: Sprout },
     { to: '/app/intelligence', label: 'Intelligence', icon: Waves },
     { to: '/app/schedule', label: 'Schedule', icon: CalendarDays },
     { to: '/app/history', label: 'History', icon: History },

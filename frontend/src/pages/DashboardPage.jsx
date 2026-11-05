@@ -12,6 +12,7 @@ import RiskAssessmentCard from '../components/RiskAssessmentCard';
 import AlertsList from '../components/AlertsList';
 import ShareSummary from '../components/ShareSummary';
 import VoiceReader from '../components/VoiceReader';
+import { getActiveFarmId } from '../services/farmSelection';
 
 export default function DashboardPage() {
   const { t } = useI18n();
@@ -25,7 +26,8 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
       const farms = await getFarms();
-      const activeFarm = farms?.[0];
+      const selectedId = getActiveFarmId();
+      const activeFarm = farms?.find((candidate) => String(candidate.id ?? candidate.farm_name) === String(selectedId)) || farms?.[0];
       setFarm(activeFarm);
       if (activeFarm) setRecommendation(await getRecommendation(activeFarm));
       else setRecommendation(null);
@@ -42,9 +44,11 @@ export default function DashboardPage() {
     const handleRefresh = () => loadData();
     window.addEventListener('agr002_mock_mode_changed', handleRefresh);
     window.addEventListener('agr002_farm_updated', handleRefresh);
+    window.addEventListener('agr002_active_farm_changed', handleRefresh);
     return () => {
       window.removeEventListener('agr002_mock_mode_changed', handleRefresh);
       window.removeEventListener('agr002_farm_updated', handleRefresh);
+      window.removeEventListener('agr002_active_farm_changed', handleRefresh);
     };
   }, []);
 

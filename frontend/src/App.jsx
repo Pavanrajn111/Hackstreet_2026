@@ -10,6 +10,7 @@ import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import IntelligencePage from './pages/IntelligencePage';
 import ProfilePage from './pages/ProfilePage';
+import MyFarmsPage from './pages/MyFarmsPage';
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/recover" element={<AuthPage mode="recover" />} />
           <Route path="/" element={<AppShell />}>
             <Route path="app" element={<DashboardPage />} />
+            <Route path="app/farms" element={<MyFarmsPage />} />
             <Route path="app/setup" element={<FarmSetupPage />} />
             <Route path="app/schedule" element={<SchedulePage />} />
             <Route path="app/history" element={<HistoryPage />} />

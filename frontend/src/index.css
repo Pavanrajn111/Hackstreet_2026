@@ -107,6 +107,55 @@
   .app-shell .border-slate-200, .app-shell .border-slate-300 { border-color: rgba(16,37,27,.14); }
   .product-shell .border-slate-200, .product-shell .border-slate-300 { border-color: rgba(16,37,27,.14); }
   .product-shell .bg-slate-50 { background-color: rgba(221,233,212,.28); }
+
+  .farms-heading { align-items: flex-end; }
+  .farms-add-button { white-space: nowrap; }
+  .farms-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; align-items: start; }
+  .farms-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .farm-card, .farm-active-panel { background: rgba(255,255,255,.7); border: 1px solid rgba(16,37,27,.13); border-radius: 22px; padding: 22px; }
+  .farm-card { transition: border-color .2s ease, box-shadow .2s ease; }
+  .farm-card.is-active { border-color: #537b47; box-shadow: 0 12px 28px rgba(16,37,27,.08); }
+  .farm-card-top, .farm-card-actions, .farm-modal-header, .farm-modal-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .farm-card-index, .farm-active-label { color: #537b47; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+  .farm-active-label { display: inline-flex; align-items: center; gap: 4px; color: #25553b; }
+  .farm-card h2, .farm-active-panel h2 { margin: 22px 0 6px; color: #10251b; font-size: 24px; letter-spacing: -.04em; }
+  .farm-location, .farm-card-facts span { display: inline-flex; align-items: center; gap: 6px; color: rgba(16,37,27,.65); font-size: 12px; }
+  .farm-card-facts { display: flex; flex-wrap: wrap; gap: 14px; margin: 24px 0 12px; }
+  .farm-soil { margin: 0; color: rgba(16,37,27,.55); font-size: 12px; }
+  .farm-card-actions { margin-top: 24px; }
+  .farm-select-button, .farm-details-button { border: 0; background: transparent; color: #25553b; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 800; padding: 0; }
+  .farm-select-button:disabled { color: rgba(16,37,27,.45); cursor: default; }
+  .farm-details-button { color: rgba(16,37,27,.62); font-weight: 600; }
+  .farm-active-panel { position: sticky; top: 108px; background: #193b2b; color: #f5f3ea; }
+  .farm-active-panel h2 { color: #f5f3ea; margin-top: 16px; }
+  .farm-active-panel p { color: rgba(245,243,234,.7); font-size: 13px; margin-bottom: 24px; }
+  .farm-active-panel .outline-action { color: #f5f3ea; border-color: rgba(245,243,234,.35); }
+  .farms-error, .farm-form-error { display: flex; align-items: center; gap: 8px; border: 1px solid #e8b6af; background: #fff3f1; color: #8d3028; border-radius: 14px; padding: 12px 14px; font-size: 12px; }
+  .farms-error button { margin-left: auto; border: 0; background: transparent; color: #8d3028; cursor: pointer; font-weight: 800; }
+  .farms-empty { min-height: 360px; }
+  .farm-modal-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: rgba(16,37,27,.46); }
+  .farm-modal { width: min(100%, 560px); max-height: calc(100vh - 40px); overflow: auto; background: #f5f3ea; border-radius: 24px; padding: 26px; box-shadow: 0 24px 70px rgba(16,37,27,.22); }
+  .farm-modal-header { align-items: flex-start; margin-bottom: 24px; }
+  .farm-modal h2 { margin: 8px 0 0; color: #10251b; font-size: 30px; letter-spacing: -.05em; }
+  .farm-close-button { border: 0; background: transparent; color: #10251b; cursor: pointer; padding: 4px; }
+  .farm-create-form { display: grid; gap: 14px; }
+  .farm-create-form label { display: grid; gap: 6px; color: rgba(16,37,27,.72); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .farm-create-form input { width: 100%; border: 1px solid rgba(16,37,27,.18); border-radius: 12px; background: #fff; color: #10251b; font: inherit; font-size: 14px; letter-spacing: normal; padding: 12px 13px; text-transform: none; }
+  .farm-form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .farm-modal-actions { justify-content: flex-end; margin-top: 10px; }
+  .farm-modal-actions .auth-submit { width: auto; }
+  .farm-detail-list { display: grid; gap: 0; }
+  .farm-detail-list p { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid rgba(16,37,27,.1); padding: 13px 0; margin: 0; color: rgba(16,37,27,.58); font-size: 13px; }
+  .farm-detail-list strong { color: #10251b; text-align: right; }
+  @media (max-width: 760px) {
+    .farms-heading { align-items: flex-start; }
+    .farms-layout, .farms-grid { grid-template-columns: 1fr; }
+    .farm-active-panel { position: static; }
+  }
+  @media (max-width: 480px) {
+    .farm-form-row { grid-template-columns: 1fr; }
+    .farm-modal { padding: 20px; }
+  }
   .product-shell .bg-emerald-50 { background-color: rgba(221,233,212,.7); }
   .product-shell .text-emerald-700, .product-shell .text-emerald-800 { color: #426930; }
   .editorial-hero {
