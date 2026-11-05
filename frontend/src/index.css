@@ -131,6 +131,33 @@
   .hybrid-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
   .hybrid-form-grid { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
   .hybrid-form-grid label span { display: block; color: rgba(16,37,27,.45); font-size: 9px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+  .market-model-banner { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 16px 18px; border: 1px solid rgba(16,37,27,.12); border-radius: 18px; background: #edf5e9; }
+  .market-model-banner > div { display: flex; align-items: center; gap: 10px; color: #315a2b; }
+  .market-model-banner strong { display: block; margin-top: 4px; color: #10251b; font-size: 14px; }
+  .market-model-banner p { margin: 0; max-width: 560px; color: rgba(16,37,27,.6); font-size: 11px; line-height: 1.5; }
+  .market-commodity-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .market-commodity-card { padding: 16px; border: 1px solid rgba(16,37,27,.12); border-radius: 18px; background: rgba(255,255,255,.72); color: #10251b; text-align: left; cursor: pointer; }
+  .market-commodity-card:hover, .market-commodity-card.is-selected { border-color: #8db17c; box-shadow: 0 10px 24px rgba(62,93,51,.1); }
+  .market-card-topline, .market-card-meta { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  .market-card-topline { color: #537b47; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+  .market-commodity-card h3 { margin: 10px 0 14px; font-size: 17px; }
+  .market-commodity-card > strong { display: block; font-size: 20px; letter-spacing: -.04em; }
+  .market-card-meta { margin-top: 12px; color: rgba(16,37,27,.55); font-size: 10px; }
+  .market-detail-panel { margin-top: 8px; }
+  .market-select-label { display: grid; gap: 5px; min-width: 180px; color: rgba(16,37,27,.62); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .market-select-label select { min-height: 40px; border: 1px solid rgba(16,37,27,.16); border-radius: 10px; background: #fff; color: #10251b; font-size: 12px; padding: 8px 10px; text-transform: none; }
+  .market-detail-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .market-detail-stats article { padding: 14px; border: 1px solid rgba(16,37,27,.11); border-radius: 15px; background: rgba(255,255,255,.62); }
+  .market-detail-stats span { display: block; color: rgba(16,37,27,.55); font-size: 10px; }
+  .market-detail-stats strong { display: block; margin-top: 6px; color: #315a2b; font-size: 17px; }
+  .market-chart-card { padding: 16px; border: 1px solid rgba(16,37,27,.12); border-radius: 18px; background: rgba(255,255,255,.7); }
+  .market-chart { height: 320px; }
+  .market-chart-legend { display: flex; gap: 16px; margin-bottom: 8px; color: rgba(16,37,27,.58); font-size: 11px; }
+  .market-chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .market-legend { width: 18px; height: 2px; display: inline-block; background: #537b47; }
+  .market-legend.forecast { background: #c58d32; }
+  @media (max-width: 800px) { .market-commodity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .market-detail-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .market-model-banner { align-items: flex-start; flex-direction: column; } }
+  @media (max-width: 560px) { .market-commodity-grid, .market-detail-stats { grid-template-columns: 1fr; } .market-chart { height: 250px; } .market-detail-panel .hybrid-result-summary { flex-direction: column; } }
   .hybrid-form label { display: grid; gap: 5px; color: rgba(16,37,27,.62); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
   .hybrid-form input, .hybrid-form select { min-height: 40px; border: 1px solid rgba(16,37,27,.16); border-radius: 10px; background: #fff; color: #10251b; font-size: 12px; padding: 8px 10px; text-transform: none; }
   .hybrid-submit { grid-column: 1 / -1; justify-self: start; border: 0; cursor: pointer; }
