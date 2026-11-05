@@ -362,6 +362,7 @@ def simulate_water_balance(
                 depth = 0.0
 
         vol = round(depth * payload.farm_area_hectares * 10000.0, 1)
+        crop_demand_vol = round(etc_day * payload.farm_area_hectares * 10000.0, 1)
         r_mins = int(round(vol / pump_flow)) if (sched_irrigate and pump_flow > 0 and depth > 0) else 0
         rain_note = f"Rain: {rain_mm} mm ({p_prob}% prob)" if rain_mm > 0 else "Clear / dry"
         if sched_irrigate and pump_flow <= 0 and depth > 0:
@@ -386,6 +387,7 @@ def simulate_water_balance(
                 simulated_depletion_mm=round(recorded_depletion, 2),
                 raw_mm=round(raw_mm, 2),
                 soil_water_status_pct=soil_pct,
+                daily_crop_demand_litres=crop_demand_vol,
             )
         )
 

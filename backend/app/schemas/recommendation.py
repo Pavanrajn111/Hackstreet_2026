@@ -18,6 +18,7 @@ class ScheduleDayItem(BaseModel):
     simulated_depletion_mm: Optional[float] = None
     raw_mm: Optional[float] = None
     soil_water_status_pct: Optional[float] = None
+    daily_crop_demand_litres: Optional[float] = None
 
 
 class WeatherDayItem(BaseModel):
