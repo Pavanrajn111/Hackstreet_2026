@@ -3,7 +3,8 @@ import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router-do
 import {
   BarChart3, ChevronDown, Database, Globe2, History, LayoutDashboard,
   LogOut, Menu, Settings2, Share2, ShieldCheck, Sprout, X, BrainCircuit,
-  MapPinned, SlidersHorizontal, FlaskConical, Droplets, Check, Loader2, LocateFixed
+  MapPinned, SlidersHorizontal, FlaskConical, Droplets, Check, Loader2, LocateFixed,
+  MessageCircle
 } from 'lucide-react';
 import { detectBrowserLocation, getUserLocation, subscribeToLocationChanges } from '../services/locationService';
 import { useI18n } from '../i18n';
@@ -11,6 +12,7 @@ import { getFarms, isMockMode, setMockMode } from '../services/api';
 import { getActiveFarmId, setActiveFarmId } from '../services/farmSelection';
 import BrandLogo from './BrandLogo';
 import useAuth from '../auth/useAuth';
+import ChatWidget from './ChatWidget';
 
 const extendedToolsGroups = [
   {
@@ -18,6 +20,7 @@ const extendedToolsGroups = [
     items: [
       { to: '/app/intelligence/crop-planner', label: 'Zonal Field Planner', icon: MapPinned },
       { to: '/app/intelligence/crop-suitability', label: 'Crop Suitability AI', icon: BrainCircuit },
+      { to: '/app/assistant', label: 'AI Farm Assistant', icon: MessageCircle },
     ],
   },
   {
@@ -173,7 +176,7 @@ export default function AppShell() {
               <BrandLogo theme="dark" size="small" />
             </Link>
 
-            {/* Unified Field Telemetry Control: Active Field and GPS */}
+            {/* Unified Field Telemetry Control: Active Field & GPS */}
             <div className="relative hidden md:inline-flex items-center rounded-xl bg-slate-800/90 border border-slate-700/80 p-0.5 shadow-sm" ref={farmDropdownRef}>
               <button
                 type="button"
@@ -348,6 +351,7 @@ export default function AppShell() {
       </header>
 
       <main className="product-main"><Outlet /></main>
+      <ChatWidget />
       <footer className="product-footer">
         <span>AQUAGROW AI / FIELD INTELLIGENCE</span>
         <span>© 2026 WATER-WISE FARMING</span>

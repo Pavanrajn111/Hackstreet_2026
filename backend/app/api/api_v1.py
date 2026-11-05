@@ -11,6 +11,7 @@ from app.api.routes.crop_planner import router as crop_planner_router
 from app.api.routes.adaptive_irrigation import router as adaptive_irrigation_router
 from app.api.routes.community_water import router as community_water_router
 from app.api.routes.water_resilience import router as water_resilience_router
+from app.api.routes.chat import router as chat_router
 
 api_router = APIRouter(prefix="/api")
 api_v1_router = APIRouter(prefix="/api/v1")
@@ -77,6 +78,7 @@ api_router.include_router(crop_planner_router)
 api_router.include_router(adaptive_irrigation_router)
 api_router.include_router(community_water_router)
 api_router.include_router(water_resilience_router)
+api_router.include_router(chat_router)
 
 # Mount all route modules on /api/v1
 api_v1_router.include_router(crops_router)
@@ -89,4 +91,4 @@ api_v1_router.include_router(crop_planner_router)
 api_v1_router.include_router(adaptive_irrigation_router)
 api_v1_router.include_router(community_water_router)
 api_v1_router.include_router(water_resilience_router)
-
+api_v1_router.include_router(chat_router)

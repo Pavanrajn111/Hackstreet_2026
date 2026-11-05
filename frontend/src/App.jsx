@@ -19,6 +19,7 @@ import AdaptiveIrrigationPage from './pages/AdaptiveIrrigationPage';
 import CommunityWaterPage from './pages/CommunityWaterPage';
 import WaterResiliencePage from './pages/WaterResiliencePage';
 import ProtectedRoute from './components/ProtectedRoute';
+import AssistantPage from './pages/AssistantPage';
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="app/intelligence/water-resilience" element={<WaterResiliencePage />} />
             <Route path="app/intelligence/hybrid" element={<HybridRecommendationsPage />} />
             <Route path="app/profile" element={<ProfilePage />} />
+            <Route path="app/assistant" element={<AssistantPage />} />
           </Route>
           <Route path="/dashboard" element={<Navigate to="/app" replace />} />
           <Route path="/setup" element={<Navigate to="/app/setup" replace />} />
