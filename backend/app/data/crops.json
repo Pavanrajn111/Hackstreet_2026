@@ -124,6 +124,108 @@
         { "name": "Mid-Season / Pod Development", "days": 45, "kc": 1.15 },
         { "name": "Late / Pod Filling & Harvest", "days": 20, "kc": 0.60 }
       ]
+    },
+    {
+      "id": "coconut",
+      "name": "Coconut",
+      "category": "Plantation / Perennial",
+      "duration_days": 365,
+      "root_depth_m": 1.5,
+      "max_allowable_depletion": 0.50,
+      "base_kc": 0.90,
+      "stages": [
+        { "name": "Inflorescence & Nut Setting", "days": 90, "kc": 0.85 },
+        { "name": "Active Nut Development", "days": 120, "kc": 0.95 },
+        { "name": "Nut Maturation & Harvest", "days": 155, "kc": 0.85 }
+      ]
+    },
+    {
+      "id": "arecanut",
+      "name": "Arecanut",
+      "category": "Plantation / Perennial",
+      "duration_days": 365,
+      "root_depth_m": 1.2,
+      "max_allowable_depletion": 0.45,
+      "base_kc": 0.85,
+      "stages": [
+        { "name": "Flowering & Fruit Setting", "days": 90, "kc": 0.80 },
+        { "name": "Nut Development", "days": 150, "kc": 0.95 },
+        { "name": "Maturity & Harvest", "days": 125, "kc": 0.80 }
+      ]
+    },
+    {
+      "id": "banana",
+      "name": "Banana",
+      "category": "Horticulture / Fruit",
+      "duration_days": 330,
+      "root_depth_m": 0.8,
+      "max_allowable_depletion": 0.35,
+      "base_kc": 0.95,
+      "stages": [
+        { "name": "Vegetative / Shooting", "days": 90, "kc": 0.65 },
+        { "name": "Floral Initiation", "days": 90, "kc": 0.95 },
+        { "name": "Bunch Development", "days": 100, "kc": 1.15 },
+        { "name": "Bunch Maturation", "days": 50, "kc": 0.85 }
+      ]
+    },
+    {
+      "id": "turmeric",
+      "name": "Turmeric",
+      "category": "Spice / Commercial",
+      "duration_days": 250,
+      "root_depth_m": 0.45,
+      "max_allowable_depletion": 0.40,
+      "base_kc": 0.85,
+      "stages": [
+        { "name": "Emergence & Early Growth", "days": 45, "kc": 0.55 },
+        { "name": "Vegetative Tillering", "days": 75, "kc": 0.85 },
+        { "name": "Rhizome Bulking", "days": 90, "kc": 1.10 },
+        { "name": "Maturation & Senescence", "days": 40, "kc": 0.65 }
+      ]
+    },
+    {
+      "id": "black-pepper",
+      "name": "Black Pepper",
+      "category": "Spice / Vine Perennial",
+      "duration_days": 365,
+      "root_depth_m": 0.65,
+      "max_allowable_depletion": 0.45,
+      "base_kc": 0.85,
+      "stages": [
+        { "name": "Vegetative Flushes & Spike Initiation", "days": 90, "kc": 0.75 },
+        { "name": "Berry Development", "days": 150, "kc": 0.95 },
+        { "name": "Maturity & Harvesting", "days": 125, "kc": 0.80 }
+      ]
+    },
+    {
+      "id": "ginger",
+      "name": "Ginger",
+      "category": "Spice / Commercial",
+      "duration_days": 240,
+      "root_depth_m": 0.40,
+      "max_allowable_depletion": 0.40,
+      "base_kc": 0.85,
+      "stages": [
+        { "name": "Sprouting & Tillering", "days": 50, "kc": 0.55 },
+        { "name": "Pseudostem Growth", "days": 70, "kc": 0.85 },
+        { "name": "Rhizome Enlargement", "days": 80, "kc": 1.10 },
+        { "name": "Foliage Yellowing & Harvest", "days": 40, "kc": 0.65 }
+      ]
+    },
+    {
+      "id": "mango",
+      "name": "Mango",
+      "category": "Horticulture / Fruit Orchard",
+      "duration_days": 365,
+      "root_depth_m": 2.0,
+      "max_allowable_depletion": 0.55,
+      "base_kc": 0.75,
+      "stages": [
+        { "name": "Vegetative Flush & Floral Induction", "days": 90, "kc": 0.60 },
+        { "name": "Flowering & Fruit Set", "days": 60, "kc": 0.80 },
+        { "name": "Fruit Development & Sizing", "days": 120, "kc": 0.95 },
+        { "name": "Post-Harvest Rest", "days": 95, "kc": 0.65 }
+      ]
     }
   ]
 }

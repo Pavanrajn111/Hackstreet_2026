@@ -1,0 +1,290 @@
+{
+  "_metadata": {
+    "source": "ICAR-CPCRI (Central Plantation Crops Research Institute), ICAR-IISR, and TNAU Agritech Portal",
+    "validation_status": "Agronomically verified multi-tier and intercropping frameworks for Indian agro-climatic zones",
+    "last_updated": "2026-11-05"
+  },
+  "combinations": [
+    {
+      "main_crop_id": "coconut",
+      "main_crop_name": "Coconut",
+      "main_crop_spacing_m": "7.5m x 7.5m or 8m x 8m",
+      "canopy_architecture": "Tall palm overstory (> 10m height); sunlight reaches floor through fronds (40-60% light transmission in palms > 8 years)",
+      "intercrops": [
+        {
+          "crop_id": "turmeric",
+          "crop_name": "Turmeric",
+          "compatibility_tier": "Highly Compatible",
+          "compatibility_score": 94,
+          "canopy_layer": "Ground / Root (Rhizosphere)",
+          "shade_tolerance": "High (thrives in 30-50% filtered canopy shade)",
+          "root_depth_separation": "Main: 1.5m - 2.0m vs Intercrop: 0.35m - 0.45m (zero spatial root interference)",
+          "water_synergy_and_competition": "Shared microclimate reduces soil evaporation. Drip lateral extension can service raised beds between palm alleys.",
+          "nutrient_interaction": "Turmeric residue mulching enriches soil organic matter and suppresses weed germination.",
+          "recommended_planting_season": "May - June (Pre-Monsoon) or August - September",
+          "min_main_crop_age_years": 8,
+          "usable_land_area_pct": 65.0,
+          "spacing_guideline": {
+            "bed_width_m": 1.2,
+            "row_spacing_m": 0.45,
+            "plant_spacing_m": 0.25,
+            "distance_from_palm_trunk_m": 2.0
+          },
+          "estimated_plant_density_per_ha": 65000,
+          "estimated_yield_per_ha_kg": { "low": 12000, "expected": 18000, "high": 24000 },
+          "suitability_explanation": "Turmeric is the premier shade-tolerant rhizomatous spice recommended by ICAR-CPCRI for adult coconut gardens. It utilizes 60-70% interspace without competing with deep active palm roots.",
+          "risks_and_limitations": "Requires raised beds and good drainage; prolonged soil waterlogging in heavy clay can trigger Pythium rhizome rot.",
+          "data_source": "ICAR-CPCRI Technical Bulletin No. 102: Multi-Species Cropping Systems in Coconut"
+        },
+        {
+          "crop_id": "black-pepper",
+          "crop_name": "Black Pepper",
+          "compatibility_tier": "Highly Compatible",
+          "compatibility_score": 96,
+          "canopy_layer": "Climber / Vertical Trunk Epiphyte",
+          "shade_tolerance": "High (climbs coconut trunk; utilizes vertical aerial column)",
+          "root_depth_separation": "Main: 1.5m vs Intercrop: 0.65m concentrated within 1m radius of palm base",
+          "water_synergy_and_competition": "Utilizes palm irrigation basin. Requires dedicated drip ring or micro-sprinkler around palm base.",
+          "nutrient_interaction": "Vines do not tap into palm vascular tissues; symbiotic vertical space utilization.",
+          "recommended_planting_season": "June - July (South-West Monsoon)",
+          "min_main_crop_age_years": 8,
+          "usable_land_area_pct": 15.0,
+          "spacing_guideline": {
+            "vines_per_palm": 2,
+            "planting_distance_from_trunk_m": 0.45
+          },
+          "estimated_plant_density_per_ha": 350,
+          "estimated_yield_per_ha_kg": { "low": 300, "expected": 550, "high": 850 },
+          "suitability_explanation": "Standard vertical multi-tier cropping system. Pepper vines are trailed directly on adult coconut trunks on the northern or north-eastern side to protect from harsh afternoon sun.",
+          "risks_and_limitations": "Vines require regular tying and pruning; Phytophthora foot rot must be monitored during heavy monsoon spells.",
+          "data_source": "ICAR-IISR Calicut: Black Pepper Cultivation on Coconut / Arecanut Standards"
+        },
+        {
+          "crop_id": "banana",
+          "crop_name": "Banana",
+          "compatibility_tier": "Highly Compatible",
+          "compatibility_score": 88,
+          "canopy_layer": "Mid-Canopy (2.5m - 3.5m height)",
+          "shade_tolerance": "Moderate (partial shade tolerant, varieties like Robusta, Nendran, Grand Naine)",
+          "root_depth_separation": "Main: 1.5m vs Intercrop: 0.8m (separate lateral feeding zone)",
+          "water_synergy_and_competition": "Banana is a heavy water feeder; requires dedicated drip lines and high irrigation capacity during dry periods.",
+          "nutrient_interaction": "Substantial biomass addition through pseudostem chopping and in-situ vermicomposting.",
+          "recommended_planting_season": "September - October or February - March",
+          "min_main_crop_age_years": 8,
+          "usable_land_area_pct": 50.0,
+          "spacing_guideline": {
+            "row_spacing_m": 2.5,
+            "plant_spacing_m": 2.5,
+            "distance_from_palm_trunk_m": 2.5
+          },
+          "estimated_plant_density_per_ha": 800,
+          "estimated_yield_per_ha_kg": { "low": 16000, "expected": 22000, "high": 28000 },
+          "suitability_explanation": "Provides fast cash flow within 11-12 months. Excellent micro-climate regulator that increases ambient humidity in the coconut plantation.",
+          "risks_and_limitations": "Ensure irrigation water supply is sufficient for both crops; avoid during severe borewell water scarcity.",
+          "data_source": "ICAR-NRCB Trichy & CPCRI Mixed Cropping Studies"
+        },
+        {
+          "crop_id": "ginger",
+          "crop_name": "Ginger",
+          "compatibility_tier": "Highly Compatible",
+          "compatibility_score": 90,
+          "canopy_layer": "Ground / Root (Rhizosphere)",
+          "shade_tolerance": "High (25-40% canopy shade enhances ginger rhizome oil content)",
+          "root_depth_separation": "Main: 1.5m vs Intercrop: 0.35m",
+          "water_synergy_and_competition": "Requires frequent light irrigation cycles that align with red sandy loam soil management.",
+          "nutrient_interaction": "Responds well to organic farmyard manure applied in inter-row alleys.",
+          "recommended_planting_season": "April - May (Pre-Monsoon showers)",
+          "min_main_crop_age_years": 8,
+          "usable_land_area_pct": 60.0,
+          "spacing_guideline": {
+            "bed_width_m": 1.0,
+            "row_spacing_m": 0.30,
+            "plant_spacing_m": 0.20,
+            "distance_from_palm_trunk_m": 2.0
+          },
+          "estimated_plant_density_per_ha": 75000,
+          "estimated_yield_per_ha_kg": { "low": 10000, "expected": 15000, "high": 20000 },
+          "suitability_explanation": "High-value commercial cash crop with 8-month cycle. Highly profitable in southern Karnataka, Kerala, and Konkan coconut belts.",
+          "risks_and_limitations": "Sensitive to bacterial wilt and soft rot. Crop rotation or seed rhizome treatment with Trichoderma is essential.",
+          "data_source": "IISR Ginger Package of Practices"
+        }
+      ]
+    },
+    {
+      "main_crop_id": "arecanut",
+      "main_crop_name": "Arecanut",
+      "main_crop_spacing_m": "2.7m x 2.7m (~1370 palms/ha)",
+      "canopy_architecture": "Dense vertical palm canopy (8-12m); narrow spacing creates tropical rainforest-like understory humidity",
+      "intercrops": [
+        {
+          "crop_id": "black-pepper",
+          "crop_name": "Black Pepper",
+          "compatibility_tier": "Highly Compatible",
+          "compatibility_score": 98,
+          "canopy_layer": "Climber / Vertical Trunk Standard",
+          "shade_tolerance": "High (ideal micro-climate with high humidity)",
+          "root_depth_separation": "Main: 1.2m vs Intercrop: 0.6m",
+          "water_synergy_and_competition": "Co-irrigated via existing sprinkler or drip system in arecanut garden.",
+          "nutrient_interaction": "No root competition; standard companion crop across Malnad and Coastal Karnataka.",
+          "recommended_planting_season": "June - August",
+          "min_main_crop_age_years": 5,
+          "usable_land_area_pct": 20.0,
+          "spacing_guideline": {
+            "vines_per_palm": 1,
+            "planting_distance_from_trunk_m": 0.30
+          },
+          "estimated_plant_density_per_ha": 1200,
+          "estimated_yield_per_ha_kg": { "low": 800, "expected": 1400, "high": 2000 },
+          "suitability_explanation": "The gold-standard multi-storeyed system in arecanut plantations. Yields substantial secondary income with minimal additional land area.",
+          "risks_and_limitations": "Ensure regular tying of runners and copper oxychloride spraying to curb foot rot during continuous rains.",
+          "data_source": "CPCRI Regional Station Vittal: High Density Multi-Species Cropping System"
+        },
+        {
+          "crop_id": "banana",
+          "crop_name": "Banana",
+          "compatibility_tier": "Moderately Compatible",
+          "compatibility_score": 82,
+          "canopy_layer": "Mid-Canopy",
+          "shade_tolerance": "Moderate (suitable in young areca orchards or alternate rows in mature orchards)",
+          "root_depth_separation": "Main: 1.2m vs Intercrop: 0.8m",
+          "water_synergy_and_competition": "Requires adequate moisture; can compete if water is limited.",
+          "nutrient_interaction": "Provides heavy organic mulch when leaves and pseudostems are recycled.",
+          "recommended_planting_season": "September - November",
+          "min_main_crop_age_years": 4,
+          "usable_land_area_pct": 35.0,
+          "spacing_guideline": {
+            "row_spacing_m": 2.7,
+            "plant_spacing_m": 5.4,
+            "distance_from_palm_trunk_m": 1.35
+          },
+          "estimated_plant_density_per_ha": 650,
+          "estimated_yield_per_ha_kg": { "low": 12000, "expected": 17000, "high": 22000 },
+          "suitability_explanation": "Planted in every second or third inter-row of arecanut to provide shade and interim cash flow.",
+          "risks_and_limitations": "Keep canopy pruned to avoid excessive shading of arecanut bunches.",
+          "data_source": "UAS Dharwad / CPCRI Intercropping Guidelines"
+        }
+      ]
+    },
+    {
+      "main_crop_id": "mango",
+      "main_crop_name": "Mango",
+      "main_crop_spacing_m": "10m x 10m (traditional) or 5m x 5m (high density)",
+      "canopy_architecture": "Wide spreading dome canopy; first 5-8 years have wide open alleys receiving 70-100% full sunlight",
+      "intercrops": [
+        {
+          "crop_id": "groundnut",
+          "crop_name": "Groundnut",
+          "compatibility_tier": "Highly Compatible",
+          "compatibility_score": 92,
+          "canopy_layer": "Ground Cover / Legume (< 0.5m)",
+          "shade_tolerance": "Moderate (best in orchards aged 1-8 years with open alley light)",
+          "root_depth_separation": "Main: 2.0m vs Intercrop: 0.45m",
+          "water_synergy_and_competition": "Low water consumer; acts as living mulch reducing weed pressure and soil erosion.",
+          "nutrient_interaction": "Biological nitrogen fixation (fixes 40-60 kg N/ha), directly boosting young mango tree vigor.",
+          "recommended_planting_season": "June - July (Kharif) or November (Rabi)",
+          "min_main_crop_age_years": 1,
+          "max_main_crop_age_years": 8,
+          "usable_land_area_pct": 70.0,
+          "spacing_guideline": {
+            "row_spacing_m": 0.30,
+            "plant_spacing_m": 0.15,
+            "distance_from_mango_trunk_m": 1.5
+          },
+          "estimated_plant_density_per_ha": 180000,
+          "estimated_yield_per_ha_kg": { "low": 1600, "expected": 2400, "high": 3200 },
+          "suitability_explanation": "Groundnut legume intercropping in pre-bearing mango orchards generates immediate seasonal cash flow while building soil fertility.",
+          "risks_and_limitations": "Stop intercropping within 1.5m radius of tree trunk to prevent disturbing mango feeder roots during harvesting.",
+          "data_source": "ICAR-CISH Lucknow & TNAU Orchard Intercropping Manual"
+        },
+        {
+          "crop_id": "turmeric",
+          "crop_name": "Turmeric",
+          "compatibility_tier": "Highly Compatible",
+          "compatibility_score": 88,
+          "canopy_layer": "Understory Bed",
+          "shade_tolerance": "High (flourishes as mango canopy expands)",
+          "root_depth_separation": "Main: 2.0m vs Intercrop: 0.45m",
+          "water_synergy_and_competition": "Can be irrigated along tree driplines.",
+          "nutrient_interaction": "Organic manure and mulching benefit both crops.",
+          "recommended_planting_season": "May - June",
+          "min_main_crop_age_years": 4,
+          "usable_land_area_pct": 55.0,
+          "spacing_guideline": {
+            "row_spacing_m": 0.45,
+            "plant_spacing_m": 0.25,
+            "distance_from_mango_trunk_m": 2.0
+          },
+          "estimated_plant_density_per_ha": 50000,
+          "estimated_yield_per_ha_kg": { "low": 10000, "expected": 15000, "high": 19000 },
+          "suitability_explanation": "Thrives under partial shade of maturing mango orchards, providing high-value returns per acre.",
+          "risks_and_limitations": "Ensure tractor movement for mango spraying is kept to designated peripheral paths.",
+          "data_source": "ICAR-IIHR Hessaraghatta Bengaluru"
+        }
+      ]
+    },
+    {
+      "main_crop_id": "maize",
+      "main_crop_name": "Maize",
+      "main_crop_spacing_m": "60cm x 20cm",
+      "canopy_architecture": "Tall erect cereal crop (1.8m - 2.2m) with moderate row spacing",
+      "intercrops": [
+        {
+          "crop_id": "groundnut",
+          "crop_name": "Groundnut",
+          "compatibility_tier": "Highly Compatible",
+          "compatibility_score": 90,
+          "canopy_layer": "Understory Legume",
+          "shade_tolerance": "Moderate (1 row maize : 2 rows groundnut additive design)",
+          "root_depth_separation": "Maize: 0.8m vs Groundnut: 0.5m",
+          "water_synergy_and_competition": "Balanced water demand; Land Equivalent Ratio (LER) typically reaches 1.25 to 1.35.",
+          "nutrient_interaction": "Groundnut fixes nitrogen, saving ~25% synthetic urea requirements for succeeding cycles.",
+          "recommended_planting_season": "June - July or January - February",
+          "min_main_crop_age_years": 0,
+          "usable_land_area_pct": 50.0,
+          "spacing_guideline": {
+            "row_spacing_m": 0.30,
+            "plant_spacing_m": 0.15,
+            "pattern": "1:2 Maize to Groundnut replacement / additive series"
+          },
+          "estimated_plant_density_per_ha": 110000,
+          "estimated_yield_per_ha_kg": { "low": 1200, "expected": 1800, "high": 2300 },
+          "suitability_explanation": "Proven agro-ecological cereal-legume intercropping system improving Land Equivalent Ratio and pest resistance.",
+          "risks_and_limitations": "Maintain weed control early; do not plant groundnut too close to dense maize stands to avoid excessive shading.",
+          "data_source": "ICAR-IIMR & ICRISAT Semi-Arid Intercropping Trials"
+        }
+      ]
+    },
+    {
+      "main_crop_id": "sugarcane",
+      "main_crop_name": "Sugarcane",
+      "main_crop_spacing_m": "1.2m to 1.5m wide-furrow spacing",
+      "canopy_architecture": "Slow early canopy closure (90-110 days) followed by tall dense cane biomass",
+      "intercrops": [
+        {
+          "crop_id": "groundnut",
+          "crop_name": "Groundnut",
+          "compatibility_tier": "Highly Compatible",
+          "compatibility_score": 89,
+          "canopy_layer": "Furrow Ridge Intercrop",
+          "shade_tolerance": "Moderate (harvested at 110 days before sugarcane reaches full canopy shading)",
+          "root_depth_separation": "Sugarcane: 1.2m vs Groundnut: 0.5m",
+          "water_synergy_and_competition": "Utilizes early sugarcane irrigation rounds that would otherwise be lost to bare ground evaporation.",
+          "nutrient_interaction": "Nitrogen enrichment and weed smothering on ridge shoulders.",
+          "recommended_planting_season": "October - November (Autumn planting) or February - March",
+          "min_main_crop_age_years": 0,
+          "usable_land_area_pct": 45.0,
+          "spacing_guideline": {
+            "rows_between_cane": 2,
+            "row_spacing_m": 0.30,
+            "plant_spacing_m": 0.15
+          },
+          "estimated_plant_density_per_ha": 85000,
+          "estimated_yield_per_ha_kg": { "low": 1400, "expected": 2000, "high": 2600 },
+          "suitability_explanation": "Short-duration pulse/oilseed intercrop that finishes before sugarcane canopy closes at 100-110 days, providing bonus income.",
+          "risks_and_limitations": "Ensure timely harvest of groundnut so that sugarcane earthing-up operations are not delayed.",
+          "data_source": "ICAR-SBI Coimbatore Sugarcane Intercropping Frameworks"
+        }
+      ]
+    }
+  ]
+}

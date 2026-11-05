@@ -15,13 +15,14 @@ import logging
 from datetime import datetime, date, timedelta
 from typing import Dict, Any, List, Optional, Tuple
 import httpx
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "../cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
 CACHE_FILE = os.path.join(CACHE_DIR, "weather_cache.json")
-CACHE_TTL_SECONDS = 3600  # 1 hour cache duration
+CACHE_TTL_SECONDS = settings.WEATHER_CACHE_TTL_SECONDS
 
 # In-memory fast cache
 _MEMORY_CACHE: Dict[str, Dict[str, Any]] = {}
@@ -104,6 +105,11 @@ def fetch_weather_data(lat: float, lon: float) -> Dict[str, Any]:
     and 7-day future forecast.
     Falls back to valid cache or documented baseline on network failure.
     """
+    # 0. Validate coordinate ranges
+    if not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):
+        logger.warning("Coordinates out of range: lat=%.4f, lon=%.4f. Returning offline baseline.", lat, lon)
+        return _generate_offline_baseline_weather(lat, lon)
+
     key = _cache_key(lat, lon)
 
     # 1. Try fresh cache
@@ -113,7 +119,7 @@ def fetch_weather_data(lat: float, lon: float) -> Dict[str, Any]:
         return {**data, "source": source}
 
     # 2. Live API Request to Open-Meteo
-    url = "https://api.open-meteo.com/v1/forecast"
+    url = settings.OPEN_METEO_BASE_URL
     params = {
         "latitude": lat,
         "longitude": lon,
@@ -134,7 +140,7 @@ def fetch_weather_data(lat: float, lon: float) -> Dict[str, Any]:
     }
 
     try:
-        response = httpx.get(url, params=params, timeout=8.0)
+        response = httpx.get(url, params=params, timeout=settings.WEATHER_API_TIMEOUT_SECONDS)
         if response.status_code == 200:
             raw = response.json()
             parsed = _parse_open_meteo_response(raw)
@@ -145,10 +151,21 @@ def fetch_weather_data(lat: float, lon: float) -> Dict[str, Any]:
     except Exception as exc:
         logger.warning("Failed to reach Open-Meteo API (%s). Attempting stale cache fallback.", exc)
 
-    # 3. Fallback: Check stale cache if network failed
+    # 3. Fallback: Check in-memory or disk cache for stale data if network failed
     if key in _MEMORY_CACHE:
         entry = _MEMORY_CACHE[key]
         return {**entry["data"], "source": "open-meteo-stale-cache"}
+
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                disk_data = json.load(f)
+                if key in disk_data:
+                    entry = disk_data[key]
+                    _MEMORY_CACHE[key] = entry
+                    return {**entry["data"], "source": "open-meteo-stale-cache"}
+        except Exception as e:
+            logger.warning("Could not read weather cache file for stale fallback: %s", e)
 
     # 4. Ultimate fallback: Documented local baseline
     logger.info("Using deterministic offline baseline weather for lat=%.4f, lon=%.4f", lat, lon)
@@ -179,19 +196,33 @@ def _parse_open_meteo_response(raw: Dict[str, Any]) -> Dict[str, Any]:
 
     today_str = date.today().isoformat()
     today_index = 0
+    found_today = False
     for idx, t in enumerate(times):
         if t == today_str:
             today_index = idx
+            found_today = True
             break
+        elif t > today_str and not found_today:
+            today_index = max(0, idx - 1)
+            found_today = True
+            break
+
+    if not found_today and times:
+        today_index = max(0, len(times) - 7)
 
     day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
     # 7-day Future Forecast (starting from today)
     forecast_items = []
-    for i in range(today_index, min(today_index + 7, len(times))):
-        dt = date.fromisoformat(times[i])
-        day_label = "Today" if i == today_index else day_names[dt.weekday()]
-        w_code = weather_codes[i] if i < len(weather_codes) else 0
+    end_index = min(today_index + 7, len(times))
+    for i in range(today_index, end_index):
+        try:
+            dt = date.fromisoformat(times[i])
+            day_label = "Today" if i == today_index else day_names[dt.weekday()]
+        except Exception:
+            day_label = "Day"
+
+        w_code = weather_codes[i] if i < len(weather_codes) and weather_codes[i] is not None else 0
         cond = WMO_CODE_MAP.get(w_code, "Partly Cloudy")
         p_prob = precip_prob[i] if i < len(precip_prob) and precip_prob[i] is not None else (70 if (precip[i] or 0) > 2.0 else 10)
 
@@ -205,6 +236,22 @@ def _parse_open_meteo_response(raw: Dict[str, Any]) -> Dict[str, Any]:
             "rain_probability_pct": p_prob,
             "et0_mm": round(et0[i], 2) if i < len(et0) and et0[i] is not None else 4.2,
             "condition": cond,
+        })
+
+    # Ensure 7 items in forecast_items
+    while len(forecast_items) < 7:
+        idx = len(forecast_items)
+        d_date = date.today() + timedelta(days=idx)
+        forecast_items.append({
+            "date": d_date.isoformat(),
+            "day": "Today" if idx == 0 else day_names[d_date.weekday()],
+            "temp_max_c": 28.5,
+            "temp_min_c": 19.0,
+            "humidity_pct": 60,
+            "rainfall_mm": 0.0,
+            "rain_probability_pct": 10,
+            "et0_mm": 4.2,
+            "condition": "Partly Cloudy",
         })
 
     # Past observed weather (prior to today)
@@ -224,7 +271,7 @@ def _parse_open_meteo_response(raw: Dict[str, Any]) -> Dict[str, Any]:
 
 def _generate_offline_baseline_weather(lat: float, lon: float) -> Dict[str, Any]:
     """Generates clearly marked deterministic baseline weather when offline."""
-    day_names = ["Today", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed"]
+    day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     today = date.today()
     mock_temps = [
         (29.5, 19.0, 58, 0.0, 5, 4.6, "Sunny"),
@@ -239,9 +286,10 @@ def _generate_offline_baseline_weather(lat: float, lon: float) -> Dict[str, Any]
     forecast = []
     for idx, (tmax, tmin, hum, rain, prob, et0, cond) in enumerate(mock_temps):
         d_date = today + timedelta(days=idx)
+        day_label = "Today" if idx == 0 else day_names[d_date.weekday()]
         forecast.append({
             "date": d_date.isoformat(),
-            "day": day_names[idx % 7],
+            "day": day_label,
             "temp_max_c": tmax,
             "temp_min_c": tmin,
             "humidity_pct": hum,

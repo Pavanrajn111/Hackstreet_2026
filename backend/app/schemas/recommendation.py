@@ -35,6 +35,7 @@ class AlertItem(BaseModel):
 
 
 class RecommendRequest(BaseModel):
+    farm_id: Optional[int] = Field(default=None, json_schema_extra={"example": 1})
     farm_name: str = Field(..., json_schema_extra={"example": "Bengaluru Green Fields"})
     latitude: float = Field(..., ge=-90.0, le=90.0, json_schema_extra={"example": 12.9716})
     longitude: float = Field(..., ge=-180.0, le=180.0, json_schema_extra={"example": 77.5946})

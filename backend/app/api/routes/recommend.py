@@ -53,6 +53,21 @@ def get_recommendation(payload: RecommendRequest, db: Session = Depends(get_db))
             detail="Farm area must be greater than 0 hectares",
         )
 
+    # Validate farm_id if provided
+    audit_farm_id = None
+    if payload.farm_id is not None:
+        farm = db.query(FarmModel).filter(FarmModel.id == payload.farm_id).first()
+        if not farm:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Farm with ID {payload.farm_id} not found",
+            )
+        audit_farm_id = farm.id
+    else:
+        matched_farm = db.query(FarmModel).filter(FarmModel.farm_name == payload.farm_name).first()
+        if matched_farm:
+            audit_farm_id = matched_farm.id
+
     # 2. Base agronomic calculation using Open-Meteo & FAO-56
     try:
         recommendation = calculate_irrigation_recommendation(payload)
@@ -94,11 +109,8 @@ def get_recommendation(payload: RecommendRequest, db: Session = Depends(get_db))
 
     # 4. Persist audit in SQLite database
     try:
-        matched_farm = db.query(FarmModel).filter(FarmModel.farm_name == payload.farm_name).first()
-        farm_id = matched_farm.id if matched_farm else None
-
         audit_entry = RecommendationHistoryModel(
-            farm_id=farm_id,
+            farm_id=audit_farm_id,
             farm_name=payload.farm_name,
             crop=payload.crop,
             timestamp=datetime.utcnow(),
@@ -119,3 +131,32 @@ def get_recommendation(payload: RecommendRequest, db: Session = Depends(get_db))
         db.rollback()
 
     return recommendation
+
+
+@router.get("/{farm_id}", response_model=RecommendResponse)
+def get_recommendation_for_farm(farm_id: int, db: Session = Depends(get_db)):
+    """
+    Generate irrigation recommendation directly for a registered farm by ID.
+    Retrieves stored farm characteristics and executes water balance calculations.
+    """
+    farm = db.query(FarmModel).filter(FarmModel.id == farm_id).first()
+    if not farm:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Farm with ID {farm_id} not found",
+        )
+
+    payload = RecommendRequest(
+        farm_id=farm.id,
+        farm_name=farm.farm_name,
+        latitude=farm.latitude,
+        longitude=farm.longitude,
+        crop=farm.crop,
+        soil_type=farm.soil_type,
+        sowing_date=farm.sowing_date,
+        farm_area_hectares=farm.farm_area_hectares,
+        irrigation_method=farm.irrigation_method,
+        last_irrigation_date=farm.last_irrigation_date,
+        pump_flow_rate_lpm=farm.pump_flow_rate_lpm,
+    )
+    return get_recommendation(payload=payload, db=db)
