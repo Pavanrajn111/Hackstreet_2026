@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, ChevronDown, ChevronUp, Droplets, FlaskConical, Leaf, RefreshCw, Ruler, Sprout, TrendingUp, Waves } from 'lucide-react';
+import { AlertCircle, Box, ChevronDown, ChevronUp, Droplets, Eye, EyeOff, FlaskConical, Leaf, RefreshCw, Ruler, Sprout, TrendingUp, Waves, ZoomIn, ZoomOut } from 'lucide-react';
 import { getFarms, isMockMode } from '../services/api';
 import { listFarms } from '../services/farmService';
 import { calculateHybridIrrigation, compareHybridProfit, estimateHybridProfit, generateFarmLayout, getCultivationGuide, getHybridPlan, listHybridPlans, listValueAddedProducts, recommendHybridCrops, saveHybridPlan } from '../services/hybridService';
@@ -68,34 +68,65 @@ function CandidateCard({ candidate, ranked }) {
 }
 
 function LayoutResult({ layout }) {
+  const [view, setView] = useState('2d');
+  const [showMain, setShowMain] = useState(true);
+  const [showIntercrop, setShowIntercrop] = useState(true);
+  const [selectedCrop, setSelectedCrop] = useState(null);
+  const [zoom, setZoom] = useState(1);
   const formatObject = (value) => value && typeof value === 'object'
     ? Object.entries(value).map(([key, entry]) => `${key.replaceAll('_', ' ')}: ${entry}`).join(' · ')
     : displayValue(value);
+  const numericSpacing = (value, fallback) => {
+    const numbers = String(value || '').match(/\d+(?:\.\d+)?/g);
+    return numbers?.length ? Number(numbers[0]) : fallback;
+  };
+  const mainRowSpacing = numericSpacing(layout.main_crop_spacing?.row_spacing_m, 7.5);
+  const plantSpacing = numericSpacing(layout.main_crop_spacing?.plant_spacing_m, 7.5);
+  const buffer = numericSpacing(layout.row_arrangement?.buffer_zone_m || layout.intercrop_spacing?.buffer_from_main_m, 1.5);
+  const mainRows = Math.max(3, Math.min(7, Math.round(32 / mainRowSpacing)));
+  const plantsPerRow = Math.max(4, Math.min(12, Math.round(62 / plantSpacing)));
+  const field = { x: 70, y: 58, width: 860, height: 444 };
+  const mainAllocation = Number(layout.main_crop_allocated_area_sqm) || 0;
+  const intercropAllocation = Number(layout.intercrop_allocated_area_sqm) || 0;
+  const allocationRatio = mainAllocation + intercropAllocation > 0 ? mainAllocation / (mainAllocation + intercropAllocation) : 0.7;
+  const rowGap = field.height / (mainRows + 1);
+  const cropShortName = (crop) => String(crop || '').split(' ').map((word) => word[0]).join('').slice(0, 3).toUpperCase();
+  const mainSymbol = (x, y, index) => <g key={`main-${index}`} className="layout-plant layout-main-plant" onMouseEnter={() => setSelectedCrop('main')} onClick={() => setSelectedCrop('main')}><ellipse cx={x} cy={y + 13} rx="17" ry="5" fill="#9a713e" opacity=".34" /><path d={`M ${x} ${y + 12} C ${x - 3} ${y + 3}, ${x - 3} ${y - 7}, ${x} ${y - 15}`} stroke="#6b4a2d" strokeWidth="4" fill="none" /><circle cx={x - 8} cy={y - 12} r="12" fill="#2f6539" /><circle cx={x + 7} cy={y - 10} r="13" fill="#3f7b43" /><circle cx={x} cy={y - 20} r="11" fill="#548d4b" /></g>;
+  const intercropSymbol = (x, y, index) => <g key={`inter-${index}`} className="layout-plant layout-intercrop-plant" onMouseEnter={() => setSelectedCrop('intercrop')} onClick={() => setSelectedCrop('intercrop')}><ellipse cx={x} cy={y + 8} rx="11" ry="4" fill="#9a713e" opacity=".3" /><path d={`M ${x} ${y + 8} C ${x - 2} ${y}, ${x + 3} ${y - 6}, ${x} ${y - 15}`} stroke="#3d6c38" strokeWidth="2.5" fill="none" /><path d={`M ${x} ${y - 5} Q ${x - 10} ${y - 12} ${x - 11} ${y - 3} Q ${x - 4} ${y + 1} ${x} ${y - 5} M ${x + 1} ${y - 9} Q ${x + 10} ${y - 16} ${x + 11} ${y - 7} Q ${x + 5} ${y - 3} ${x + 1} ${y - 9}`} fill="#6b9b48" /></g>;
+  const schematicPlants = [];
+  for (let row = 1; row <= mainRows; row += 1) {
+    const y = field.y + rowGap * row;
+    if (showMain) for (let plant = 0; plant < plantsPerRow; plant += 1) schematicPlants.push(mainSymbol(field.x + 45 + plant * ((field.width - 90) / (plantsPerRow - 1)), y, `${row}-${plant}`));
+    if (showIntercrop) {
+      const intercropY = y + rowGap / 2;
+      for (let plant = 0; plant < plantsPerRow * 2 - 1; plant += 1) schematicPlants.push(intercropSymbol(field.x + 45 + plant * ((field.width - 90) / (plantsPerRow * 2 - 2)), intercropY, `${row}-${plant}`));
+    }
+  }
+  const selectedDetails = selectedCrop === 'main'
+    ? { name: layout.main_crop, count: layout.main_crop_plant_count, area: layout.main_crop_allocated_area_sqm, spacing: layout.main_crop_spacing, role: 'Main crop' }
+    : selectedCrop === 'intercrop'
+      ? { name: layout.intercrop, count: layout.intercrop_plant_count, area: layout.intercrop_allocated_area_sqm, spacing: layout.intercrop_spacing, role: 'Intercrop' }
+      : null;
 
   return (
     <section className="hybrid-results">
       <div className="hybrid-result-summary">
-        <div>
-          <span className="workspace-eyebrow">GENERATED FARM LAYOUT</span>
-          <h2>{layout.main_crop} + {layout.intercrop}.</h2>
-          <p>{displayValue(layout.planting_pattern_summary)}</p>
-        </div>
+        <div><span className="workspace-eyebrow">GENERATED FARM LAYOUT</span><h2>{layout.main_crop} + {layout.intercrop}.</h2><p>{displayValue(layout.planting_pattern_summary)}</p></div>
         <div className="hybrid-result-stat"><strong>{displayValue(layout.usable_cultivated_area_sqm, ' m²')}</strong><span>usable cultivated area</span></div>
       </div>
-      <div className="hybrid-layout-stats">
-        <div><span>Total farm area</span><strong>{displayValue(layout.total_farm_area_sqm, ' m²')}</strong></div>
-        <div><span>Main crop allocation</span><strong>{displayValue(layout.main_crop_allocated_area_sqm, ' m²')}</strong></div>
-        <div><span>Intercrop allocation</span><strong>{displayValue(layout.intercrop_allocated_area_sqm, ' m²')}</strong></div>
-        <div><span>Plant counts</span><strong>{displayValue(layout.main_crop_plant_count)} / {displayValue(layout.intercrop_plant_count)}</strong><small>Main / intercrop</small></div>
+      <div className="hybrid-layout-visual-card">
+        <div className="hybrid-layout-visual-toolbar">
+          <div><span className="workspace-eyebrow">SCHEMATIC FIELD VIEW</span><p>Representative arrangement based on returned spacing and row data. It is not a geographic boundary or exact plant map.</p></div>
+          <div className="layout-view-switcher" role="group" aria-label="Farm layout view"><button type="button" className={view === '2d' ? 'is-active' : ''} onClick={() => setView('2d')}><Ruler size={14} />2D plan</button><button type="button" className={view === '3d' ? 'is-active' : ''} onClick={() => setView('3d')}><Box size={14} />3D isometric</button></div>
+        </div>
+        <div className="layout-visual-controls"><button type="button" onClick={() => setShowMain((value) => !value)} className={showMain ? 'is-on' : ''}>{showMain ? <Eye size={14} /> : <EyeOff size={14} />} {cropShortName(layout.main_crop)}</button><button type="button" onClick={() => setShowIntercrop((value) => !value)} className={showIntercrop ? 'is-on' : ''}>{showIntercrop ? <Eye size={14} /> : <EyeOff size={14} />} {cropShortName(layout.intercrop)}</button><span className="layout-zoom-controls"><button type="button" onClick={() => setZoom((value) => Math.max(.85, value - .1))} aria-label="Zoom out"><ZoomOut size={14} /></button><strong>{Math.round(zoom * 100)}%</strong><button type="button" onClick={() => setZoom((value) => Math.min(1.25, value + .1))} aria-label="Zoom in"><ZoomIn size={14} /></button></span></div>
+        <div className={`layout-viewport layout-view-${view}`}><svg className="layout-svg" viewBox="0 0 1000 560" role="img" aria-label={`${view === '2d' ? 'Top-down' : 'Isometric'} schematic of ${layout.main_crop} and ${layout.intercrop} planting`}><g transform={`scale(${zoom}) translate(${(1 - zoom) * 500 / zoom}, ${(1 - zoom) * 280 / zoom})`}>{view === '3d' && <path d="M 75 110 L 900 60 L 925 440 L 105 515 Z" fill="#a97b45" opacity=".36" />}{view === '2d' && <rect x={field.x} y={field.y} width={field.width} height={field.height} rx="22" fill="#b28a52" opacity=".55" />}{view === '3d' && <path d="M 70 500 L 930 430 L 930 460 L 70 535 Z" fill="#7e5a36" opacity=".65" />}{view === '2d' && <path d={`M ${field.x + field.width * allocationRatio} ${field.y} V ${field.y + field.height}`} stroke="#e8d2a4" strokeDasharray="7 7" opacity=".7" />}{view === '2d' && Array.from({ length: mainRows }, (_, index) => <line key={`row-${index}`} x1={field.x + 24} x2={field.x + field.width - 24} y1={field.y + rowGap * (index + 1)} y2={field.y + rowGap * (index + 1)} stroke="#7ea163" strokeDasharray="3 8" opacity=".55" />)}{view === '3d' && Array.from({ length: mainRows }, (_, index) => <path key={`iso-row-${index}`} d={`M 110 ${135 + index * 47} L 860 ${92 + index * 47}`} stroke="#6e9554" strokeDasharray="3 9" opacity=".62" />)}{showIntercrop && <path d={view === '3d' ? 'M 105 475 L 895 410' : `M ${field.x + 20} ${field.y + field.height - 25} H ${field.x + field.width - 20}`} stroke="#6b9b48" strokeWidth="5" opacity=".65" />}{view === '2d' && schematicPlants}{view === '3d' && showMain && Array.from({ length: Math.min(mainRows * 5, 35) }, (_, index) => mainSymbol(135 + (index % 5) * 175, 125 + Math.floor(index / 5) * 47, `iso-main-${index}`))}{view === '3d' && showIntercrop && Array.from({ length: Math.min(mainRows * 7, 49) }, (_, index) => intercropSymbol(115 + (index % 7) * 125, 150 + Math.floor(index / 7) * 47, `iso-inter-${index}`))}<rect x={field.x} y={field.y} width={field.width} height={field.height} rx="22" fill="none" stroke="#315a2b" strokeWidth="4" />{layout.irrigation_line_layout && <g className="layout-irrigation"><path d={view === '3d' ? 'M 85 105 L 905 58' : `M ${field.x + 18} ${field.y + 18} H ${field.x + field.width - 18}`} stroke="#4b8aa3" strokeWidth="3" strokeDasharray="8 7" /><text x="84" y="42" fill="#326b83" fontSize="13">Irrigation layout returned</text></g>}</g></svg></div>
+        <div className="layout-legend"><span><i className="layout-legend-main" />{layout.main_crop}</span><span><i className="layout-legend-inter" />{layout.intercrop}</span>{layout.irrigation_line_layout && <span><i className="layout-legend-water" />Irrigation lines</span>}<span><i className="layout-legend-boundary" />Field boundary</span></div>
+        {selectedDetails && <div className="layout-selected-details"><div><span className="workspace-eyebrow">SELECTED CROP</span><h3>{selectedDetails.name}</h3></div><div><span>Role</span><strong>{selectedDetails.role}</strong></div><div><span>Plant count</span><strong>{displayValue(selectedDetails.count)}</strong></div><div><span>Allocated area</span><strong>{displayValue(selectedDetails.area, ' m²')}</strong></div><div><span>Spacing</span><strong>{formatObject(selectedDetails.spacing)}</strong></div></div>}
       </div>
-      <div className="hybrid-layout-grid">
-        <article className="hybrid-layout-card"><Ruler size={17} /><div><span className="workspace-eyebrow">SPACING</span><h3>Crop-wise spacing</h3><p><strong>{layout.main_crop}</strong> · {formatObject(layout.main_crop_spacing)}</p><p><strong>{layout.intercrop}</strong> · {formatObject(layout.intercrop_spacing)}</p></div></article>
-        <article className="hybrid-layout-card"><Sprout size={17} /><div><span className="workspace-eyebrow">ARRANGEMENT</span><h3>Row arrangement</h3><p>{formatObject(layout.row_arrangement)}</p><p>{displayValue(layout.irrigation_line_layout)}</p></div></article>
-      </div>
-      <div className="hybrid-calendar">
-        <div><span className="workspace-eyebrow">PLANTING CALENDAR</span><h3>Plan milestones.</h3></div>
-        {layout.planting_calendar?.length ? layout.planting_calendar.map((entry, index) => <div key={`${entry.stage || entry.date || index}`} className="hybrid-calendar-row"><strong>{entry.stage || entry.activity || entry.date || `Step ${index + 1}`}</strong><span>{Object.entries(entry).filter(([key]) => !['stage', 'activity', 'date'].includes(key)).map(([key, value]) => `${key.replaceAll('_', ' ')}: ${value}`).join(' · ') || entry.date || 'Details unavailable'}</span></div>) : <p className="text-sm text-slate-500">No planting calendar was returned.</p>}
-      </div>
+      <div className="hybrid-layout-stats"><div><span>Total farm area</span><strong>{displayValue(layout.total_farm_area_sqm, ' m²')}</strong></div><div><span>Main crop allocation</span><strong>{displayValue(layout.main_crop_allocated_area_sqm, ' m²')}</strong></div><div><span>Intercrop allocation</span><strong>{displayValue(layout.intercrop_allocated_area_sqm, ' m²')}</strong></div><div><span>Plant counts</span><strong>{displayValue(layout.main_crop_plant_count)} / {displayValue(layout.intercrop_plant_count)}</strong><small>Main / intercrop</small></div></div>
+      <div className="hybrid-layout-grid"><article className="hybrid-layout-card"><Ruler size={17} /><div><span className="workspace-eyebrow">SPACING</span><h3>Crop-wise spacing</h3><p><strong>{layout.main_crop}</strong> · {formatObject(layout.main_crop_spacing)}</p><p><strong>{layout.intercrop}</strong> · {formatObject(layout.intercrop_spacing)}</p></div></article><article className="hybrid-layout-card"><Sprout size={17} /><div><span className="workspace-eyebrow">ARRANGEMENT</span><h3>Row arrangement</h3><p>{formatObject(layout.row_arrangement)}</p><p>{displayValue(layout.irrigation_line_layout)}</p></div></article></div>
+      <div className="hybrid-calendar"><div><span className="workspace-eyebrow">PLANTING CALENDAR</span><h3>Plan milestones.</h3></div>{layout.planting_calendar?.length ? layout.planting_calendar.map((entry, index) => <div key={`${entry.stage || entry.date || index}`} className="hybrid-calendar-row"><strong>{entry.stage || entry.activity || entry.date || `Step ${index + 1}`}</strong><span>{Object.entries(entry).filter(([key]) => !['stage', 'activity', 'date'].includes(key)).map(([key, value]) => `${key.replaceAll('_', ' ')}: ${value}`).join(' · ') || entry.date || 'Details unavailable'}</span></div>) : <p className="text-sm text-slate-500">No planting calendar was returned.</p>}</div>
       <div className="hybrid-limitations"><AlertCircle size={17} /><div><span className="workspace-eyebrow">LIMITATIONS</span>{layout.limitations?.length ? <ul>{layout.limitations.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}</ul> : <p>No limitations were returned.</p>}</div></div>
     </section>
   );
