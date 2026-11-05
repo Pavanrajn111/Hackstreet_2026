@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, ChevronDown, ChevronUp, Droplets, FlaskConical, Leaf, RefreshCw, Ruler, Sprout, TrendingUp, Waves } from 'lucide-react';
 import { getFarms, isMockMode } from '../services/api';
 import { listFarms } from '../services/farmService';
-import { calculateHybridIrrigation, compareHybridProfit, estimateHybridProfit, generateFarmLayout, getCultivationGuide, listValueAddedProducts, recommendHybridCrops } from '../services/hybridService';
+import { calculateHybridIrrigation, compareHybridProfit, estimateHybridProfit, generateFarmLayout, getCultivationGuide, getHybridPlan, listHybridPlans, listValueAddedProducts, recommendHybridCrops, saveHybridPlan } from '../services/hybridService';
 import { getActiveFarmId } from '../services/farmSelection';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
@@ -328,6 +328,15 @@ export default function HybridRecommendationsPage() {
   const [productResults, setProductResults] = useState(null);
   const [productLoading, setProductLoading] = useState(false);
   const [productError, setProductError] = useState('');
+  const [planForm, setPlanForm] = useState({ plan_name: '', main_crop: '', intercrop: '', farm_area_hectares: '', plant_count_summary: '', net_profit_expected_inr: '', roi_pct: '', notes: '' });
+  const [savedPlans, setSavedPlans] = useState([]);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [plansError, setPlansError] = useState('');
+  const [savingPlan, setSavingPlan] = useState(false);
+  const [planSuccess, setPlanSuccess] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [planDetailsLoading, setPlanDetailsLoading] = useState(false);
+  const [planDetailsError, setPlanDetailsError] = useState('');
   const requestSequence = useRef(0);
   const layoutRequestSequence = useRef(0);
 
@@ -375,6 +384,7 @@ export default function HybridRecommendationsPage() {
           farm_area_hectares: active.farm_area_hectares || '',
         }));
         setProductCrop(active.crop || '');
+        setPlanForm((current) => ({ ...current, main_crop: active.crop || '', farm_area_hectares: active.farm_area_hectares || '' }));
       }
     } catch (loadError) {
       setFarmError(loadError?.message || 'Could not load farms for hybrid recommendations.');
@@ -385,7 +395,10 @@ export default function HybridRecommendationsPage() {
 
   useEffect(() => {
     loadFarms();
-    const refresh = () => loadFarms();
+    const refresh = () => {
+      loadFarms();
+      loadSavedPlans();
+    };
     window.addEventListener('agr002_active_farm_changed', refresh);
     window.addEventListener('agr002_farm_updated', refresh);
     window.addEventListener('agr002_mock_mode_changed', refresh);
@@ -394,6 +407,28 @@ export default function HybridRecommendationsPage() {
       window.removeEventListener('agr002_farm_updated', refresh);
       window.removeEventListener('agr002_mock_mode_changed', refresh);
     };
+  }, []);
+
+  const loadSavedPlans = async () => {
+    if (isMockMode()) {
+      setSavedPlans([]);
+      setPlansError('');
+      return;
+    }
+    setPlansLoading(true);
+    setPlansError('');
+    try {
+      const plans = await listHybridPlans();
+      setSavedPlans(Array.isArray(plans) ? plans : []);
+    } catch (plansLoadError) {
+      setPlansError(plansLoadError?.message || 'Could not load saved farming plans.');
+    } finally {
+      setPlansLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSavedPlans();
   }, []);
 
   const selectFarm = (event) => {
@@ -422,6 +457,7 @@ export default function HybridRecommendationsPage() {
     setProfitForm((current) => ({ ...current, main_crop: farm?.crop || '', farm_area_hectares: farm?.farm_area_hectares || '' }));
     setComparisonForm((current) => ({ ...current, main_crop: farm?.crop || '', farm_area_hectares: farm?.farm_area_hectares || '' }));
     setProductCrop(farm?.crop || '');
+    setPlanForm((current) => ({ ...current, main_crop: farm?.crop || '', farm_area_hectares: farm?.farm_area_hectares || '' }));
   };
 
   const updateForm = (event) => {
@@ -539,6 +575,13 @@ export default function HybridRecommendationsPage() {
         setIrrigationForm((current) => ({ ...current, intercrop: current.intercrop || response.intercrop }));
         setProfitForm((current) => ({ ...current, intercrop: current.intercrop || response.intercrop }));
         setComparisonForm((current) => ({ ...current, intercrop: current.intercrop || response.intercrop }));
+        setPlanForm((current) => ({
+          ...current,
+          main_crop: current.main_crop || response.main_crop || '',
+          intercrop: current.intercrop || response.intercrop || '',
+          farm_area_hectares: current.farm_area_hectares || form.farm_area_hectares || '',
+          plant_count_summary: `${response.main_crop_plant_count ?? 'Unavailable'} main / ${response.intercrop_plant_count ?? 'Unavailable'} intercrop plants`,
+        }));
       }
     } catch (requestError) {
       if (requestId === layoutRequestSequence.current) setLayoutError(requestError?.message || 'Could not generate the farm layout.');
@@ -571,7 +614,17 @@ export default function HybridRecommendationsPage() {
       optionalFields.forEach((field) => {
         if (profitForm[field] !== '' && profitForm[field] !== undefined && profitForm[field] !== null) payload[field] = Number(profitForm[field]);
       });
-      setProfitResult(await estimateHybridProfit(payload));
+      const response = await estimateHybridProfit(payload);
+      setProfitResult(response);
+      const expected = response.scenarios?.expected_realistic;
+      setPlanForm((current) => ({
+        ...current,
+        main_crop: current.main_crop || response.main_crop || '',
+        intercrop: current.intercrop || response.intercrop || '',
+        farm_area_hectares: current.farm_area_hectares || response.farm_area_hectares || '',
+        net_profit_expected_inr: expected?.net_profit_inr ?? '',
+        roi_pct: expected?.roi_pct ?? '',
+      }));
     } catch (requestError) {
       setProfitError(requestError?.message || 'Could not calculate the profit estimate.');
     } finally {
@@ -624,6 +677,64 @@ export default function HybridRecommendationsPage() {
           setProductLoading(false);
         }
       };
+
+      const updatePlanForm = (event) => {
+        const { name, value, type } = event.target;
+        setPlanForm((current) => ({ ...current, [name]: type === 'number' && value !== '' ? Number(value) : value }));
+      };
+
+      const savePlan = async (event) => {
+        event.preventDefault();
+        if (savingPlan) return;
+        if (!planForm.plan_name.trim() || !planForm.main_crop.trim() || !planForm.intercrop.trim() || !planForm.farm_area_hectares || Number(planForm.farm_area_hectares) <= 0) {
+          setPlansError('Plan name, main crop, intercrop, and a positive farm area are required.');
+          setPlanSuccess('');
+          return;
+        }
+        if (isMockMode()) {
+          setPlansError('Saved farming plans require Live API mode. Switch off Demo Mode to save a backend plan.');
+          setPlanSuccess('');
+          return;
+        }
+        setSavingPlan(true);
+        setPlansError('');
+        setPlanSuccess('');
+        try {
+          const payload = {
+            ...(selectedFarm?.id !== undefined ? { farm_id: selectedFarm.id } : {}),
+            plan_name: planForm.plan_name.trim(),
+            main_crop: planForm.main_crop.trim(),
+            intercrop: planForm.intercrop.trim(),
+            farm_area_hectares: Number(planForm.farm_area_hectares),
+            plant_count_summary: planForm.plant_count_summary.trim() || undefined,
+            net_profit_expected_inr: planForm.net_profit_expected_inr === '' ? undefined : Number(planForm.net_profit_expected_inr),
+            roi_pct: planForm.roi_pct === '' ? undefined : Number(planForm.roi_pct),
+            notes: planForm.notes.trim() || undefined,
+          };
+          const saved = await saveHybridPlan(payload);
+          setSavedPlans((current) => [saved, ...current]);
+          setPlanSuccess(`Saved "${saved.plan_name || payload.plan_name}".`);
+          setPlanForm((current) => ({ ...current, plan_name: '', notes: '' }));
+        } catch (saveError) {
+          setPlansError(saveError?.message || 'Could not save this farming plan.');
+        } finally {
+          setSavingPlan(false);
+        }
+      };
+
+      const loadPlanDetails = async (plan) => {
+        setPlanDetailsError('');
+        setSelectedPlan(plan);
+        if (plan?.id === undefined) return;
+        setPlanDetailsLoading(true);
+        try {
+          setSelectedPlan(await getHybridPlan(plan.id));
+        } catch (detailsError) {
+          setPlanDetailsError(detailsError?.message || 'Could not load plan details.');
+        } finally {
+          setPlanDetailsLoading(false);
+        }
+      };
       optionalFields.forEach((field) => {
         if (comparisonForm[field] !== '' && comparisonForm[field] !== undefined && comparisonForm[field] !== null) payload[field] = Number(comparisonForm[field]);
       });
@@ -671,6 +782,7 @@ export default function HybridRecommendationsPage() {
           setIrrigationForm((current) => ({ ...current, intercrop: current.intercrop || firstCandidate.crop_id }));
           setProfitForm((current) => ({ ...current, intercrop: current.intercrop || firstCandidate.crop_id }));
           setComparisonForm((current) => ({ ...current, intercrop: current.intercrop || firstCandidate.crop_id }));
+          setPlanForm((current) => ({ ...current, main_crop: current.main_crop || response.main_crop || '', intercrop: current.intercrop || firstCandidate.crop_id, farm_area_hectares: current.farm_area_hectares || response.farm_area_hectares || '' }));
         }
       }
     } catch (requestError) {
@@ -843,6 +955,34 @@ export default function HybridRecommendationsPage() {
       {productError && <div className="history-notice"><AlertCircle size={16} />{productError}<button type="button" onClick={() => setProductError('')} aria-label="Dismiss product error">Dismiss</button></div>}
       {!productResults && !productError && <div className="hybrid-empty-result">Select a crop to view backend-provided value-added product opportunities.</div>}
       {productResults && (productResults.length ? <ProductResults products={productResults} /> : <div className="hybrid-empty-result">No product opportunities were returned for this crop.</div>)}
+
+      <section className="hybrid-input-panel hybrid-plans-panel">
+        <div className="hybrid-panel-heading">
+          <div className="hybrid-icon"><Sprout size={20} /></div>
+          <div><span className="workspace-eyebrow">PLANS / 08</span><h2>Keep the field plan.</h2><p>Save a complete hybrid combination and the backend-supported financial or layout details for later review.</p></div>
+        </div>
+        <form onSubmit={savePlan} className="hybrid-form">
+          <label>Plan name<input name="plan_name" value={planForm.plan_name} onChange={updatePlanForm} placeholder="Required" maxLength="120" required /></label>
+          <label>Main crop<input name="main_crop" value={planForm.main_crop} onChange={updatePlanForm} placeholder="Required" required /></label>
+          <label>Intercrop<input name="intercrop" list="hybrid-plan-crops" value={planForm.intercrop} onChange={updatePlanForm} placeholder="Required" required /><datalist id="hybrid-plan-crops">{result?.recommendations?.map((candidate) => <option key={candidate.crop_id} value={candidate.crop_id}>{candidate.crop_name}</option>)}{layoutResult?.intercrop && <option value={layoutResult.intercrop} />}</datalist></label>
+          <label>Farm area (hectares)<input name="farm_area_hectares" type="number" min="0.01" step="0.01" value={planForm.farm_area_hectares} onChange={updatePlanForm} required /></label>
+          <label>Plant count summary<input name="plant_count_summary" value={planForm.plant_count_summary} onChange={updatePlanForm} placeholder="Optional; use generated layout data" /></label>
+          <label>Expected net profit (₹)<input name="net_profit_expected_inr" type="number" min="0" step="0.01" value={planForm.net_profit_expected_inr} onChange={updatePlanForm} placeholder="Optional; use returned estimate" /></label>
+          <label>Expected ROI (%)<input name="roi_pct" type="number" step="0.1" value={planForm.roi_pct} onChange={updatePlanForm} placeholder="Optional; use returned estimate" /></label>
+          <label>Notes<input name="notes" value={planForm.notes} onChange={updatePlanForm} placeholder="Optional" /></label>
+          <button type="submit" className="auth-submit hybrid-submit" disabled={savingPlan}><Sprout size={16} />{savingPlan ? 'Saving plan...' : 'Save farming plan'}</button>
+        </form>
+      </section>
+
+      {plansError && <div className="history-notice"><AlertCircle size={16} />{plansError}<button type="button" onClick={() => setPlansError('')} aria-label="Dismiss plan error">Dismiss</button></div>}
+      {planSuccess && <div className="history-notice hybrid-success-notice"><Sprout size={16} />{planSuccess}</div>}
+
+      <section className="hybrid-saved-plans">
+        <div className="hybrid-result-summary"><div><span className="workspace-eyebrow">SAVED PLANS</span><h2>Return to a field decision.</h2><p>Plans are listed from the backend record store; no ownership or privacy claim is made.</p></div><button type="button" className="outline-action" onClick={loadSavedPlans} disabled={plansLoading}><RefreshCw size={15} />{plansLoading ? 'Refreshing...' : 'Refresh plans'}</button></div>
+        {isMockMode() ? <div className="hybrid-empty-result">Saved plans require Live API mode.</div> : plansLoading ? <LoadingState message="Loading saved plans..." /> : savedPlans.length ? <div className="hybrid-saved-plan-grid">{savedPlans.map((plan) => <article className="hybrid-saved-plan" key={plan.id}><div><span className="workspace-eyebrow">{plan.created_at ? new Date(plan.created_at).toLocaleDateString() : 'DATE UNAVAILABLE'}</span><h3>{plan.plan_name || 'Unnamed plan'}</h3><p>{plan.main_crop || 'Main crop unavailable'} + {plan.intercrop || 'Intercrop unavailable'}</p></div><div className="hybrid-saved-plan-meta"><span>{plan.farm_area_hectares ?? 'Unavailable'} ha</span>{plan.roi_pct !== null && plan.roi_pct !== undefined && <span>{plan.roi_pct}% ROI</span>}</div><button type="button" className="hybrid-expand" onClick={() => loadPlanDetails(plan)}>View details <ChevronDown size={15} /></button></article>)}</div> : <div className="hybrid-empty-result">No saved plans were returned.</div>}
+      </section>
+
+      {selectedPlan && <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"><div className="bg-white rounded-2xl p-5 w-full max-w-lg shadow-xl"><div className="flex items-start justify-between gap-3 mb-4"><div><span className="workspace-eyebrow">SAVED PLAN DETAILS</span><h3 className="text-lg font-bold text-slate-900 mt-1">{selectedPlan.plan_name || 'Unnamed plan'}</h3></div><button type="button" onClick={() => setSelectedPlan(null)} aria-label="Close plan details">×</button></div>{planDetailsLoading ? <LoadingState message="Loading plan details..." /> : planDetailsError ? <div className="history-notice">{planDetailsError}</div> : <div className="hybrid-detail-grid"><p><span>Main crop</span><strong>{selectedPlan.main_crop || 'Unavailable'}</strong></p><p><span>Intercrop</span><strong>{selectedPlan.intercrop || 'Unavailable'}</strong></p><p><span>Farm area</span><strong>{selectedPlan.farm_area_hectares ?? 'Unavailable'} ha</strong></p><p><span>Farm association</span><strong>{selectedPlan.farm_id ?? 'Not associated'}</strong></p><p><span>Plant counts</span><strong>{selectedPlan.plant_count_summary || 'Unavailable'}</strong></p><p><span>Expected net profit</span><strong>{selectedPlan.net_profit_expected_inr ?? 'Unavailable'}</strong></p><p><span>ROI</span><strong>{selectedPlan.roi_pct ?? 'Unavailable'}{selectedPlan.roi_pct === null || selectedPlan.roi_pct === undefined ? '' : '%'}</strong></p><p><span>Created</span><strong>{selectedPlan.created_at ? new Date(selectedPlan.created_at).toLocaleString() : 'Unavailable'}</strong></p>{selectedPlan.notes && <p><span>Notes</span><strong>{selectedPlan.notes}</strong></p>}</div>}</div></div>}
     </div>
   );
 }
