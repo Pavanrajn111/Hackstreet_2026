@@ -140,6 +140,26 @@
   .community-resource-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
   .community-card-topline { display: flex; justify-content: space-between; gap: 10px; color: rgba(16,37,27,.55); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
   .community-danger-action { color: #a44a3f; margin-left: 14px; }
+  .resilience-error { border-color: #e7b5ab; background: #fff7f5; color: #8d3024; }
+  .resilience-success { display: flex; align-items: center; gap: 8px; border: 1px solid #b9d6bc; background: #f1faf1; color: #2f693d; border-radius: 14px; padding: 11px 13px; font-size: 12px; }
+  .resilience-wide-field { grid-column: span 2; }
+  .resilience-summary-grid, .resilience-two-column, .resilience-action-grid, .resilience-option-grid { display: grid; gap: 14px; }
+  .resilience-summary-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .resilience-two-column { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .resilience-action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .resilience-option-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
+  .resilience-action-card, .resilience-option-card { border: 1px solid #e4ebe3; border-radius: 16px; padding: 16px; background: #fbfdfb; }
+  .resilience-action-card h3, .resilience-option-card h3 { margin: 10px 0 6px; color: #10251b; }
+  .resilience-action-card h4 { margin: 14px 0 5px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #537b47; }
+  .resilience-action-card ul, .resilience-option-card ul { margin: 6px 0 0; padding-left: 18px; color: rgba(16,37,27,.7); font-size: 12px; line-height: 1.6; }
+  .resilience-action-card p, .resilience-option-card p { color: rgba(16,37,27,.65); font-size: 12px; line-height: 1.55; }
+  .resilience-category { color: #537b47 !important; font-size: 10px !important; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .resilience-confirmation { border-top: 1px solid #edf1ec; padding-top: 10px; }
+  .resilience-callout { border-left: 4px solid #d59d37; }
+  .resilience-number { display: block; margin-top: 12px; color: #a3382a; font-size: 26px; letter-spacing: -.05em; }
+  .resilience-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; color: rgba(16,37,27,.5); font-size: 10px; }
+  @media (max-width: 800px) { .resilience-summary-grid, .resilience-action-grid, .resilience-option-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .resilience-two-column { grid-template-columns: 1fr; } }
+  @media (max-width: 560px) { .resilience-summary-grid, .resilience-action-grid, .resilience-option-grid { grid-template-columns: 1fr; } .resilience-wide-field { grid-column: auto; } }
   .community-request-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
   .community-consent { display: flex !important; grid-template-columns: none !important; align-items: flex-start; gap: 8px; margin-top: 10px; color: #315a2b !important; }
   .community-consent input { margin-top: 3px; accent-color: #537b47; }
