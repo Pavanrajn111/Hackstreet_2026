@@ -1,0 +1,14 @@
+import React, { useEffect, useState } from 'react';
+import { ArrowRight, CloudRain, Droplets, Leaf, MapPin, Sprout, Sun, Waves } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { getFarms, getRecommendation } from '../services/api';
+import LoadingState from '../components/LoadingState';
+
+export default function IntelligencePage() {
+  const [farm, setFarm] = useState(null);
+  const [recommendation, setRecommendation] = useState(null);
+  useEffect(() => { Promise.all([getFarms()]).then(async ([farms]) => { const current = farms[0]; setFarm(current); setRecommendation(await getRecommendation(current)); }); }, []);
+  if (!recommendation) return <LoadingState message="Reading field signals..." />;
+  const weather = recommendation.seven_day_weather || [];
+  return <div className="workspace-page"><div className="workspace-heading"><div><span className="workspace-eyebrow">FIELD INTELLIGENCE / 02</span><h1>Read the whole field.</h1><p>Signals become useful when they are seen together.</p></div><Link to="/app/setup" className="outline-action"><MapPin size={15} /> Edit field record</Link></div><section className="signal-grid"><article className="signal-card signal-dark"><span>01 / SOIL</span><div className="signal-icon"><Waves /></div><h2>{recommendation.soil_moisture?.current_moisture_pct || 42}<small>%</small></h2><p>Current moisture level</p><div className="signal-meter"><span style={{ width: `${recommendation.soil_moisture?.current_moisture_pct || 42}%` }} /></div><small>Refill threshold / 50%</small></article><article className="signal-card signal-cream"><span>02 / WEATHER</span><div className="signal-icon"><CloudRain /></div><h2>{weather[0]?.temp_max_c ? Math.round(weather[0].temp_max_c) : 28}<small>°C</small></h2><p>{weather[0]?.condition || 'Warm and partly cloudy'}</p><div className="weather-mini">{weather.slice(0, 4).map((day, index) => <div key={day.date || index}><b>{day.day}</b><Sun size={15} /><small>{Math.round(day.temp_max_c || 28)}°</small></div>)}</div></article><article className="signal-card signal-light"><span>03 / CROP</span><div className="signal-icon"><Sprout /></div><h2>{farm?.crop || 'Tomato'}</h2><p>{recommendation.current_growth_stage || 'Mid-season'} growth stage</p><div className="crop-facts"><span><Leaf size={14} /> Kc {recommendation.current_kc || '1.15'}</span><span><Droplets size={14} /> {farm?.irrigation_method || 'Drip irrigation'}</span></div></article></section><section className="insight-callout"><div><span className="workspace-eyebrow">THE SIGNAL, TOGETHER</span><h2>{recommendation.irrigate_today ? 'Your field is asking for water.' : 'Your field can wait today.'}</h2><p>{recommendation.explanation}</p></div><Link to="/app/schedule" className="round-arrow"><ArrowRight size={19} /></Link></section></div>;
+}
