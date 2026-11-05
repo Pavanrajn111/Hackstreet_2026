@@ -1,0 +1,12 @@
+crop,layout,ph_min,ph_max,rain_min,rain_max,temp_min,temp_max,shade_tol,soils,kc,water_l_plant_day,spacing_m,years_to_first_yield,yield_per_plant_yr,unit,price_per_unit,est_cost_per_plant,annual_cost_per_plant,life_years
+coconut,boundary,5.2,8.0,1000,3000,20,35,0.2,Red|Laterite|Alluvial|Sandy|Loamy,0.95,50,7.5,5,80,nut,18,300,500,40
+arecanut,boundary,5.0,7.5,1500,4500,14,36,0.5,Laterite|Red|Loamy|Alluvial,1.0,25,3.0,6,2.5,kg_dry,400,150,350,40
+moringa,boundary,5.5,8.0,250,1500,25,35,0.2,Red|Sandy|Loamy|Alluvial,0.8,8,2.5,1,30,kg,30,20,60,6
+curry_leaf,boundary,5.5,7.5,600,1500,20,38,0.5,Red|Loamy|Sandy|Alluvial,0.8,5,1.5,1,3,kg,25,15,40,10
+glyricidia,boundary,5.0,8.5,600,3000,20,35,0.7,Red|Black|Laterite|Alluvial|Sandy|Loamy,0.5,0,1.0,1,5,kg_leaf,3,5,5,15
+papaya,intercrop,6.0,7.0,1000,2000,22,32,0.1,Red|Sandy|Loamy|Alluvial,0.9,15,2.0,1,40,kg,15,30,80,2
+turmeric,understorey,5.0,7.5,1000,2000,20,35,0.5,Red|Loamy|Alluvial|Laterite,1.0,4,0.3,1,0.3,kg_fresh,20,2,2.5,1
+pepper,understorey,5.0,7.0,1250,4000,20,35,0.6,Laterite|Red|Loamy,1.0,10,3.0,3,2,kg_dry,600,100,100,25
+lemongrass,intercrop,5.0,8.4,700,2500,20,35,0.3,Red|Sandy|Laterite|Loamy,0.8,3,0.6,1,0.8,kg_fresh,5,2,3,5
+tulsi,intercrop,6.0,7.5,500,1500,15,38,0.4,Red|Loamy|Sandy|Alluvial,0.8,1,0.45,1,0.3,kg,30,2,4,3
+marigold,border,6.0,7.5,400,1000,15,35,0.2,Red|Loamy|Sandy|Alluvial,0.8,1.5,0.4,1,0.3,kg_flower,30,2,3,1

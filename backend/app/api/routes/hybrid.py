@@ -197,3 +197,42 @@ def get_hybrid_plan_by_id(plan_id: int, db: Session = Depends(get_db)):
             detail=f"Hybrid plan with ID {plan_id} not found",
         )
     return plan
+
+
+# --- ML Extra Crop Planner & Forecasting Endpoints ---
+
+from app.schemas.crop_planner import (
+    CropPlannerRequest,
+    CropPlannerResponse,
+    CommodityPriceForecastResponse,
+    AllPriceForecastsResponse,
+)
+from app.services.crop_planner_service import (
+    plan_extra_crops,
+    get_commodity_price_forecast,
+    get_all_price_forecasts,
+)
+
+
+@router.post("/ml-planner", response_model=CropPlannerResponse)
+def get_hybrid_ml_crop_planner(req: CropPlannerRequest):
+    """
+    ML-augmented multi-tier companion crop planning:
+    Integrates Random Forest suitability probability, 15-year DCF cashflow,
+    layout groupings (boundary, border, intercrop, understorey), plant density, and daily water demand.
+    """
+    farm_dict = req.model_dump()
+    return plan_extra_crops(farm_dict, years=req.years, top=req.top)
+
+
+@router.get("/price-forecasts", response_model=AllPriceForecastsResponse)
+def get_hybrid_price_forecasts_all():
+    """Market price summaries and annual projected growth rates for 8 key commodities."""
+    return get_all_price_forecasts()
+
+
+@router.get("/price-forecasts/{commodity}", response_model=CommodityPriceForecastResponse)
+def get_hybrid_commodity_price_forecast(commodity: str):
+    """12-month forward price forecast and historical price series for a specific commodity."""
+    return get_commodity_price_forecast(commodity)
+

@@ -44,6 +44,7 @@ from app.services.irrigation_engine import (
     calculate_effective_rainfall,
 )
 from app.services.weather_service import fetch_weather_data
+from app.services.crop_planner_service import enrich_candidate_crop_with_ml
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +150,18 @@ def get_hybrid_crop_recommendations(req: HybridRecommendRequest) -> HybridRecomm
 
         score = max(30, min(99, score))
 
+        farm_conditions = {
+            "soil": req.soil_type or "Red",
+            "area_acre": req.farm_area_hectares * 2.47105,
+            "temp_c": 28.0,
+            "humidity": 70.0,
+            "ph": 6.5,
+            "rainfall_mm_yr": 1200.0,
+        }
+        ml_enrichment = enrich_candidate_crop_with_ml(
+            c.get("crop_id", ""), c.get("crop_name", ""), farm_conditions
+        )
+
         cand = CandidateCrop(
             crop_id=c.get("crop_id"),
             crop_name=c.get("crop_name"),
@@ -166,6 +179,10 @@ def get_hybrid_crop_recommendations(req: HybridRecommendRequest) -> HybridRecomm
             suitability_explanation=c.get("suitability_explanation", "Compatible intercrop based on ICAR guidelines."),
             risks_and_limitations=c.get("risks_and_limitations", "Monitor drainage and timely fertilization."),
             data_source=c.get("data_source", "ICAR Agroforestry Guidelines"),
+            ml_suitability_probability=ml_enrichment.get("ml_suitability_probability"),
+            forecast_npv_15yr=ml_enrichment.get("forecast_npv_15yr"),
+            market_growth_rate=ml_enrichment.get("market_growth_rate"),
+            price_forecast_trend=ml_enrichment.get("price_forecast_trend"),
         )
         filtered_candidates.append(cand)
 

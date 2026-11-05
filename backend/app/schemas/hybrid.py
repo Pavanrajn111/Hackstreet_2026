@@ -22,6 +22,10 @@ class CandidateCrop(BaseModel):
     suitability_explanation: str
     risks_and_limitations: str
     data_source: str
+    ml_suitability_probability: Optional[float] = None
+    forecast_npv_15yr: Optional[float] = None
+    market_growth_rate: Optional[float] = None
+    price_forecast_trend: Optional[str] = None
 
 
 class HybridRecommendRequest(BaseModel):

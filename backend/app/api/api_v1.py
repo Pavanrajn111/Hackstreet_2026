@@ -6,6 +6,7 @@ from app.api.routes.recommend import router as recommend_router
 from app.api.routes.farms import router as farms_router
 from app.api.routes.history import router as history_router
 from app.api.routes.hybrid import router as hybrid_router
+from app.api.routes.crop_planner import router as crop_planner_router
 
 api_router = APIRouter(prefix="/api")
 
@@ -26,3 +27,4 @@ api_router.include_router(recommend_router)
 api_router.include_router(farms_router)
 api_router.include_router(history_router)
 api_router.include_router(hybrid_router)
+api_router.include_router(crop_planner_router)
