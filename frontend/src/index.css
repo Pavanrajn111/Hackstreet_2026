@@ -186,6 +186,21 @@
   .hybrid-profit-panel { margin-top: 8px; }
   .hybrid-profit-results { margin-top: 8px; }
   .hybrid-comparison-panel { margin-top: 8px; }
+  .hybrid-product-panel { margin-top: 8px; }
+  .hybrid-product-results { margin-top: 8px; }
+  .hybrid-product-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .hybrid-product-card { padding: 18px; border: 1px solid rgba(16,37,27,.12); border-radius: 20px; background: rgba(255,255,255,.75); }
+  .hybrid-product-card h3 { margin: 6px 0 3px; color: #10251b; font-size: 19px; }
+  .hybrid-product-card > div > p { margin: 0; color: rgba(16,37,27,.52); font-size: 10px; }
+  .hybrid-product-margin { color: #315a2b; font-size: 21px; text-align: right; }
+  .hybrid-product-margin small { display: block; color: rgba(16,37,27,.52); font-size: 9px; font-weight: 700; text-transform: uppercase; }
+  .hybrid-product-lines { display: grid; gap: 0; margin-top: 16px; border-top: 1px solid #edf1ec; }
+  .hybrid-product-lines p { display: flex; justify-content: space-between; gap: 12px; margin: 0; padding: 8px 0; border-bottom: 1px solid #edf1ec; color: rgba(16,37,27,.55); font-size: 11px; }
+  .hybrid-product-lines strong { max-width: 62%; color: #10251b; text-align: right; }
+  .hybrid-product-limitations { margin-top: 14px; padding-top: 12px; border-top: 1px solid #edf1ec; }
+  .hybrid-product-limitations span { color: #80621b; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .hybrid-product-limitations p { margin: 5px 0 0; color: rgba(16,37,27,.62); font-size: 11px; line-height: 1.5; }
+  @media (max-width: 800px) { .hybrid-product-grid { grid-template-columns: 1fr; } }
   .hybrid-profit-scenarios { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   .hybrid-profit-scenarios article { padding: 17px; border: 1px solid rgba(16,37,27,.12); border-radius: 18px; background: rgba(255,255,255,.7); }
   .hybrid-profit-scenarios article.is-expected { border-color: #b89345; box-shadow: 0 10px 24px rgba(145,108,38,.1); }

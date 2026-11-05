@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, ChevronDown, ChevronUp, Droplets, FlaskConical, Leaf, RefreshCw, Ruler, Sprout, TrendingUp, Waves } from 'lucide-react';
 import { getFarms, isMockMode } from '../services/api';
 import { listFarms } from '../services/farmService';
-import { calculateHybridIrrigation, compareHybridProfit, estimateHybridProfit, generateFarmLayout, getCultivationGuide, recommendHybridCrops } from '../services/hybridService';
+import { calculateHybridIrrigation, compareHybridProfit, estimateHybridProfit, generateFarmLayout, getCultivationGuide, listValueAddedProducts, recommendHybridCrops } from '../services/hybridService';
 import { getActiveFarmId } from '../services/farmSelection';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
@@ -220,6 +220,48 @@ function ProfitResult({ profit }) {
   );
 }
 
+function ProductResults({ products }) {
+  const money = (value) => value === null || value === undefined ? 'Unavailable' : `₹${Number(value).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+  const value = (item, suffix = '') => item === null || item === undefined || item === '' ? 'Unavailable' : `${item}${suffix}`;
+
+  return (
+    <section className="hybrid-results hybrid-product-results">
+      <div className="hybrid-result-summary">
+        <div>
+          <span className="workspace-eyebrow">VALUE-ADDED PRODUCTS</span>
+          <h2>More ways to use the harvest.</h2>
+          <p>{products.length} backend product opportunities returned for the selected crop.</p>
+        </div>
+        <div className="hybrid-result-stat"><strong>{products.length}</strong><span>product options</span></div>
+      </div>
+      <div className="hybrid-product-grid">
+        {products.map((product) => (
+          <article className="hybrid-product-card" key={product.product_id}>
+            <div className="flex items-start justify-between gap-3">
+              <div><span className="workspace-eyebrow">{product.processing_stage}</span><h3>{product.product_name}</h3><p>{product.product_id} · {product.crop_id}</p></div>
+              <strong className="hybrid-product-margin">{value(product.gross_margin_pct, '%')}<small>margin</small></strong>
+            </div>
+            <div className="hybrid-product-lines">
+              <p><span>Processing scale</span><strong>{value(product.processing_scale)}</strong></p>
+              <p><span>Processing method</span><strong>{value(product.processing_method)}</strong></p>
+              <p><span>Raw input</span><strong>{value(product.raw_input_kg, ' kg')}</strong></p>
+              <p><span>Output product</span><strong>{value(product.output_product_kg, ' kg')}</strong></p>
+              <p><span>Recovery rate</span><strong>{value(product.recovery_rate_pct, '%')}</strong></p>
+              <p><span>Farmgate price</span><strong>{money(product.typical_farmgate_price_per_kg_inr)} / kg</strong></p>
+              <p><span>Selling price</span><strong>{money(product.typical_selling_price_per_kg_inr)} / kg</strong></p>
+              <p><span>Processing cost</span><strong>{money(product.processing_cost_per_kg_input_inr)} / input kg</strong></p>
+              <p><span>Packaging cost</span><strong>{money(product.packaging_cost_per_kg_output_inr)} / output kg</strong></p>
+              <p><span>Equipment</span><strong>{value(product.equipment_required)}</strong></p>
+              <p><span>Licences</span><strong>{value(product.licenses_required)}</strong></p>
+            </div>
+            <div className="hybrid-product-limitations"><span>Limitations</span><p>{value(product.limitations)}</p></div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function HybridRecommendationsPage() {
   const [farms, setFarms] = useState([]);
   const [farmKey, setFarmKey] = useState('');
@@ -282,6 +324,10 @@ export default function HybridRecommendationsPage() {
   const [comparisonResult, setComparisonResult] = useState(null);
   const [comparisonLoading, setComparisonLoading] = useState(false);
   const [comparisonError, setComparisonError] = useState('');
+  const [productCrop, setProductCrop] = useState('');
+  const [productResults, setProductResults] = useState(null);
+  const [productLoading, setProductLoading] = useState(false);
+  const [productError, setProductError] = useState('');
   const requestSequence = useRef(0);
   const layoutRequestSequence = useRef(0);
 
@@ -328,6 +374,7 @@ export default function HybridRecommendationsPage() {
           main_crop: active.crop || '',
           farm_area_hectares: active.farm_area_hectares || '',
         }));
+        setProductCrop(active.crop || '');
       }
     } catch (loadError) {
       setFarmError(loadError?.message || 'Could not load farms for hybrid recommendations.');
@@ -374,6 +421,7 @@ export default function HybridRecommendationsPage() {
     }));
     setProfitForm((current) => ({ ...current, main_crop: farm?.crop || '', farm_area_hectares: farm?.farm_area_hectares || '' }));
     setComparisonForm((current) => ({ ...current, main_crop: farm?.crop || '', farm_area_hectares: farm?.farm_area_hectares || '' }));
+    setProductCrop(farm?.crop || '');
   };
 
   const updateForm = (event) => {
@@ -551,6 +599,30 @@ export default function HybridRecommendationsPage() {
         farm_area_hectares: Number(comparisonForm.farm_area_hectares),
         main_crop: comparisonForm.main_crop.trim(),
         intercrop: comparisonForm.intercrop.trim(),
+      };
+
+      const loadProducts = async (event) => {
+        event.preventDefault();
+        if (productLoading) return;
+        if (!productCrop.trim()) {
+          setProductError('Select or enter a crop before loading product recommendations.');
+          return;
+        }
+        if (isMockMode()) {
+          setProductError('Product recommendations require Live API mode. Switch off Demo Mode to request backend products.');
+          return;
+        }
+        setProductLoading(true);
+        setProductError('');
+        setProductResults(null);
+        try {
+          const products = await listValueAddedProducts(productCrop.trim());
+          setProductResults(Array.isArray(products) ? products : []);
+        } catch (requestError) {
+          setProductError(requestError?.message || 'Could not load crop product recommendations.');
+        } finally {
+          setProductLoading(false);
+        }
       };
       optionalFields.forEach((field) => {
         if (comparisonForm[field] !== '' && comparisonForm[field] !== undefined && comparisonForm[field] !== null) payload[field] = Number(comparisonForm[field]);
@@ -756,6 +828,21 @@ export default function HybridRecommendationsPage() {
       {comparisonError && <div className="history-notice"><AlertCircle size={16} />{comparisonError}<button type="button" onClick={() => setComparisonError('')} aria-label="Dismiss comparison error">Dismiss</button></div>}
       {!comparisonResult && !comparisonError && <div className="hybrid-empty-result">Choose a main crop and intercrop to compare the hybrid combination with monoculture.</div>}
       {comparisonResult && <ProfitResult profit={comparisonResult} />}
+
+      <section className="hybrid-input-panel hybrid-product-panel">
+        <div className="hybrid-panel-heading">
+          <div className="hybrid-icon"><Leaf size={20} /></div>
+          <div><span className="workspace-eyebrow">PRODUCTS / 07</span><h2>Explore value-added paths.</h2><p>Load product opportunities returned for a farm crop or a hybrid recommendation.</p></div>
+        </div>
+        <form onSubmit={loadProducts} className="hybrid-guide-form">
+          <label>Crop products<input list="hybrid-product-crops" value={productCrop} onChange={(event) => { setProductCrop(event.target.value); setProductResults(null); setProductError(''); }} placeholder="Select or enter a crop" required /><datalist id="hybrid-product-crops">{selectedFarm?.crop && <option value={selectedFarm.crop}>{selectedFarm.crop} (farm crop)</option>}{result?.recommendations?.map((candidate) => <option key={candidate.crop_id} value={candidate.crop_id}>{candidate.crop_name}</option>)}{layoutResult?.intercrop && <option value={layoutResult.intercrop} />}</datalist></label>
+          <button type="submit" className="auth-submit hybrid-submit" disabled={productLoading}><Leaf size={16} />{productLoading ? 'Loading products...' : 'Load product recommendations'}</button>
+        </form>
+      </section>
+
+      {productError && <div className="history-notice"><AlertCircle size={16} />{productError}<button type="button" onClick={() => setProductError('')} aria-label="Dismiss product error">Dismiss</button></div>}
+      {!productResults && !productError && <div className="hybrid-empty-result">Select a crop to view backend-provided value-added product opportunities.</div>}
+      {productResults && (productResults.length ? <ProductResults products={productResults} /> : <div className="hybrid-empty-result">No product opportunities were returned for this crop.</div>)}
     </div>
   );
 }
