@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, ChevronDown, ChevronUp, FlaskConical, Leaf, RefreshCw, Ruler, Sprout, Waves } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp, Droplets, FlaskConical, Leaf, RefreshCw, Ruler, Sprout, Waves } from 'lucide-react';
 import { getFarms, isMockMode } from '../services/api';
 import { listFarms } from '../services/farmService';
-import { generateFarmLayout, getCultivationGuide, recommendHybridCrops } from '../services/hybridService';
+import { calculateHybridIrrigation, generateFarmLayout, getCultivationGuide, recommendHybridCrops } from '../services/hybridService';
 import { getActiveFarmId } from '../services/farmSelection';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
@@ -135,6 +135,43 @@ function GuideResult({ guide }) {
   );
 }
 
+function IrrigationResult({ irrigation }) {
+  const displayNumber = (value, suffix = '') => value === null || value === undefined ? 'Unavailable' : `${value}${suffix}`;
+
+  return (
+    <section className="hybrid-results hybrid-irrigation-results">
+      <div className="hybrid-result-summary">
+        <div>
+          <span className="workspace-eyebrow">HYBRID IRRIGATION RESULT</span>
+          <h2>{irrigation.main_crop} + {irrigation.intercrop}.</h2>
+          <p>{irrigation.irrigate_today ? 'Irrigation is indicated today.' : 'No irrigation is indicated today.'} {displayNumber(irrigation.water_competition_risk)}</p>
+        </div>
+        <div className="hybrid-result-stat"><strong>{displayNumber(irrigation.total_water_volume_litres, ' L')}</strong><span>total water volume</span></div>
+      </div>
+      <div className="hybrid-layout-stats">
+        <div><span>Combined daily ETc</span><strong>{displayNumber(irrigation.combined_daily_etc_mm, ' mm')}</strong></div>
+        <div><span>Main crop ETc</span><strong>{displayNumber(irrigation.main_crop_etc_mm, ' mm')}</strong></div>
+        <div><span>Intercrop ETc</span><strong>{displayNumber(irrigation.intercrop_etc_mm, ' mm')}</strong></div>
+        <div><span>Recommended depth</span><strong>{displayNumber(irrigation.recommended_depth_mm, ' mm')}</strong></div>
+      </div>
+      <div className="hybrid-layout-grid">
+        <article className="hybrid-layout-card"><Droplets size={17} /><div><span className="workspace-eyebrow">PUMP WINDOW</span><h3>{displayNumber(irrigation.estimated_pump_runtime_minutes, ' minutes')}</h3><p>Weighted Kc: {displayNumber(irrigation.weighted_kc)}</p></div></article>
+        <article className="hybrid-layout-card"><Sprout size={17} /><div><span className="workspace-eyebrow">SHARED SCHEDULE</span><h3>{irrigation.shared_schedule_advisable ? 'Advisable' : 'Not advisable'}</h3><p>{displayNumber(irrigation.shared_schedule_reasoning)}</p></div></article>
+      </div>
+      <div className="hybrid-calendar">
+        <div><span className="workspace-eyebrow">SEVEN-DAY IRRIGATION SCHEDULE</span><h3>Projected water windows.</h3></div>
+        {irrigation.seven_day_schedule?.length ? irrigation.seven_day_schedule.map((day) => (
+          <div className="hybrid-calendar-row" key={`${day.date}-${day.day}`}>
+            <strong>{day.day} · {day.date}</strong>
+            <span>{day.action} · {displayNumber(day.water_volume_litres, ' L')} · {displayNumber(day.runtime_minutes, ' min')} · {displayNumber(day.notes)}</span>
+          </div>
+        )) : <p className="text-sm text-slate-500">No schedule was returned.</p>}
+      </div>
+      <div className="hybrid-principles"><Droplets size={18} /><div><span className="workspace-eyebrow">METHODOLOGY</span><p>{displayNumber(irrigation.methodology)}</p><small>Main crop depth: {displayNumber(irrigation.seven_day_schedule?.[0]?.main_crop_depth_mm, ' mm')} · Intercrop depth: {displayNumber(irrigation.seven_day_schedule?.[0]?.intercrop_depth_mm, ' mm')}</small></div></div>
+    </section>
+  );
+}
+
 export default function HybridRecommendationsPage() {
   const [farms, setFarms] = useState([]);
   const [farmKey, setFarmKey] = useState('');
@@ -158,6 +195,19 @@ export default function HybridRecommendationsPage() {
   const [guideResult, setGuideResult] = useState(null);
   const [guideLoading, setGuideLoading] = useState(false);
   const [guideError, setGuideError] = useState('');
+  const [irrigationForm, setIrrigationForm] = useState({
+    main_crop: '',
+    intercrop: '',
+    farm_area_hectares: '',
+    latitude: '',
+    longitude: '',
+    soil_type: '',
+    irrigation_method: '',
+    pump_flow_rate_lpm: '',
+  });
+  const [irrigationResult, setIrrigationResult] = useState(null);
+  const [irrigationLoading, setIrrigationLoading] = useState(false);
+  const [irrigationError, setIrrigationError] = useState('');
   const requestSequence = useRef(0);
   const layoutRequestSequence = useRef(0);
 
@@ -183,6 +233,16 @@ export default function HybridRecommendationsPage() {
           farm_area_hectares: active.farm_area_hectares || '',
           soil_type: active.soil_type || 'Red Sandy Loam',
           irrigation_method: active.irrigation_method || 'Drip Irrigation',
+        }));
+        setIrrigationForm((current) => ({
+          ...current,
+          main_crop: active.crop || '',
+          farm_area_hectares: active.farm_area_hectares || '',
+          latitude: active.latitude ?? '',
+          longitude: active.longitude ?? '',
+          soil_type: active.soil_type || '',
+          irrigation_method: active.irrigation_method || '',
+          pump_flow_rate_lpm: active.pump_flow_rate_lpm ?? '',
         }));
       }
     } catch (loadError) {
@@ -218,6 +278,16 @@ export default function HybridRecommendationsPage() {
       soil_type: farm?.soil_type || 'Red Sandy Loam',
       irrigation_method: farm?.irrigation_method || 'Drip Irrigation',
     }));
+    setIrrigationForm((current) => ({
+      ...current,
+      main_crop: farm?.crop || '',
+      farm_area_hectares: farm?.farm_area_hectares || '',
+      latitude: farm?.latitude ?? '',
+      longitude: farm?.longitude ?? '',
+      soil_type: farm?.soil_type || '',
+      irrigation_method: farm?.irrigation_method || '',
+      pump_flow_rate_lpm: farm?.pump_flow_rate_lpm ?? '',
+    }));
   };
 
   const updateForm = (event) => {
@@ -228,6 +298,11 @@ export default function HybridRecommendationsPage() {
   const updateLayoutForm = (event) => {
     const { name, value, type } = event.target;
     setLayoutForm((current) => ({ ...current, [name]: type === 'number' && value !== '' ? Number(value) : value }));
+  };
+
+  const updateIrrigationForm = (event) => {
+    const { name, value, type } = event.target;
+    setIrrigationForm((current) => ({ ...current, [name]: type === 'number' && value !== '' ? Number(value) : value }));
   };
 
   const generateLayout = async (event) => {
@@ -280,8 +355,50 @@ export default function HybridRecommendationsPage() {
           setGuideLoading(false);
         }
       };
+
+      const generateIrrigation = async (event) => {
+        event.preventDefault();
+        if (irrigationLoading) return;
+        const required = ['main_crop', 'intercrop', 'farm_area_hectares', 'latitude', 'longitude'];
+        if (required.some((field) => irrigationForm[field] === '' || irrigationForm[field] === null || irrigationForm[field] === undefined)) {
+          setIrrigationError('Main crop, intercrop, farm area, latitude, and longitude are required.');
+          return;
+        }
+        if (Number(irrigationForm.farm_area_hectares) <= 0 || Number(irrigationForm.latitude) < -90 || Number(irrigationForm.latitude) > 90 || Number(irrigationForm.longitude) < -180 || Number(irrigationForm.longitude) > 180) {
+          setIrrigationError('Enter a positive farm area and coordinates within the supported ranges.');
+          return;
+        }
+        if (isMockMode()) {
+          setIrrigationError('Hybrid irrigation requires Live API mode. Switch off Demo Mode to request the backend calculation.');
+          return;
+        }
+        setIrrigationLoading(true);
+        setIrrigationError('');
+        setIrrigationResult(null);
+        try {
+          const payload = {
+            ...(selectedFarm?.id !== undefined ? { farm_id: selectedFarm.id } : {}),
+            farm_area_hectares: Number(irrigationForm.farm_area_hectares),
+            main_crop: irrigationForm.main_crop.trim(),
+            intercrop: irrigationForm.intercrop.trim(),
+            latitude: Number(irrigationForm.latitude),
+            longitude: Number(irrigationForm.longitude),
+            soil_type: irrigationForm.soil_type || undefined,
+            irrigation_method: irrigationForm.irrigation_method || undefined,
+            pump_flow_rate_lpm: irrigationForm.pump_flow_rate_lpm === '' ? undefined : Number(irrigationForm.pump_flow_rate_lpm),
+          };
+          setIrrigationResult(await calculateHybridIrrigation(payload));
+        } catch (requestError) {
+          setIrrigationError(requestError?.message || 'Could not calculate hybrid irrigation.');
+        } finally {
+          setIrrigationLoading(false);
+        }
+      };
       const response = await generateFarmLayout(payload);
-      if (requestId === layoutRequestSequence.current) setLayoutResult(response);
+      if (requestId === layoutRequestSequence.current) {
+        setLayoutResult(response);
+        setIrrigationForm((current) => ({ ...current, intercrop: current.intercrop || response.intercrop }));
+      }
     } catch (requestError) {
       if (requestId === layoutRequestSequence.current) setLayoutError(requestError?.message || 'Could not generate the farm layout.');
     } finally {
@@ -318,7 +435,11 @@ export default function HybridRecommendationsPage() {
         available_sunlight: form.available_sunlight || undefined,
       };
       const response = await recommendHybridCrops(payload);
-      if (requestId === requestSequence.current) setResult(response);
+      if (requestId === requestSequence.current) {
+        setResult(response);
+        const firstCandidate = response?.recommendations?.[0];
+        if (firstCandidate) setIrrigationForm((current) => ({ ...current, intercrop: current.intercrop || firstCandidate.crop_id }));
+      }
     } catch (requestError) {
       if (requestId === requestSequence.current) setError(requestError?.message || 'Could not generate hybrid recommendations.');
     } finally {
@@ -408,6 +529,28 @@ export default function HybridRecommendationsPage() {
       {guideError && <div className="history-notice"><AlertCircle size={16} />{guideError}<button type="button" onClick={() => setGuideError('')} aria-label="Dismiss guide error">Dismiss</button></div>}
       {!guideResult && !guideError && <div className="hybrid-empty-result">Select a crop to view its backend cultivation guide.</div>}
       {guideResult && <GuideResult guide={guideResult} />}
+
+      <section className="hybrid-input-panel hybrid-irrigation-panel">
+        <div className="hybrid-panel-heading">
+          <div className="hybrid-icon"><Droplets size={20} /></div>
+          <div><span className="workspace-eyebrow">HYBRID IRRIGATION / 04</span><h2>Balance both root zones.</h2><p>Calculate a shared water balance and seven-day schedule from the backend irrigation engine.</p></div>
+        </div>
+        <form onSubmit={generateIrrigation} className="hybrid-form">
+          <label>Main crop<input name="main_crop" value={irrigationForm.main_crop} onChange={updateIrrigationForm} placeholder="Required" required /></label>
+          <label>Intercrop<input name="intercrop" list="hybrid-irrigation-crops" value={irrigationForm.intercrop} onChange={updateIrrigationForm} placeholder="Required" required /><datalist id="hybrid-irrigation-crops">{result?.recommendations?.map((candidate) => <option key={candidate.crop_id} value={candidate.crop_id}>{candidate.crop_name}</option>)}{layoutResult?.intercrop && <option value={layoutResult.intercrop} />}</datalist></label>
+          <label>Farm area (hectares)<input name="farm_area_hectares" type="number" min="0.01" step="0.01" value={irrigationForm.farm_area_hectares} onChange={updateIrrigationForm} required /></label>
+          <label>Soil type<input name="soil_type" value={irrigationForm.soil_type} onChange={updateIrrigationForm} placeholder="Optional" /></label>
+          <label>Latitude<input name="latitude" type="number" min="-90" max="90" step="any" value={irrigationForm.latitude} onChange={updateIrrigationForm} required /></label>
+          <label>Longitude<input name="longitude" type="number" min="-180" max="180" step="any" value={irrigationForm.longitude} onChange={updateIrrigationForm} required /></label>
+          <label>Irrigation method<select name="irrigation_method" value={irrigationForm.irrigation_method} onChange={updateIrrigationForm}><option value="">Use backend default</option><option>Drip Irrigation</option><option>Sprinkler</option><option>Flood Irrigation</option><option>Rainfed</option></select></label>
+          <label>Pump flow (L/min)<input name="pump_flow_rate_lpm" type="number" min="0" step="0.1" value={irrigationForm.pump_flow_rate_lpm} onChange={updateIrrigationForm} placeholder="Optional" /></label>
+          <button type="submit" className="auth-submit hybrid-submit" disabled={irrigationLoading}><Droplets size={16} />{irrigationLoading ? 'Calculating...' : 'Generate hybrid irrigation'}</button>
+        </form>
+      </section>
+
+      {irrigationError && <div className="history-notice"><AlertCircle size={16} />{irrigationError}<button type="button" onClick={() => setIrrigationError('')} aria-label="Dismiss irrigation error">Dismiss</button></div>}
+      {!irrigationResult && !irrigationError && <div className="hybrid-empty-result">Enter both crops and the farm location to calculate hybrid irrigation.</div>}
+      {irrigationResult && <IrrigationResult irrigation={irrigationResult} />}
     </div>
   );
 }

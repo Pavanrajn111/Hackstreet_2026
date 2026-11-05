@@ -181,6 +181,8 @@
   .hybrid-stage-number { display: grid; place-items: center; width: 27px; height: 27px; flex: 0 0 auto; border-radius: 50%; background: #e6f1df; color: #315a2b; font-size: 11px; font-weight: 900; }
   .hybrid-stage h4 { margin: 2px 0 4px; color: #10251b; font-size: 13px; }
   .hybrid-stage p { margin: 0; color: rgba(16,37,27,.64); font-size: 12px; line-height: 1.6; }
+  .hybrid-irrigation-panel { margin-top: 8px; }
+  .hybrid-irrigation-results { margin-top: 8px; }
   @media (max-width: 800px) { .hybrid-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hybrid-candidate-grid { grid-template-columns: 1fr; } }
   @media (max-width: 680px) { .hybrid-layout-stats, .hybrid-layout-grid { grid-template-columns: 1fr 1fr; } .hybrid-calendar-row { display: grid; gap: 4px; } .hybrid-calendar-row span { text-align: left; } }
   @media (max-width: 560px) { .hybrid-guide-form, .hybrid-guide-overview { grid-template-columns: 1fr; } }
