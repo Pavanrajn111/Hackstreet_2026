@@ -1,0 +1,19 @@
+[
+    "crop",
+    "soil",
+    "stage",
+    "kc",
+    "depletion_mm",
+    "taw_mm",
+    "days_since_irrigation",
+    "et0",
+    "tmax",
+    "tmin",
+    "tmean",
+    "rainfall",
+    "humidity",
+    "wind",
+    "solar",
+    "latitude",
+    "longitude"
+]
