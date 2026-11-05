@@ -18,6 +18,7 @@ import MarketIntelligencePage from './pages/MarketIntelligencePage';
 import AdaptiveIrrigationPage from './pages/AdaptiveIrrigationPage';
 import CommunityWaterPage from './pages/CommunityWaterPage';
 import WaterResiliencePage from './pages/WaterResiliencePage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
   return (
@@ -28,7 +29,7 @@ export default function App() {
           <Route path="/login" element={<AuthPage mode="login" />} />
           <Route path="/register" element={<AuthPage mode="register" />} />
           <Route path="/recover" element={<AuthPage mode="recover" />} />
-          <Route path="/" element={<AppShell />}>
+          <Route path="/" element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
             <Route path="app" element={<DashboardPage />} />
             <Route path="app/farms" element={<MyFarmsPage />} />
             <Route path="app/setup" element={<FarmSetupPage />} />

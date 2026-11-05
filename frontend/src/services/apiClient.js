@@ -1,4 +1,5 @@
 import axios from 'axios';
+import supabase from '../lib/supabaseClient';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 const API_TIMEOUT_MS = 6000;
@@ -73,6 +74,15 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+apiClient.interceptors.request.use(async (config) => {
+  const { data } = await supabase.auth.getSession();
+  const accessToken = data.session?.access_token;
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+  return config;
 });
 
 apiClient.interceptors.response.use(
