@@ -11,6 +11,7 @@ import AuthPage from './pages/AuthPage';
 import IntelligencePage from './pages/IntelligencePage';
 import ProfilePage from './pages/ProfilePage';
 import MyFarmsPage from './pages/MyFarmsPage';
+import HybridRecommendationsPage from './pages/HybridRecommendationsPage';
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
             <Route path="app/schedule" element={<SchedulePage />} />
             <Route path="app/history" element={<HistoryPage />} />
             <Route path="app/intelligence" element={<IntelligencePage />} />
+            <Route path="app/intelligence/hybrid" element={<HybridRecommendationsPage />} />
             <Route path="app/profile" element={<ProfilePage />} />
           </Route>
           <Route path="/dashboard" element={<Navigate to="/app" replace />} />
