@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertCircle, ChevronDown, ChevronUp, FlaskConical, Leaf, RefreshCw, Sprout, Waves } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp, FlaskConical, Leaf, RefreshCw, Ruler, Sprout, Waves } from 'lucide-react';
 import { getFarms, isMockMode } from '../services/api';
 import { listFarms } from '../services/farmService';
-import { recommendHybridCrops } from '../services/hybridService';
+import { generateFarmLayout, getCultivationGuide, recommendHybridCrops } from '../services/hybridService';
 import { getActiveFarmId } from '../services/farmSelection';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
@@ -62,6 +62,79 @@ function CandidateCard({ candidate, ranked }) {
   );
 }
 
+function LayoutResult({ layout }) {
+  const formatObject = (value) => value && typeof value === 'object'
+    ? Object.entries(value).map(([key, entry]) => `${key.replaceAll('_', ' ')}: ${entry}`).join(' · ')
+    : displayValue(value);
+
+  return (
+    <section className="hybrid-results">
+      <div className="hybrid-result-summary">
+        <div>
+          <span className="workspace-eyebrow">GENERATED FARM LAYOUT</span>
+          <h2>{layout.main_crop} + {layout.intercrop}.</h2>
+          <p>{displayValue(layout.planting_pattern_summary)}</p>
+        </div>
+        <div className="hybrid-result-stat"><strong>{displayValue(layout.usable_cultivated_area_sqm, ' m²')}</strong><span>usable cultivated area</span></div>
+      </div>
+      <div className="hybrid-layout-stats">
+        <div><span>Total farm area</span><strong>{displayValue(layout.total_farm_area_sqm, ' m²')}</strong></div>
+        <div><span>Main crop allocation</span><strong>{displayValue(layout.main_crop_allocated_area_sqm, ' m²')}</strong></div>
+        <div><span>Intercrop allocation</span><strong>{displayValue(layout.intercrop_allocated_area_sqm, ' m²')}</strong></div>
+        <div><span>Plant counts</span><strong>{displayValue(layout.main_crop_plant_count)} / {displayValue(layout.intercrop_plant_count)}</strong><small>Main / intercrop</small></div>
+      </div>
+      <div className="hybrid-layout-grid">
+        <article className="hybrid-layout-card"><Ruler size={17} /><div><span className="workspace-eyebrow">SPACING</span><h3>Crop-wise spacing</h3><p><strong>{layout.main_crop}</strong> · {formatObject(layout.main_crop_spacing)}</p><p><strong>{layout.intercrop}</strong> · {formatObject(layout.intercrop_spacing)}</p></div></article>
+        <article className="hybrid-layout-card"><Sprout size={17} /><div><span className="workspace-eyebrow">ARRANGEMENT</span><h3>Row arrangement</h3><p>{formatObject(layout.row_arrangement)}</p><p>{displayValue(layout.irrigation_line_layout)}</p></div></article>
+      </div>
+      <div className="hybrid-calendar">
+        <div><span className="workspace-eyebrow">PLANTING CALENDAR</span><h3>Plan milestones.</h3></div>
+        {layout.planting_calendar?.length ? layout.planting_calendar.map((entry, index) => <div key={`${entry.stage || entry.date || index}`} className="hybrid-calendar-row"><strong>{entry.stage || entry.activity || entry.date || `Step ${index + 1}`}</strong><span>{Object.entries(entry).filter(([key]) => !['stage', 'activity', 'date'].includes(key)).map(([key, value]) => `${key.replaceAll('_', ' ')}: ${value}`).join(' · ') || entry.date || 'Details unavailable'}</span></div>) : <p className="text-sm text-slate-500">No planting calendar was returned.</p>}
+      </div>
+      <div className="hybrid-limitations"><AlertCircle size={17} /><div><span className="workspace-eyebrow">LIMITATIONS</span>{layout.limitations?.length ? <ul>{layout.limitations.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}</ul> : <p>No limitations were returned.</p>}</div></div>
+    </section>
+  );
+}
+
+function GuideResult({ guide }) {
+  const formatStructuredValue = (value) => {
+    if (value === null || value === undefined || value === '') return 'Unavailable';
+    if (Array.isArray(value)) return value.join(', ');
+    if (typeof value === 'object') {
+      return Object.entries(value).map(([key, entry]) => `${key.replaceAll('_', ' ')}: ${Array.isArray(entry) ? entry.join(', ') : entry}`).join(' · ');
+    }
+    return String(value);
+  };
+
+  return (
+    <section className="hybrid-results hybrid-guide-results">
+      <div className="hybrid-result-summary">
+        <div>
+          <span className="workspace-eyebrow">CULTIVATION GUIDE</span>
+          <h2>{guide.crop_name}.</h2>
+          <p>{guide.botanical_name} · {displayValue(guide.season)} · {displayValue(guide.duration_days, ' days')}</p>
+        </div>
+        <div className="hybrid-result-stat"><strong>{guide.stages?.length || 0}</strong><span>growth stages</span></div>
+      </div>
+      <div className="hybrid-guide-overview">
+        <article><span className="workspace-eyebrow">CLIMATE</span><p>{formatStructuredValue(guide.climate)}</p></article>
+        <article><span className="workspace-eyebrow">SOIL</span><p>{formatStructuredValue(guide.soil)}</p></article>
+        <article><span className="workspace-eyebrow">EXPECTED YIELD</span><p>{formatStructuredValue(guide.yield_potential)}</p></article>
+      </div>
+      <div className="hybrid-stages">
+        <div><span className="workspace-eyebrow">CULTIVATION STAGES</span><h3>From preparation to harvest.</h3></div>
+        {guide.stages?.length ? guide.stages.map((stage) => (
+          <article className="hybrid-stage" key={stage.stage_number}>
+            <span className="hybrid-stage-number">{stage.stage_number}</span>
+            <div><h4>{stage.stage_name}</h4><p>{stage.description}</p></div>
+          </article>
+        )) : <p className="text-sm text-slate-500">No cultivation stages were returned.</p>}
+      </div>
+      <div className="hybrid-principles"><Leaf size={18} /><div><span className="workspace-eyebrow">DATA SOURCE</span><p>{displayValue(guide.data_source)}</p><small>Displayed only from the backend cultivation guide response.</small></div></div>
+    </section>
+  );
+}
+
 export default function HybridRecommendationsPage() {
   const [farms, setFarms] = useState([]);
   const [farmKey, setFarmKey] = useState('');
@@ -71,7 +144,22 @@ export default function HybridRecommendationsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [farmError, setFarmError] = useState('');
+  const [layoutForm, setLayoutForm] = useState({
+    intercrop: '',
+    farm_length_m: '',
+    farm_width_m: '',
+    planting_system: 'Multi-Tier Intercropping',
+    custom_unusable_area_pct: 10,
+  });
+  const [layoutResult, setLayoutResult] = useState(null);
+  const [layoutSubmitting, setLayoutSubmitting] = useState(false);
+  const [layoutError, setLayoutError] = useState('');
+  const [guideCrop, setGuideCrop] = useState('');
+  const [guideResult, setGuideResult] = useState(null);
+  const [guideLoading, setGuideLoading] = useState(false);
+  const [guideError, setGuideError] = useState('');
   const requestSequence = useRef(0);
+  const layoutRequestSequence = useRef(0);
 
   const selectedFarm = useMemo(
     () => farms.find((farm) => String(farm.id ?? farm.farm_name) === String(farmKey)) || null,
@@ -135,6 +223,70 @@ export default function HybridRecommendationsPage() {
   const updateForm = (event) => {
     const { name, value, type } = event.target;
     setForm((current) => ({ ...current, [name]: type === 'number' && value !== '' ? Number(value) : value }));
+  };
+
+  const updateLayoutForm = (event) => {
+    const { name, value, type } = event.target;
+    setLayoutForm((current) => ({ ...current, [name]: type === 'number' && value !== '' ? Number(value) : value }));
+  };
+
+  const generateLayout = async (event) => {
+    event.preventDefault();
+    if (layoutSubmitting) return;
+    if (!form.main_crop?.trim() || !form.farm_area_hectares || Number(form.farm_area_hectares) <= 0 || !layoutForm.intercrop?.trim()) {
+      setLayoutError('Main crop, intercrop, and a positive farm area are required.');
+      return;
+    }
+    if (isMockMode()) {
+      setLayoutError('Farm layouts require Live API mode. Switch off Demo Mode to request the backend layout.');
+      return;
+    }
+    const requestId = layoutRequestSequence.current + 1;
+    layoutRequestSequence.current = requestId;
+    setLayoutSubmitting(true);
+    setLayoutError('');
+    setLayoutResult(null);
+    try {
+      const payload = {
+        ...(selectedFarm?.id !== undefined ? { farm_id: selectedFarm.id } : {}),
+        farm_area_hectares: Number(form.farm_area_hectares),
+        main_crop: form.main_crop.trim(),
+        intercrop: layoutForm.intercrop.trim(),
+        farm_length_m: layoutForm.farm_length_m === '' ? undefined : Number(layoutForm.farm_length_m),
+        farm_width_m: layoutForm.farm_width_m === '' ? undefined : Number(layoutForm.farm_width_m),
+        planting_system: layoutForm.planting_system || undefined,
+        custom_unusable_area_pct: layoutForm.custom_unusable_area_pct === '' ? undefined : Number(layoutForm.custom_unusable_area_pct),
+      };
+
+      const loadGuide = async (event) => {
+        event.preventDefault();
+        if (guideLoading) return;
+        if (!guideCrop.trim()) {
+          setGuideError('Select or enter a crop before loading its guide.');
+          return;
+        }
+        if (isMockMode()) {
+          setGuideError('Cultivation guides require Live API mode. Switch off Demo Mode to request the backend guide.');
+          return;
+        }
+        setGuideLoading(true);
+        setGuideError('');
+        setGuideResult(null);
+        try {
+          setGuideResult(await getCultivationGuide(guideCrop.trim()));
+        } catch (requestError) {
+          setGuideError(requestError?.message || 'Could not load the cultivation guide.');
+        } finally {
+          setGuideLoading(false);
+        }
+      };
+      const response = await generateFarmLayout(payload);
+      if (requestId === layoutRequestSequence.current) setLayoutResult(response);
+    } catch (requestError) {
+      if (requestId === layoutRequestSequence.current) setLayoutError(requestError?.message || 'Could not generate the farm layout.');
+    } finally {
+      if (requestId === layoutRequestSequence.current) setLayoutSubmitting(false);
+    }
   };
 
   const generateRecommendations = async (event) => {
@@ -220,6 +372,42 @@ export default function HybridRecommendationsPage() {
           <div className="hybrid-principles"><Leaf size={18} /><div><span className="workspace-eyebrow">AGRONOMIC PRINCIPLES</span><p>{displayValue(result.agronomic_principles)}</p><small>Sources: {result.data_sources?.length ? result.data_sources.join(', ') : 'Unavailable'}</small></div></div>
         </section>
       )}
+
+      <section className="hybrid-input-panel hybrid-layout-panel">
+        <div className="hybrid-panel-heading">
+          <div className="hybrid-icon"><Ruler size={20} /></div>
+          <div><span className="workspace-eyebrow">FARM LAYOUT / 02</span><h2>Plan the planting pattern.</h2><p>Generate allocation, spacing, row arrangement, and planting milestones from the backend layout engine.</p></div>
+        </div>
+        <form onSubmit={generateLayout} className="hybrid-form">
+          <label>Main crop<input value={form.main_crop || ''} readOnly aria-label="Main crop for layout" /></label>
+          <label>Intercrop<input name="intercrop" list="hybrid-crop-options" value={layoutForm.intercrop} onChange={updateLayoutForm} placeholder="e.g. Turmeric" required /><datalist id="hybrid-crop-options">{result?.recommendations?.map((candidate) => <option key={candidate.crop_id} value={candidate.crop_name} />)}</datalist></label>
+          <label>Farm area (hectares)<input value={form.farm_area_hectares || ''} readOnly aria-label="Farm area for layout" /></label>
+          <label>Planting system<select name="planting_system" value={layoutForm.planting_system} onChange={updateLayoutForm}><option>Multi-Tier Intercropping</option><option>Multi-Row Intercropping</option><option>Alley Cropping</option></select></label>
+          <label>Farm length (metres)<input name="farm_length_m" type="number" min="0.01" step="0.01" value={layoutForm.farm_length_m} onChange={updateLayoutForm} placeholder="Optional" /></label>
+          <label>Farm width (metres)<input name="farm_width_m" type="number" min="0.01" step="0.01" value={layoutForm.farm_width_m} onChange={updateLayoutForm} placeholder="Optional" /></label>
+          <label>Unusable area (%)<input name="custom_unusable_area_pct" type="number" min="0" max="50" step="0.1" value={layoutForm.custom_unusable_area_pct} onChange={updateLayoutForm} /></label>
+          <button type="submit" className="auth-submit hybrid-submit" disabled={layoutSubmitting}><Ruler size={16} />{layoutSubmitting ? 'Generating layout...' : 'Generate farm layout'}</button>
+        </form>
+      </section>
+
+      {layoutError && <div className="history-notice"><AlertCircle size={16} />{layoutError}<button type="button" onClick={() => setLayoutError('')} aria-label="Dismiss layout error">Dismiss</button></div>}
+      {!layoutResult && !layoutError && <div className="hybrid-empty-result">Choose an intercrop to generate a backend layout. No crop positions are shown until the service returns them.</div>}
+      {layoutResult && <LayoutResult layout={layoutResult} />}
+
+      <section className="hybrid-input-panel hybrid-guide-panel">
+        <div className="hybrid-panel-heading">
+          <div className="hybrid-icon"><Leaf size={20} /></div>
+          <div><span className="workspace-eyebrow">CULTIVATION / 03</span><h2>Grow with a clear sequence.</h2><p>Load the backend guide for a selected farm crop or a returned intercrop candidate.</p></div>
+        </div>
+        <form onSubmit={loadGuide} className="hybrid-guide-form">
+          <label>Crop guide<input list="hybrid-guide-crops" value={guideCrop} onChange={(event) => { setGuideCrop(event.target.value); setGuideResult(null); setGuideError(''); }} placeholder="Select or enter a crop" required /><datalist id="hybrid-guide-crops">{selectedFarm?.crop && <option value={selectedFarm.crop}>{selectedFarm.crop} (farm crop)</option>}{result?.recommendations?.map((candidate) => <option key={candidate.crop_id} value={candidate.crop_id}>{candidate.crop_name}</option>)}{layoutResult?.intercrop && !result?.recommendations?.some((candidate) => candidate.crop_id === layoutResult.intercrop) && <option value={layoutResult.intercrop}>{layoutResult.intercrop} (layout intercrop)</option>}</datalist></label>
+          <button type="submit" className="auth-submit hybrid-submit" disabled={guideLoading}><Leaf size={16} />{guideLoading ? 'Loading guide...' : 'Load cultivation guide'}</button>
+        </form>
+      </section>
+
+      {guideError && <div className="history-notice"><AlertCircle size={16} />{guideError}<button type="button" onClick={() => setGuideError('')} aria-label="Dismiss guide error">Dismiss</button></div>}
+      {!guideResult && !guideError && <div className="hybrid-empty-result">Select a crop to view its backend cultivation guide.</div>}
+      {guideResult && <GuideResult guide={guideResult} />}
     </div>
   );
 }

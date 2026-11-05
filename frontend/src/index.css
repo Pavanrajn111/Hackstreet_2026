@@ -150,7 +150,40 @@
   .hybrid-empty { margin-top: 0; }
   .hybrid-empty-result { padding: 24px; color: rgba(16,37,27,.6); text-align: center; border: 1px dashed rgba(16,37,27,.2); border-radius: 18px; }
   .history-notice button { margin-left: auto; border: 0; background: none; color: inherit; cursor: pointer; font-size: 11px; font-weight: 800; }
+  .hybrid-layout-panel { margin-top: 8px; }
+  .hybrid-layout-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .hybrid-layout-stats > div { padding: 14px; border: 1px solid rgba(16,37,27,.11); border-radius: 15px; background: rgba(255,255,255,.62); }
+  .hybrid-layout-stats span, .hybrid-layout-stats small { display: block; color: rgba(16,37,27,.55); font-size: 10px; }
+  .hybrid-layout-stats strong { display: block; margin-top: 6px; color: #315a2b; font-size: 17px; }
+  .hybrid-layout-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .hybrid-layout-card { display: flex; gap: 12px; padding: 18px; border: 1px solid rgba(16,37,27,.12); border-radius: 18px; background: rgba(255,255,255,.7); color: #537b47; }
+  .hybrid-layout-card h3, .hybrid-calendar h3 { margin: 5px 0 10px; color: #10251b; font-size: 17px; }
+  .hybrid-layout-card p { margin: 8px 0 0; color: rgba(16,37,27,.62); font-size: 12px; line-height: 1.55; }
+  .hybrid-layout-card p strong { color: #10251b; }
+  .hybrid-calendar { padding: 18px; border-radius: 18px; background: rgba(255,255,255,.7); border: 1px solid rgba(16,37,27,.12); }
+  .hybrid-calendar-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid #edf1ec; color: rgba(16,37,27,.62); font-size: 11px; }
+  .hybrid-calendar-row strong { color: #315a2b; }
+  .hybrid-calendar-row span { text-align: right; }
+  .hybrid-limitations { display: flex; gap: 12px; padding: 16px 18px; border-radius: 18px; background: #fff9e8; border: 1px solid #ead9a6; color: #80621b; }
+  .hybrid-limitations ul { margin: 8px 0 0; padding-left: 18px; font-size: 12px; line-height: 1.7; }
+  .hybrid-limitations p { margin: 8px 0 0; font-size: 12px; }
+  .hybrid-guide-panel { margin-top: 8px; }
+  .hybrid-guide-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px; }
+  .hybrid-guide-form label { display: grid; gap: 5px; color: rgba(16,37,27,.62); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .hybrid-guide-form select { min-height: 40px; border: 1px solid rgba(16,37,27,.16); border-radius: 10px; background: #fff; color: #10251b; font-size: 12px; padding: 8px 10px; text-transform: none; }
+  .hybrid-guide-results { margin-top: 8px; }
+  .hybrid-guide-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .hybrid-guide-overview article { padding: 16px; border: 1px solid rgba(16,37,27,.12); border-radius: 17px; background: rgba(255,255,255,.7); }
+  .hybrid-guide-overview p { margin: 8px 0 0; color: rgba(16,37,27,.68); font-size: 12px; line-height: 1.6; }
+  .hybrid-stages { padding: 18px; border: 1px solid rgba(16,37,27,.12); border-radius: 18px; background: rgba(255,255,255,.7); }
+  .hybrid-stages h3 { margin: 5px 0 12px; color: #10251b; font-size: 18px; }
+  .hybrid-stage { display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid #edf1ec; }
+  .hybrid-stage-number { display: grid; place-items: center; width: 27px; height: 27px; flex: 0 0 auto; border-radius: 50%; background: #e6f1df; color: #315a2b; font-size: 11px; font-weight: 900; }
+  .hybrid-stage h4 { margin: 2px 0 4px; color: #10251b; font-size: 13px; }
+  .hybrid-stage p { margin: 0; color: rgba(16,37,27,.64); font-size: 12px; line-height: 1.6; }
   @media (max-width: 800px) { .hybrid-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hybrid-candidate-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 680px) { .hybrid-layout-stats, .hybrid-layout-grid { grid-template-columns: 1fr 1fr; } .hybrid-calendar-row { display: grid; gap: 4px; } .hybrid-calendar-row span { text-align: left; } }
+  @media (max-width: 560px) { .hybrid-guide-form, .hybrid-guide-overview { grid-template-columns: 1fr; } }
   @media (max-width: 520px) { .history-filters { grid-template-columns: 1fr; } }
 
   .farms-heading { align-items: flex-end; }
