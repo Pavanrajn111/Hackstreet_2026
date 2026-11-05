@@ -1,0 +1,9 @@
+import React, { useState } from 'react';
+import { Bell, Check, ChevronRight, Globe2, LockKeyhole, UserRound } from 'lucide-react';
+import { useI18n } from '../i18n';
+
+export default function ProfilePage() {
+  const { lang, setLang } = useI18n();
+  const [saved, setSaved] = useState(false);
+  return <div className="workspace-page"><div className="workspace-heading"><div><span className="workspace-eyebrow">WORKSPACE / SETTINGS</span><h1>Your field companion.</h1><p>Keep your preferences close to the way you work.</p></div></div><div className="settings-layout"><aside className="settings-menu"><button className="is-active"><UserRound size={16} /> Profile</button><button><Bell size={16} /> Notifications</button><button><LockKeyhole size={16} /> Security</button><button><Globe2 size={16} /> Language</button></aside><section className="settings-panel"><div className="settings-section"><span className="workspace-eyebrow">PROFILE</span><h2>How should we address you?</h2><div className="settings-avatar">LR</div><div className="settings-fields"><label>Full name<input defaultValue="Lakshmi R." /></label><label>Farm role<select defaultValue="Farm owner"><option>Farm owner</option><option>Farm manager</option><option>Agronomist</option></select></label><label>Preferred language<select value={lang} onChange={(event) => setLang(event.target.value)}><option value="en">English</option><option value="kn">ಕನ್ನಡ (Kannada)</option><option value="hi">हिन्दी (Hindi)</option></select></label></div><button className="auth-submit settings-save" onClick={() => setSaved(true)}>{saved ? <><Check size={16} /> Saved</> : 'Save preferences'}<ChevronRight size={16} /></button></div><div className="settings-note"><span>LOCAL-FIRST WORKSPACE</span><p>Your demo preferences and farm record are stored on this device. Connect an account service when authentication is available.</p></div></section></div></div>;
+}

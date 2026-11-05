@@ -1,15 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
-import {
-  CalendarDays,
-  Database,
-  Globe2,
-  History,
-  LayoutDashboard,
-  Menu,
-  Sprout,
-  X,
-} from 'lucide-react';
+import { NavLink, Outlet, Link } from 'react-router-dom';
+import { CalendarDays, Database, Globe2, History, LayoutDashboard, LogOut, Menu, Settings2, Sprout, X, Waves } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { isMockMode, setMockMode } from '../services/api';
 
@@ -25,10 +16,10 @@ export default function AppShell() {
   }, []);
 
   const navItems = [
-    { to: '/', label: t('nav_dashboard'), icon: LayoutDashboard },
-    { to: '/setup', label: t('nav_farm_setup'), icon: Sprout },
-    { to: '/schedule', label: t('nav_schedule'), icon: CalendarDays },
-    { to: '/history', label: t('nav_history'), icon: History },
+    { to: '/app', label: 'Overview', icon: LayoutDashboard, end: true },
+    { to: '/app/intelligence', label: 'Intelligence', icon: Waves },
+    { to: '/app/schedule', label: 'Schedule', icon: CalendarDays },
+    { to: '/app/history', label: 'History', icon: History },
   ];
 
   const toggleMockMode = () => {
@@ -38,82 +29,33 @@ export default function AppShell() {
   };
 
   return (
-    <div className="app-shell min-h-screen flex flex-col">
-      <header className="app-header">
-        <div className="app-header-inner">
-          <NavLink to="/" className="brand" onClick={() => setMenuOpen(false)}>
-            <span className="brand-mark" aria-hidden="true">
-              <Sprout size={20} strokeWidth={1.8} />
-            </span>
-            <span>
-              <span className="brand-name">{t('app_name')}</span>
-              <span className="brand-meta">FIELD INTELLIGENCE / AGR002</span>
-            </span>
-          </NavLink>
-
-          <nav className="desktop-nav" aria-label="Primary navigation">
-            {navItems.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) => `nav-link ${isActive ? 'is-active' : ''}`}
-              >
-                {label}
+    <div className="product-shell min-h-screen">
+      <header className="product-header">
+        <div className="product-header-inner">
+          <Link to="/app" className="product-brand" onClick={() => setMenuOpen(false)}>
+            <span className="product-brand-mark"><Sprout size={19} /></span>
+            <span><strong>AquaGrow</strong><small>FIELD OPERATING SYSTEM</small></span>
+          </Link>
+          <nav className="product-nav">
+            {navItems.map(({ to, label, icon: Icon, end }) => (
+              <NavLink key={to} to={to} end={end} className={({ isActive }) => `product-nav-link ${isActive ? 'is-active' : ''}`}>
+                <Icon size={15} />{label}
               </NavLink>
             ))}
           </nav>
-
-          <div className="header-actions">
-            <button type="button" className={`mode-toggle ${mockActive ? 'is-demo' : ''}`} onClick={toggleMockMode}>
-              <Database size={14} />
-              <span>{mockActive ? t('mock_mode') : t('backend_mode')}</span>
+          <div className="product-actions">
+            <button type="button" className={`product-mode ${mockActive ? 'is-demo' : ''}`} onClick={toggleMockMode}>
+              <Database size={14} /><span>{mockActive ? 'DEMO MODE' : 'LIVE API'}</span>
             </button>
-            <label className="language-control">
-              <Globe2 size={15} />
-              <select value={lang} aria-label="Language Selector" onChange={(event) => setLang(event.target.value)}>
-                <option value="en">EN</option>
-                <option value="kn">ಕನ್ನಡ</option>
-                <option value="hi">हिन्दी</option>
-              </select>
-            </label>
-            <button
-              type="button"
-              className="menu-toggle"
-              aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((open) => !open)}
-            >
-              {menuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
+            <label className="product-language"><Globe2 size={14} /><select value={lang} aria-label="Language Selector" onChange={(event) => setLang(event.target.value)}><option value="en">EN</option><option value="kn">ಕನ್ನಡ</option><option value="hi">हिन्दी</option></select></label>
+            <NavLink to="/app/profile" className="profile-link" title="Profile and settings"><Settings2 size={17} /></NavLink>
+            <button type="button" className="product-menu" onClick={() => setMenuOpen((open) => !open)} aria-label="Toggle navigation">{menuOpen ? <X size={20} /> : <Menu size={20} />}</button>
           </div>
         </div>
-
-        {menuOpen && (
-          <nav className="mobile-nav" aria-label="Mobile navigation">
-            {navItems.map(({ to, label, icon: Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                onClick={() => setMenuOpen(false)}
-                className={({ isActive }) => `mobile-nav-link ${isActive ? 'is-active' : ''}`}
-              >
-                <Icon size={17} />
-                {label}
-              </NavLink>
-            ))}
-          </nav>
-        )}
+        {menuOpen && <nav className="product-mobile-nav">{navItems.map(({ to, label, icon: Icon, end }) => <NavLink key={to} to={to} end={end} onClick={() => setMenuOpen(false)} className={({ isActive }) => `product-mobile-link ${isActive ? 'is-active' : ''}`}><Icon size={17} />{label}</NavLink>)}</nav>}
       </header>
-
-      <main className="app-main">
-        <div className="page-kicker"><span /> LIVE FIELD CONSOLE <span /></div>
-        <Outlet />
-      </main>
-
-      <footer className="app-footer">
-        <span>AQUAGROW AI / SMART WATER MANAGEMENT</span>
-        <span>FAO-56 PENMAN-MONTEITH ENGINE</span>
-      </footer>
+      <main className="product-main"><Outlet /></main>
+      <footer className="product-footer"><span>AQUAGROW AI / FIELD INTELLIGENCE</span><span>© 2026 WATER-WISE FARMING</span><Link to="/"><LogOut size={13} /> Exit workspace</Link></footer>
     </div>
   );
 }
