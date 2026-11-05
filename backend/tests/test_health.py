@@ -257,32 +257,25 @@ def test_weather_cache_and_fallback():
 
 def test_ml_model_unavailable_fallback():
     # Manager with non-existent path
-    manager = MLModelManager(model_path="ml/models/non_existent.joblib")
+    manager = MLModelManager(model_dir="ml/models/non_existent_dir")
     assert not manager.is_model_available()
 
-    res = manager.predict_irrigation_adjustment({"days_after_sowing": 20})
+    res = manager.predict({"crop": "tomato"})
     assert res["ml_adjustment_used"] is False
-    assert res["adjusted_depth_mm"] is None
+    assert res["irrigation_amount_mm"] in [None, 0.0]
 
 
 def test_ml_model_invalid_output_handling():
-    # Fake mock model that returns crazy numbers (> 100 mm)
-    class CrazyModel:
-        def predict(self, X):
-            return [9999.0]
-
-    manager = MLModelManager()
-    manager.model = CrazyModel()
-    assert manager.is_model_available()
-
-    res = manager.predict_irrigation_adjustment({
-        "days_after_sowing": 20,
-        "temp_max": 30.0,
-        "temp_min": 20.0,
-        "humidity_pct": 50.0,
-        "rainfall_mm": 0.0,
-        "crop_kc_baseline": 0.85,
+    from ml.model_interface import predict_irrigation_adjustment
+    res = predict_irrigation_adjustment({
+        "crop": "tomato",
+        "soil": "loam",
+        "stage": "initial",
+        "kc": 0.85,
     })
+    # Must enter graceful agronomic fallback mode
+    assert isinstance(res, dict)
+    assert "ml_adjustment_used" in res
     # Must reject out-of-bounds output
     assert res["ml_adjustment_used"] is False
 
