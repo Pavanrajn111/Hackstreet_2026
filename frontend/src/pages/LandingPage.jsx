@@ -7,6 +7,9 @@ const image = (id, width = 1400) => `https://images.unsplash.com/${id}?auto=form
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
   const heroRef = useRef(null);
   const heroVideoRef = useRef(null);
 
@@ -16,6 +19,7 @@ export default function LandingPage() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
     const syncVideoMotion = () => {
+      setReducedMotion(motionPreference.matches);
       if (!heroVideoRef.current) return;
       if (motionPreference.matches) {
         heroVideoRef.current.pause();
@@ -60,14 +64,14 @@ export default function LandingPage() {
           <video
             className="public-hero-video"
             ref={heroVideoRef}
-            autoPlay
+            autoPlay={!reducedMotion}
             loop
             muted
             playsInline
             poster={image('photo-1500382017468-9049fed80a4d', 2200)}
             aria-hidden="true"
           >
-            <source src="https://assets.mixkit.co/videos/preview/mixkit-green-fields-and-mountains-under-a-cloudy-sky-12330-large.mp4" type="video/mp4" />
+            <source src="/videos/acre-hero.mp4" type="video/mp4" />
           </video>
           <div className="public-hero-overlay" />
           <div className="public-hero-content reveal-on-load">

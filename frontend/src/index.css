@@ -172,7 +172,7 @@
 .pill-button:hover { transform: translateY(-2px); }
 .pill-button.light { color: #10251b; background: #fff; }
 .pill-button.cream { color: #10251b; background: #f5f3ea; }
-.public-hero { min-height: min(840px, 100vh); position: relative; display: flex; align-items: flex-end; padding: 170px clamp(20px, 8vw, 120px) 58px; color: #fff; background: url('https://images.unsplash.com/photo-1500382017468-9049fed80a4d?auto=format&fit=crop&w=2200&q=88') center/cover; }
+.public-hero { min-height: min(840px, 100vh); position: relative; display: flex; align-items: flex-end; padding: 170px clamp(20px, 8vw, 120px) 58px; color: #fff; background: #173f2a; }
 .public-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(16,37,27,.3), rgba(16,37,27,.05) 35%, rgba(16,37,27,.8)); }
 .public-hero-content { position: relative; max-width: 950px; z-index: 1; }
 .public-eyebrow, .section-marker, .workspace-eyebrow, .auth-eyebrow { display: block; font-size: 10px; font-weight: 600; letter-spacing: .16em; }
