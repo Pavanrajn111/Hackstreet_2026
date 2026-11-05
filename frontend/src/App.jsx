@@ -16,6 +16,7 @@ import CropSuitabilityPage from './pages/CropSuitabilityPage';
 import CropPlannerPage from './pages/CropPlannerPage';
 import MarketIntelligencePage from './pages/MarketIntelligencePage';
 import AdaptiveIrrigationPage from './pages/AdaptiveIrrigationPage';
+import CommunityWaterPage from './pages/CommunityWaterPage';
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="app/intelligence/crop-planner" element={<CropPlannerPage />} />
             <Route path="app/intelligence/market" element={<MarketIntelligencePage />} />
             <Route path="app/intelligence/adaptive-irrigation" element={<AdaptiveIrrigationPage />} />
+            <Route path="app/community-water" element={<CommunityWaterPage />} />
             <Route path="app/intelligence/hybrid" element={<HybridRecommendationsPage />} />
             <Route path="app/profile" element={<ProfilePage />} />
           </Route>

@@ -134,6 +134,17 @@
   .adaptive-method-list { display: flex; flex-wrap: wrap; gap: 8px; }
   .adaptive-method-list label { display: inline-flex; align-items: center; gap: 7px; padding: 8px 10px; border: 1px solid rgba(16,37,27,.14); border-radius: 999px; background: rgba(255,255,255,.7); color: rgba(16,37,27,.7); font-size: 11px; }
   .adaptive-method-list input { accent-color: #537b47; }
+  .community-filter-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+  .community-filter-grid label { display: grid; gap: 5px; color: rgba(16,37,27,.62); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+  .community-filter-grid input, .community-filter-grid select { min-height: 40px; border: 1px solid rgba(16,37,27,.16); border-radius: 10px; background: #fff; padding: 8px; font-size: 12px; }
+  .community-resource-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .community-card-topline { display: flex; justify-content: space-between; gap: 10px; color: rgba(16,37,27,.55); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
+  .community-danger-action { color: #a44a3f; margin-left: 14px; }
+  .community-request-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .community-consent { display: flex !important; grid-template-columns: none !important; align-items: flex-start; gap: 8px; margin-top: 10px; color: #315a2b !important; }
+  .community-consent input { margin-top: 3px; accent-color: #537b47; }
+  @media (max-width: 800px) { .community-filter-grid, .community-resource-grid, .community-request-list { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .community-filter-grid, .community-resource-grid, .community-request-list { grid-template-columns: 1fr; } }
   .market-model-banner { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 16px 18px; border: 1px solid rgba(16,37,27,.12); border-radius: 18px; background: #edf5e9; }
   .market-model-banner > div { display: flex; align-items: center; gap: 10px; color: #315a2b; }
   .market-model-banner strong { display: block; margin-top: 4px; color: #10251b; font-size: 14px; }
