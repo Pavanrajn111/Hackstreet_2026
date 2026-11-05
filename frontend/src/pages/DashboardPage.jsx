@@ -145,6 +145,18 @@ export default function DashboardPage() {
       {/* Simulation / Offline Cached Pill Banner */}
       <DemoBanner isCached={is_cached} onLoadPreset={handlePresetLoad} />
 
+      <section className="editorial-hero">
+        <div className="editorial-hero-copy">
+          <span className="eyebrow">01 / OBSERVE YOUR FIELD</span>
+          <h1>Better water decisions<br /><em>start with attention.</em></h1>
+          <p>One calm view of your soil, crop and weather signals, so the next irrigation decision is clear.</p>
+        </div>
+        <div className="editorial-hero-meta">
+          <span className="live-dot" /> LIVE FIELD RECORD
+          <strong>{farm?.district || 'Bengaluru Rural'}</strong>
+        </div>
+      </section>
+
       {/* Farm Quick Summary Strip */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div>
