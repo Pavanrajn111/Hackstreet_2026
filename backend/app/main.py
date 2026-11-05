@@ -10,7 +10,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.api.api_v1 import api_router
+from app.api.api_v1 import api_router, api_v1_router
+
+# Ensure all database models are registered with Base metadata
+import app.models.farm
+import app.models.community_water
 
 # Initialize database tables (SQLite)
 Base.metadata.create_all(bind=engine)
@@ -32,6 +36,7 @@ app.add_middleware(
 
 # Mount API routers
 app.include_router(api_router)
+app.include_router(api_v1_router)
 
 
 @app.get("/", tags=["Root"])
