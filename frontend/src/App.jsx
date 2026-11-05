@@ -12,6 +12,8 @@ import IntelligencePage from './pages/IntelligencePage';
 import ProfilePage from './pages/ProfilePage';
 import MyFarmsPage from './pages/MyFarmsPage';
 import HybridRecommendationsPage from './pages/HybridRecommendationsPage';
+import CropSuitabilityPage from './pages/CropSuitabilityPage';
+import CropPlannerPage from './pages/CropPlannerPage';
 
 export default function App() {
   return (
@@ -29,6 +31,8 @@ export default function App() {
             <Route path="app/schedule" element={<SchedulePage />} />
             <Route path="app/history" element={<HistoryPage />} />
             <Route path="app/intelligence" element={<IntelligencePage />} />
+            <Route path="app/intelligence/crop-suitability" element={<CropSuitabilityPage />} />
+            <Route path="app/intelligence/crop-planner" element={<CropPlannerPage />} />
             <Route path="app/intelligence/hybrid" element={<HybridRecommendationsPage />} />
             <Route path="app/profile" element={<ProfilePage />} />
           </Route>

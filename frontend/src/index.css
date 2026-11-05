@@ -129,6 +129,8 @@
   .hybrid-panel-heading h2, .hybrid-result-summary h2 { margin: 6px 0 4px; color: #10251b; font-size: 24px; letter-spacing: -.04em; }
   .hybrid-panel-heading p, .hybrid-result-summary p { margin: 0; color: rgba(16,37,27,.58); font-size: 12px; }
   .hybrid-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .hybrid-form-grid { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .hybrid-form-grid label span { display: block; color: rgba(16,37,27,.45); font-size: 9px; font-weight: 500; letter-spacing: 0; text-transform: none; }
   .hybrid-form label { display: grid; gap: 5px; color: rgba(16,37,27,.62); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
   .hybrid-form input, .hybrid-form select { min-height: 40px; border: 1px solid rgba(16,37,27,.16); border-radius: 10px; background: #fff; color: #10251b; font-size: 12px; padding: 8px 10px; text-transform: none; }
   .hybrid-submit { grid-column: 1 / -1; justify-self: start; border: 0; cursor: pointer; }
@@ -200,6 +202,8 @@
   .hybrid-product-results { margin-top: 8px; }
   .hybrid-product-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
   .hybrid-product-card { padding: 18px; border: 1px solid rgba(16,37,27,.12); border-radius: 20px; background: rgba(255,255,255,.75); }
+  .hybrid-product-card.is-highlighted { border-color: #8db17c; box-shadow: 0 12px 30px rgba(62,93,51,.1); }
+  .hybrid-product-card-heading { display: flex; align-items: center; justify-content: space-between; color: #537b47; }
   .hybrid-product-card h3 { margin: 6px 0 3px; color: #10251b; font-size: 19px; }
   .hybrid-product-card > div > p { margin: 0; color: rgba(16,37,27,.52); font-size: 10px; }
   .hybrid-product-margin { color: #315a2b; font-size: 21px; text-align: right; }
@@ -224,9 +228,9 @@
   .hybrid-profit-grid .hybrid-layout-card strong { color: #10251b; }
   .hybrid-principles ul { margin: 8px 0 10px; padding-left: 18px; font-size: 12px; line-height: 1.7; }
   @media (max-width: 800px) { .hybrid-profit-scenarios, .hybrid-profit-grid { grid-template-columns: 1fr; } }
-  @media (max-width: 800px) { .hybrid-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hybrid-candidate-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 800px) { .hybrid-form, .hybrid-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hybrid-candidate-grid { grid-template-columns: 1fr; } }
   @media (max-width: 680px) { .hybrid-layout-stats, .hybrid-layout-grid { grid-template-columns: 1fr 1fr; } .hybrid-calendar-row { display: grid; gap: 4px; } .hybrid-calendar-row span { text-align: left; } }
-  @media (max-width: 560px) { .hybrid-guide-form, .hybrid-guide-overview { grid-template-columns: 1fr; } }
+  @media (max-width: 560px) { .hybrid-guide-form, .hybrid-guide-overview, .hybrid-form-grid { grid-template-columns: 1fr; } }
   @media (max-width: 520px) { .history-filters { grid-template-columns: 1fr; } }
 
   .farms-heading { align-items: flex-end; }
