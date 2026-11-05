@@ -68,6 +68,14 @@ export default function IrrigationSchedule({ schedule = [] }) {
         </div>
       </div>
 
+      {schedule.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+          <CalendarDays className="w-7 h-7 text-slate-400 mx-auto mb-2" />
+          <p className="text-xs font-semibold text-slate-700">No irrigation schedule returned.</p>
+          <p className="text-[11px] text-slate-500 mt-1">The recommendation does not include scheduled events for this farm.</p>
+        </div>
+      ) : (
+      <>
       {/* Visual Volume Distribution Chart */}
       <div className="h-44 w-full pt-1">
         <ResponsiveContainer width="100%" height="100%">
@@ -145,6 +153,8 @@ export default function IrrigationSchedule({ schedule = [] }) {
           </div>
         ))}
       </div>
+      </>
+      )}
     </div>
   );
 }

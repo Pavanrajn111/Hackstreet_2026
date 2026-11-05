@@ -126,11 +126,18 @@
   .farm-select-button, .farm-details-button { border: 0; background: transparent; color: #25553b; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 800; padding: 0; }
   .farm-select-button:disabled { color: rgba(16,37,27,.45); cursor: default; }
   .farm-details-button { color: rgba(16,37,27,.62); font-weight: 600; }
+  .farm-card-secondary-actions { display: inline-flex; align-items: center; gap: 10px; }
+  .farm-icon-button { display: inline-flex; align-items: center; justify-content: center; border: 0; background: transparent; color: #25553b; cursor: pointer; padding: 3px; }
+  .farm-icon-button.is-danger, .farm-delete-action { color: #9c3d34; }
+  .farm-delete-action { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(156,61,52,.28); border-radius: 12px; background: #fff3f1; cursor: pointer; font-size: 12px; font-weight: 800; padding: 10px 13px; }
+  .farm-delete-action:disabled { cursor: wait; opacity: .6; }
+  .farm-delete-copy { color: rgba(16,37,27,.68); font-size: 14px; line-height: 1.6; margin: 0 0 18px; }
   .farm-active-panel { position: sticky; top: 108px; background: #193b2b; color: #f5f3ea; }
   .farm-active-panel h2 { color: #f5f3ea; margin-top: 16px; }
   .farm-active-panel p { color: rgba(245,243,234,.7); font-size: 13px; margin-bottom: 24px; }
   .farm-active-panel .outline-action { color: #f5f3ea; border-color: rgba(245,243,234,.35); }
   .farms-error, .farm-form-error { display: flex; align-items: center; gap: 8px; border: 1px solid #e8b6af; background: #fff3f1; color: #8d3028; border-radius: 14px; padding: 12px 14px; font-size: 12px; }
+  .farms-success { display: flex; align-items: center; gap: 8px; border: 1px solid #b8d5b6; background: #eff8ed; color: #25553b; border-radius: 14px; padding: 12px 14px; font-size: 12px; }
   .farms-error button { margin-left: auto; border: 0; background: transparent; color: #8d3028; cursor: pointer; font-weight: 800; }
   .farms-empty { min-height: 360px; }
   .farm-modal-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: rgba(16,37,27,.46); }

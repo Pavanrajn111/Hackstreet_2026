@@ -2,7 +2,7 @@ import React from 'react';
 import { CloudRain, Sun, Cloud, CloudSun, AlertTriangle, Droplet } from 'lucide-react';
 import { useI18n } from '../i18n';
 
-export default function WeatherPanel({ weatherData = [], rainWarning = null, isDemo = true }) {
+export default function WeatherPanel({ weatherData = [], rainWarning = null, isDemo = true, weatherSource = 'unknown' }) {
   const { t } = useI18n();
 
   const getWeatherIcon = (condition) => {
@@ -25,6 +25,11 @@ export default function WeatherPanel({ weatherData = [], rainWarning = null, isD
           </h3>
           <p className="text-xs text-slate-500">Local rainfall, temperatures & evapotranspiration</p>
         </div>
+        {!isDemo && weatherSource !== 'unknown' && (
+          <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[10px] font-semibold border border-slate-200">
+            {weatherSource} weather
+          </span>
+        )}
         {isDemo && (
           <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[10px] font-semibold border border-slate-200">
             {t('demo_pill')}
@@ -62,6 +67,15 @@ export default function WeatherPanel({ weatherData = [], rainWarning = null, isD
               <span className="text-xs font-extrabold">{Math.round(day.temp_max_c)}°</span>
               <span className="text-[10px] text-slate-400">{Math.round(day.temp_min_c)}°</span>
             </div>
+            <span className="mt-1 text-[10px] text-slate-500">
+              {typeof day.humidity_pct === 'number' ? `${day.humidity_pct}% humidity` : 'Humidity unavailable'}
+            </span>
+            <span className="text-[10px] text-slate-500">
+              {typeof day.et0_mm === 'number' ? `${day.et0_mm} mm ET0` : 'ET0 unavailable'}
+            </span>
+            <span className="text-[10px] text-slate-500 truncate max-w-full" title={day.condition || undefined}>
+              {day.condition || 'Condition unavailable'}
+            </span>
 
             {/* Rainfall mm */}
             {day.rainfall_mm > 0 ? (

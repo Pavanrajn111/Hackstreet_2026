@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, ArrowRight, Check, ChevronRight, MapPin, Plus, Ruler, Sprout, X } from 'lucide-react';
+import { AlertCircle, ArrowRight, Check, ChevronRight, MapPin, Pencil, Plus, Ruler, Sprout, Trash2, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { isMockMode, getFarms, saveFarm } from '../services/api';
-import { createFarm, getFarm, listFarms } from '../services/farmService';
+import { isMockMode, getFarms, saveFarm, updateSavedFarm, deleteSavedFarm } from '../services/api';
+import { createFarm, deleteFarm, getFarm, listFarms, updateFarm } from '../services/farmService';
 import { defaultFarm } from '../data/mockFarm';
 import { getActiveFarmId, setActiveFarmId } from '../services/farmSelection';
 import LoadingState from '../components/LoadingState';
@@ -18,11 +18,26 @@ const EMPTY_FORM = {
 
 const formatArea = (area) => (area === undefined || area === null || area === '' ? 'Area not recorded' : `${area} ha`);
 const getFarmKey = (farm) => farm?.id ?? farm?.farm_name;
+const getFarmPayload = (farm) => ({
+  farm_name: farm.farm_name,
+  district: farm.district,
+  latitude: farm.latitude,
+  longitude: farm.longitude,
+  crop: farm.crop,
+  soil_type: farm.soil_type,
+  sowing_date: farm.sowing_date,
+  farm_area_hectares: farm.farm_area_hectares,
+  irrigation_method: farm.irrigation_method,
+  last_irrigation_date: farm.last_irrigation_date,
+  pump_flow_rate_lpm: farm.pump_flow_rate_lpm,
+});
 
 export default function MyFarmsPage() {
   const [farms, setFarms] = useState([]);
   const [activeFarmId, setActiveFarmIdState] = useState(getActiveFarmId());
   const [selectedFarm, setSelectedFarm] = useState(null);
+  const [editingFarm, setEditingFarm] = useState(null);
+  const [deletingFarm, setDeletingFarm] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
@@ -30,6 +45,8 @@ export default function MyFarmsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [formError, setFormError] = useState('');
+  const [operationError, setOperationError] = useState('');
+  const [operationSuccess, setOperationSuccess] = useState('');
 
   const loadFarms = async () => {
     setLoading(true);
@@ -47,12 +64,13 @@ export default function MyFarmsPage() {
         setActiveFarmId(nextKey);
       }
     } catch (loadError) {
-      try {
+      const canUseOfflineFallback = loadError?.code === 'NETWORK_ERROR' || loadError?.code === 'TIMEOUT';
+      if (canUseOfflineFallback) {
         const fallback = await getFarms();
         setFarms(Array.isArray(fallback) ? fallback : []);
-      } catch (fallbackError) {
+      } else {
         console.error('Failed to load farms:', loadError);
-        setError('Could not load your farms. Check your connection and try again.');
+        setError(loadError?.message || 'Could not load your farms.');
       }
     } finally {
       setLoading(false);
@@ -88,6 +106,53 @@ export default function MyFarmsPage() {
       console.warn('Could not load farm details:', detailsError.message);
     } finally {
       setDetailsLoading(false);
+    }
+  };
+
+  const handleEdit = (farm) => {
+    setSelectedFarm(null);
+    setOperationError('');
+    setOperationSuccess('');
+    setFormData({ ...EMPTY_FORM, ...farm });
+    setEditingFarm(farm);
+  };
+
+  const handleDelete = async () => {
+    if (!deletingFarm || saving) return;
+    setSaving(true);
+    setOperationError('');
+    try {
+      if (isMockMode() || deletingFarm.id === undefined) {
+        deleteSavedFarm();
+      } else {
+        await deleteFarm(deletingFarm.id);
+      }
+      const deletedKey = getFarmKey(deletingFarm);
+      const remaining = farms.filter((farm) => String(getFarmKey(farm)) !== String(deletedKey));
+      setFarms(remaining);
+      if (String(getFarmKey(activeFarm)) === String(deletedKey)) {
+        const nextFarm = remaining[0];
+        if (nextFarm) handleSelect(nextFarm);
+        else {
+          setActiveFarmIdState(null);
+          setActiveFarmId(null);
+        }
+      }
+      setDeletingFarm(null);
+      setOperationSuccess(`${deletingFarm.farm_name || 'Farm'} was deleted.`);
+      await loadFarms();
+    } catch (deleteError) {
+      const canUseOfflineFallback = deleteError?.code === 'NETWORK_ERROR' || deleteError?.code === 'TIMEOUT';
+      if (canUseOfflineFallback) {
+        deleteSavedFarm();
+        setDeletingFarm(null);
+        setOperationSuccess('The farm was removed from this device. It will remain on the server until connectivity is restored.');
+        await loadFarms();
+      } else {
+        setOperationError(deleteError?.message || 'The farm could not be deleted.');
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -151,6 +216,54 @@ export default function MyFarmsPage() {
     }
   };
 
+  const handleSaveEdit = async (event) => {
+    event.preventDefault();
+    const validationMessage = validateForm();
+    if (validationMessage || !editingFarm) {
+      setFormError(validationMessage || 'The farm could not be identified.');
+      return;
+    }
+    setSaving(true);
+    setFormError('');
+    try {
+      const updated = isMockMode() || editingFarm.id === undefined
+        ? updateSavedFarm({ ...editingFarm, ...formData })
+        : await updateFarm(editingFarm.id, getFarmPayload(formData));
+      const updatedKey = getFarmKey(editingFarm);
+      setFarms((current) => current.map((farm) => (
+        String(getFarmKey(farm)) === String(updatedKey) ? { ...farm, ...updated } : farm
+      )));
+      if (String(getFarmKey(activeFarm)) === String(updatedKey)) {
+        handleSelect({ ...editingFarm, ...updated });
+      }
+      setEditingFarm(null);
+      setFormData(EMPTY_FORM);
+      setOperationSuccess(`${updated.farm_name || 'Farm'} was updated.`);
+      await loadFarms();
+    } catch (updateError) {
+      const canUseOfflineFallback = updateError?.code === 'NETWORK_ERROR' || updateError?.code === 'TIMEOUT';
+      if (canUseOfflineFallback) {
+        updateSavedFarm(formData);
+        setEditingFarm(null);
+        setFormData(EMPTY_FORM);
+        setOperationSuccess('The farm was updated on this device. It will sync when connectivity is restored.');
+        await loadFarms();
+      } else {
+        setFormError(updateError?.message || 'The farm could not be updated.');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openCreateForm = () => {
+    setOperationError('');
+    setOperationSuccess('');
+    setFormError('');
+    setFormData(EMPTY_FORM);
+    setShowForm(true);
+  };
+
   if (loading) return <LoadingState message="Loading your farms..." />;
 
   return (
@@ -161,7 +274,7 @@ export default function MyFarmsPage() {
           <h1>Every field, in one view.</h1>
           <p>Choose the farm you want to use for today&apos;s field intelligence.</p>
         </div>
-        <button type="button" className="auth-submit farms-add-button" onClick={() => setShowForm(true)}>
+        <button type="button" className="auth-submit farms-add-button" onClick={openCreateForm}>
           <Plus size={16} /> Add farm
         </button>
       </div>
@@ -169,6 +282,8 @@ export default function MyFarmsPage() {
       {error && (
         <div className="farms-error"><AlertCircle size={17} />{error}<button type="button" onClick={loadFarms}>Retry</button></div>
       )}
+      {operationError && <div className="farms-error"><AlertCircle size={17} />{operationError}</div>}
+      {operationSuccess && <div className="farms-success"><Check size={17} />{operationSuccess}</div>}
 
       {farms.length === 0 ? (
         <section className="empty-workspace farms-empty">
@@ -176,7 +291,7 @@ export default function MyFarmsPage() {
           <span className="workspace-eyebrow">NO FIELD RECORDS YET</span>
           <h2>Start with your first farm.</h2>
           <p>Add the field details that power weather-aware irrigation decisions.</p>
-          <button type="button" className="outline-action" onClick={() => setShowForm(true)}><Plus size={15} /> Add your first farm</button>
+          <button type="button" className="outline-action" onClick={openCreateForm}><Plus size={15} /> Add your first farm</button>
         </section>
       ) : (
         <div className="farms-layout">
@@ -200,7 +315,11 @@ export default function MyFarmsPage() {
                     <button type="button" className="farm-select-button" onClick={() => handleSelect(farm)} disabled={isActive}>
                       {isActive ? 'Selected' : 'Use this farm'} {!isActive && <ArrowRight size={14} />}
                     </button>
-                    <button type="button" className="farm-details-button" onClick={() => handleOpenDetails(farm)}>Details <ChevronRight size={14} /></button>
+                    <div className="farm-card-secondary-actions">
+                      <button type="button" className="farm-details-button" onClick={() => handleOpenDetails(farm)}>Details <ChevronRight size={14} /></button>
+                      <button type="button" className="farm-icon-button" onClick={() => handleEdit(farm)} aria-label={`Edit ${farm.farm_name || 'farm'}`}><Pencil size={14} /></button>
+                      <button type="button" className="farm-icon-button is-danger" onClick={() => { setOperationError(''); setDeletingFarm(farm); }} aria-label={`Delete ${farm.farm_name || 'farm'}`}><Trash2 size={14} /></button>
+                    </div>
                   </div>
                 </article>
               );
@@ -266,6 +385,58 @@ export default function MyFarmsPage() {
                 <p><span>Coordinates</span><strong>{selectedFarm.latitude}, {selectedFarm.longitude}</strong></p>
               </div>
             )}
+            <div className="farm-modal-actions">
+              <button type="button" className="outline-action" onClick={() => handleEdit(selectedFarm)}><Pencil size={14} /> Edit farm</button>
+              <button type="button" className="farm-delete-action" onClick={() => { setSelectedFarm(null); setDeletingFarm(selectedFarm); }}><Trash2 size={14} /> Delete farm</button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {editingFarm && (
+        <div className="farm-modal-backdrop" role="presentation">
+          <section className="farm-modal" role="dialog" aria-modal="true" aria-labelledby="edit-farm-title">
+            <div className="farm-modal-header">
+              <div><span className="workspace-eyebrow">FIELD RECORD / EDIT</span><h2 id="edit-farm-title">Update this farm.</h2></div>
+              <button type="button" className="farm-close-button" onClick={() => setEditingFarm(null)} aria-label="Close edit farm form"><X size={19} /></button>
+            </div>
+            <form onSubmit={handleSaveEdit} className="farm-create-form">
+              {formError && <p className="farm-form-error"><AlertCircle size={15} /> {formError}</p>}
+              <label>Farm name<input name="farm_name" value={formData.farm_name || ''} onChange={updateForm} /></label>
+              <label>District<input name="district" value={formData.district || ''} onChange={updateForm} /></label>
+              <div className="farm-form-row">
+                <label>Crop<input name="crop" value={formData.crop || ''} onChange={updateForm} /></label>
+                <label>Soil type<input name="soil_type" value={formData.soil_type || ''} onChange={updateForm} /></label>
+              </div>
+              <div className="farm-form-row">
+                <label>Area (hectares)<input type="number" min="0.01" step="0.01" name="farm_area_hectares" value={formData.farm_area_hectares ?? ''} onChange={updateForm} /></label>
+                <label>Sowing date<input type="date" name="sowing_date" value={formData.sowing_date || ''} onChange={updateForm} /></label>
+              </div>
+              <div className="farm-form-row">
+                <label>Latitude<input type="number" step="any" name="latitude" value={formData.latitude ?? ''} onChange={updateForm} /></label>
+                <label>Longitude<input type="number" step="any" name="longitude" value={formData.longitude ?? ''} onChange={updateForm} /></label>
+              </div>
+              <div className="farm-modal-actions">
+                <button type="button" className="outline-action" onClick={() => setEditingFarm(null)}>Cancel</button>
+                <button type="submit" className="auth-submit" disabled={saving}>{saving ? 'Updating...' : 'Update farm'} {!saving && <ArrowRight size={15} />}</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+
+      {deletingFarm && (
+        <div className="farm-modal-backdrop" role="presentation">
+          <section className="farm-modal farm-delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-farm-title">
+            <div className="farm-modal-header">
+              <div><span className="workspace-eyebrow">REMOVE FIELD RECORD</span><h2 id="delete-farm-title">Delete this farm?</h2></div>
+              <button type="button" className="farm-close-button" onClick={() => setDeletingFarm(null)} aria-label="Cancel delete"><X size={19} /></button>
+            </div>
+            <p className="farm-delete-copy">You are about to delete <strong>{deletingFarm.farm_name || 'this farm'}</strong>. This cannot be undone.</p>
+            <div className="farm-modal-actions">
+              <button type="button" className="outline-action" onClick={() => setDeletingFarm(null)}>Keep farm</button>
+              <button type="button" className="farm-delete-action" onClick={handleDelete} disabled={saving}>{saving ? 'Deleting...' : 'Delete farm'} <Trash2 size={14} /></button>
+            </div>
           </section>
         </div>
       )}

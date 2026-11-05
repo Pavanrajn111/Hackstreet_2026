@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRight, CalendarDays, Check, Clock3, Droplets, MapPin, RefreshCw, Sprout, Waves } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '../i18n';
@@ -13,6 +13,10 @@ import AlertsList from '../components/AlertsList';
 import ShareSummary from '../components/ShareSummary';
 import VoiceReader from '../components/VoiceReader';
 import { getActiveFarmId } from '../services/farmSelection';
+import { getRecommendationByFarm, createRecommendation } from '../services/irrigationService';
+import { getRecommendationWeather, getWeatherStatus } from '../services/weatherService';
+import IrrigationSchedule from '../components/IrrigationSchedule';
+import { isMockMode } from '../services/api';
 
 export default function DashboardPage() {
   const { t } = useI18n();
@@ -20,22 +24,56 @@ export default function DashboardPage() {
   const [recommendation, setRecommendation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const requestSequence = useRef(0);
 
   const loadData = async () => {
+    const requestId = requestSequence.current + 1;
+    requestSequence.current = requestId;
     try {
       setLoading(true);
       setError(null);
       const farms = await getFarms();
       const selectedId = getActiveFarmId();
       const activeFarm = farms?.find((candidate) => String(candidate.id ?? candidate.farm_name) === String(selectedId)) || farms?.[0];
+      if (requestId !== requestSequence.current) return;
       setFarm(activeFarm);
-      if (activeFarm) setRecommendation(await getRecommendation(activeFarm));
-      else setRecommendation(null);
+      if (!activeFarm) {
+        setRecommendation(null);
+        return;
+      }
+
+      let nextRecommendation;
+      if (isMockMode()) {
+        nextRecommendation = await getRecommendation(activeFarm);
+      } else if (activeFarm.id !== undefined) {
+        nextRecommendation = await getRecommendationByFarm(activeFarm.id);
+      } else {
+        nextRecommendation = await createRecommendation(activeFarm);
+      }
+      if (requestId !== requestSequence.current) return;
+      setRecommendation(nextRecommendation);
     } catch (loadError) {
+      if (requestId !== requestSequence.current) return;
       console.error('Error fetching dashboard:', loadError);
-      setError('Could not retrieve field intelligence. Try again or load the demo record.');
+      if (!isMockMode() && (loadError?.code === 'NETWORK_ERROR' || loadError?.code === 'TIMEOUT')) {
+        try {
+          const farms = await getFarms();
+          const selectedId = getActiveFarmId();
+          const activeFarm = farms?.find((candidate) => String(candidate.id ?? candidate.farm_name) === String(selectedId)) || farms?.[0];
+          const cachedRecommendation = activeFarm ? await getRecommendation(activeFarm) : null;
+          if (requestId === requestSequence.current) {
+            setFarm(activeFarm);
+            setRecommendation(cachedRecommendation);
+            setError(cachedRecommendation?.is_cached ? null : loadError.message);
+          }
+          return;
+        } catch (fallbackError) {
+          console.warn('Offline recommendation fallback failed:', fallbackError.message);
+        }
+      }
+      setError(loadError?.message || 'Could not retrieve field intelligence.');
     } finally {
-      setLoading(false);
+      if (requestId === requestSequence.current) setLoading(false);
     }
   };
 
@@ -89,10 +127,15 @@ export default function DashboardPage() {
     over_irrigation_note: overNote,
     alerts,
   } = recommendation;
+  const weatherDetails = getRecommendationWeather(recommendation);
+  const weatherStatus = getWeatherStatus(weatherDetails.source);
+  const displayValue = (value, suffix = '') => (
+    value === null || value === undefined || value === '' ? 'Unavailable' : `${value}${suffix}`
+  );
 
   const decisionText = irrigateToday ? 'Irrigate today.' : 'Let the field breathe.';
   const summary = irrigateToday
-    ? `Apply ${irrigationDepth} mm through ${farm.irrigation_method || 'drip irrigation'}.`
+    ? `Apply ${displayValue(irrigationDepth, ' mm')} through ${farm.irrigation_method || 'the recorded irrigation method'}.`
     : 'Soil moisture is within a healthy range. No extra watering is needed today.';
 
   return (
@@ -118,7 +161,7 @@ export default function DashboardPage() {
           <p>{summary}</p>
           <div className="decision-tags">
             <span><Sprout size={14} /> {growthStage}</span>
-            <span><CalendarDays size={14} /> {t('next_irrigation')}: {nextIrrigationDate || 'tomorrow'}</span>
+            <span><CalendarDays size={14} /> {t('next_irrigation')}: {displayValue(nextIrrigationDate)}</span>
             {riskStatus && <span>{t('risk_status')}: {riskStatus}</span>}
           </div>
         </div>
@@ -130,9 +173,9 @@ export default function DashboardPage() {
 
       {irrigateToday && (
         <section className="measure-row">
-          <div><span>RECOMMENDED DEPTH</span><strong>{irrigationDepth}<small> mm</small></strong><p>Crop coefficient {cropCoefficient}</p></div>
-          <div><span>WATER VOLUME</span><strong>{(waterVolume / 1000).toFixed(1)}<small> kL</small></strong><p><Waves size={13} /> Delivered to the root zone</p></div>
-          <div><span>PUMP WINDOW</span><strong>{pumpRuntime}<small> min</small></strong><p><Clock3 size={13} /> At {farm.pump_flow_rate_lpm || 120} L/min</p></div>
+          <div><span>RECOMMENDED DEPTH</span><strong>{displayValue(irrigationDepth)}<small>{irrigationDepth === null || irrigationDepth === undefined ? '' : ' mm'}</small></strong><p>Crop coefficient {displayValue(cropCoefficient)}</p></div>
+          <div><span>WATER VOLUME</span><strong>{waterVolume === null || waterVolume === undefined ? 'Unavailable' : (waterVolume / 1000).toFixed(1)}<small>{waterVolume === null || waterVolume === undefined ? '' : ' kL'}</small></strong><p><Waves size={13} /> Delivered to the root zone</p></div>
+          <div><span>PUMP WINDOW</span><strong>{displayValue(pumpRuntime)}<small>{pumpRuntime === null || pumpRuntime === undefined ? '' : ' min'}</small></strong><p><Clock3 size={13} /> {farm.pump_flow_rate_lpm ? `At ${farm.pump_flow_rate_lpm} L/min` : 'Flow rate unavailable'}</p></div>
         </section>
       )}
 
@@ -155,7 +198,8 @@ export default function DashboardPage() {
         overNote={overNote}
       />
       <AlertsList alerts={alerts} />
-      <WeatherPanel weatherData={weather || []} rainWarning={rainWarning} isDemo={isDemoData} />
+      <WeatherPanel weatherData={weatherDetails.forecast} rainWarning={rainWarning} isDemo={isDemoData} weatherSource={weatherStatus} />
+      <IrrigationSchedule schedule={recommendation.seven_day_schedule || []} />
       <AnalyticsCharts recommendation={recommendation} />
 
       <div className="dashboard-section-heading dashboard-schedule-link">
