@@ -111,6 +111,17 @@
   .weather-current-stat span { display: block; margin-top: 6px; color: rgba(16,37,27,.55); font-size: 10px; }
   .weather-current-stat strong { display: block; margin-top: 3px; color: #10251b; font-size: 17px; letter-spacing: -.03em; overflow-wrap: anywhere; }
   .weather-current-stat small { display: block; margin-top: 3px; color: rgba(16,37,27,.5); font-size: 10px; line-height: 1.3; }
+  .history-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 14px; background: rgba(255,255,255,.62); border: 1px solid rgba(16,37,27,.12); border-radius: 18px; }
+  .history-filters label { display: grid; gap: 5px; color: rgba(16,37,27,.62); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .history-filters select, .history-filters input { min-height: 40px; border: 1px solid rgba(16,37,27,.16); border-radius: 10px; background: #fff; color: #10251b; font-size: 12px; padding: 8px 10px; text-transform: none; }
+  .history-notice { display: flex; align-items: center; gap: 8px; border: 1px solid #d5c596; background: #fff9e8; color: #6d5718; border-radius: 14px; padding: 11px 13px; font-size: 12px; }
+  .history-chart-card { background: rgba(255,255,255,.7); border: 1px solid rgba(16,37,27,.13); border-radius: 22px; padding: 18px; }
+  .history-chart-card h3 { margin: 7px 0 3px; color: #10251b; font-size: 23px; letter-spacing: -.04em; }
+  .history-chart-card p { color: rgba(16,37,27,.56); font-size: 12px; margin: 0 0 12px; }
+  .history-detail-grid { display: grid; gap: 0; }
+  .history-detail-grid p { display: flex; justify-content: space-between; gap: 14px; border-bottom: 1px solid #edf1ec; padding: 10px 0; margin: 0; color: rgba(16,37,27,.56); font-size: 12px; }
+  .history-detail-grid strong { color: #10251b; text-align: right; }
+  @media (max-width: 520px) { .history-filters { grid-template-columns: 1fr; } }
 
   .farms-heading { align-items: flex-end; }
   .farms-add-button { white-space: nowrap; }
