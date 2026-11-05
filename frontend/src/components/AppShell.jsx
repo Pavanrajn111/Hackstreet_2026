@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
-import { BarChart3, CalendarDays, Database, Globe2, History, LayoutDashboard, LogOut, Menu, Settings2, X, Waves, Sprout, FlaskConical, BrainCircuit, MapPinned } from 'lucide-react';
+import { BarChart3, CalendarDays, Database, Globe2, History, LayoutDashboard, LogOut, Menu, Settings2, X, Waves, Sprout, FlaskConical, BrainCircuit, MapPinned, SlidersHorizontal } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { isMockMode, setMockMode } from '../services/api';
 import BrandLogo from './BrandLogo';
@@ -23,6 +23,7 @@ export default function AppShell() {
     { to: '/app/intelligence/crop-suitability', label: 'Crop suitability', icon: BrainCircuit },
     { to: '/app/intelligence/crop-planner', label: 'Crop planner', icon: MapPinned },
     { to: '/app/intelligence/market', label: 'Market intelligence', icon: BarChart3 },
+    { to: '/app/intelligence/adaptive-irrigation', label: 'Adaptive irrigation', icon: SlidersHorizontal },
     { to: '/app/intelligence/hybrid', label: 'Hybrid crops', icon: FlaskConical },
     { to: '/app/schedule', label: 'Schedule', icon: CalendarDays },
     { to: '/app/history', label: 'History', icon: History },

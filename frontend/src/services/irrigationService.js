@@ -18,5 +18,17 @@ export const createRecommendation = async (farm) => (
   await apiClient.post('/api/recommend', getRecommendationPayload(farm))
 ).data;
 export const getRecommendationByFarm = async (farmId) => (await apiClient.get(`/api/recommend/${farmId}`)).data;
+export const evaluateAdaptiveIrrigationOptions = async (payload) => (
+  await apiClient.post('/api/irrigation/options', payload)
+).data;
+export const compareAdaptiveIrrigationMethods = async (payload) => (
+  await apiClient.post('/api/irrigation/compare', payload)
+).data;
 
-export default { createRecommendation, getRecommendationByFarm, getRecommendationPayload };
+export default {
+  createRecommendation,
+  getRecommendationByFarm,
+  getRecommendationPayload,
+  evaluateAdaptiveIrrigationOptions,
+  compareAdaptiveIrrigationMethods,
+};
