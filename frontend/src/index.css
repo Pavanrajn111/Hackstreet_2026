@@ -1775,20 +1775,466 @@ h1, h2, h3, h4, .workspace-eyebrow, .brand-name, .decision-copy h2 {
   .app-shell .p-4 { padding: 18px; }
 }
 
-/* Public Acre-inspired experience */
-.public-site { background: #f5f3ea; color: #10251b; }
-.public-nav { position: absolute; z-index: 20; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 26px clamp(20px, 5vw, 72px); color: #fff; }
-.public-brand { display: flex; align-items: center; gap: 11px; color: #fff; text-decoration: none; font-size: 20px; letter-spacing: -.05em; }
-.public-brand .brand-logo { color: #fff; border-radius: 6px; }
-.public-links { display: flex; align-items: center; gap: 30px; }
-.public-links a, .public-signin { color: rgba(255,255,255,.75); text-decoration: none; font-size: 13px; transition: color .2s ease; }
-.public-links a:hover, .public-signin:hover { color: #fff; }
-.public-nav-actions { display: flex; align-items: center; gap: 18px; }
-.public-menu { display: none; border: 0; background: transparent; color: #fff; }
-.pill-button { min-height: 46px; padding: 0 18px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border-radius: 999px; text-decoration: none; font-size: 13px; font-weight: 500; transition: transform .2s ease, background .2s ease; }
+/* ==========================================================================
+   AquaGrow AI Landing Page — Liquid Glass Floating Navigation System
+   ========================================================================== */
+
+.public-site {
+  background: #F5F3EA;
+  color: #10251B;
+  position: relative;
+}
+
+/* ==========================================================================
+   AquaGrow AI — Two-State Scroll-Responsive Liquid Glass Navigation System
+   State 1 (Top / scrollY <= 40px): 100% Transparent, seamless hero blend
+   State 2 (Scrolled / scrollY > 40px): Floating rounded Liquid Glass pill
+   ========================================================================== */
+
+/* Base Public Navigation Container */
+.public-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 100%;
+  min-height: 72px;
+  height: 72px;
+  padding: 0 clamp(24px, 5vw, 64px);
+  border-radius: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  box-sizing: border-box;
+
+  /* State 1: Completely Transparent Navbar (Initial State) */
+  background: transparent;
+  backdrop-filter: blur(0px) saturate(100%);
+  -webkit-backdrop-filter: blur(0px) saturate(100%);
+  border: 1px solid transparent;
+  box-shadow: 0 0 0 transparent;
+
+  /* Smooth 350-400ms transition between transparent and liquid glass */
+  transition:
+    top 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    width 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    min-height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    padding 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    border-radius 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    backdrop-filter 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    -webkit-backdrop-filter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* State 2: Scrolled Floating Liquid Glass Navbar */
+.public-nav.is-scrolled {
+  top: 18px;
+  width: min(1600px, calc(100% - 48px));
+  max-width: 1600px;
+  min-height: 64px;
+  height: 64px;
+  padding: 0 20px;
+  border-radius: 32px;
+
+  /* Translucent Sage Liquid Glass Material */
+  background: rgba(225, 232, 210, 0.72);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow:
+    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 1px 0 rgba(23, 63, 42, 0.05),
+    0 12px 36px -6px rgba(16, 37, 27, 0.12),
+    0 4px 12px -2px rgba(16, 37, 27, 0.06);
+}
+
+/* Graceful Fallback for Browsers Lacking backdrop-filter */
+@supports not (backdrop-filter: blur(24px)) {
+  .public-nav.is-scrolled {
+    background: rgba(225, 232, 210, 0.96);
+  }
+}
+
+/* Brand Logo Container & Adaptive Contrast Filter */
+.public-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex: 0 0 auto;
+}
+.public-brand .brand-logo-image {
+  max-height: 38px;
+  width: auto;
+  max-width: 136px;
+  display: block;
+  object-fit: contain;
+  transition: filter 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s ease;
+}
+/* In transparent state over dark hero video, invert logo to crisp white with drop shadow */
+.public-nav:not(.is-scrolled) .brand-logo-light .brand-logo-image {
+  filter: brightness(0) invert(1) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45));
+}
+.public-nav.is-scrolled .brand-logo-image {
+  filter: none;
+}
+
+/* Navigation Links */
+.public-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.public-links a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  border-radius: 9999px;
+  white-space: nowrap;
+  transition:
+    color 0.35s ease,
+    background-color 0.25s ease,
+    text-shadow 0.35s ease;
+}
+
+/* Links in Initial Transparent State */
+.public-nav:not(.is-scrolled) .public-links a {
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+.public-nav:not(.is-scrolled) .public-links a:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.14);
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.65);
+}
+
+/* Links in Scrolled Liquid Glass State */
+.public-nav.is-scrolled .public-links a {
+  color: #173F2A;
+  text-shadow: none;
+}
+.public-nav.is-scrolled .public-links a:hover {
+  color: #10251B;
+  background: rgba(23, 63, 42, 0.08);
+}
+.public-links a:focus-visible {
+  outline: 2px solid #426930;
+  outline-offset: 2px;
+}
+
+/* Right Navigation Actions */
+.public-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 0 0 auto;
+}
+
+/* Sign In Link */
+.public-signin {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 9999px;
+  white-space: nowrap;
+  transition:
+    color 0.35s ease,
+    background-color 0.25s ease,
+    text-shadow 0.35s ease;
+}
+.public-nav:not(.is-scrolled) .public-signin {
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+.public-nav:not(.is-scrolled) .public-signin:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.14);
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.65);
+}
+.public-nav.is-scrolled .public-signin {
+  color: #173F2A;
+  text-shadow: none;
+}
+.public-nav.is-scrolled .public-signin:hover {
+  color: #10251B;
+  background: rgba(23, 63, 42, 0.08);
+}
+.public-signin:focus-visible {
+  outline: 2px solid #426930;
+  outline-offset: 2px;
+}
+
+/* Primary CTA Button */
+.public-cta-button {
+  min-height: 42px;
+  height: 42px;
+  padding: 0 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 9999px;
+  background: #173F2A;
+  color: #FFFFFF !important;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transition:
+    background-color 0.25s ease,
+    border-color 0.35s ease,
+    box-shadow 0.35s ease,
+    transform 0.2s ease;
+}
+.public-nav:not(.is-scrolled) .public-cta-button {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+.public-nav:not(.is-scrolled) .public-cta-button:hover {
+  background: #10251B;
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  transform: translateY(-2px);
+}
+.public-nav.is-scrolled .public-cta-button {
+  border: 1px solid rgba(23, 63, 42, 0.12);
+  box-shadow: 0 4px 14px rgba(23, 63, 42, 0.22);
+}
+.public-nav.is-scrolled .public-cta-button:hover {
+  background: #1F5237;
+  box-shadow: 0 8px 22px rgba(23, 63, 42, 0.32);
+  transform: translateY(-2px);
+}
+.public-cta-button:active {
+  transform: translateY(0);
+}
+.public-cta-button:focus-visible {
+  outline: 2px solid #426930;
+  outline-offset: 2px;
+}
+
+.public-mobile-actions {
+  display: none;
+}
+
+/* Mobile Hamburger Menu Toggle Button */
+.public-menu {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  cursor: pointer;
+  padding: 0;
+  transition:
+    color 0.35s ease,
+    background-color 0.25s ease,
+    border-color 0.35s ease;
+}
+.public-nav:not(.is-scrolled) .public-menu {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.public-nav:not(.is-scrolled) .public-menu:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+.public-nav.is-scrolled .public-menu {
+  color: #173F2A;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(23, 63, 42, 0.14);
+}
+.public-nav.is-scrolled .public-menu:hover {
+  background: #DDE9D4;
+}
+.public-menu:focus-visible {
+  outline: 2px solid #426930;
+  outline-offset: 2px;
+}
+
+.pill-button {
+  min-height: 46px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: transform .2s ease, background .2s ease;
+}
 .pill-button:hover { transform: translateY(-2px); }
-.pill-button.light { color: #10251b; background: #fff; }
+.pill-button.light { color: #fff; background: #173f2a; }
 .pill-button.cream { color: #10251b; background: #f5f3ea; }
+.pill-button.forest { color: #fff; background: #173f2a; }
+
+/* Responsive Rules */
+@media (max-width: 1024px) {
+  .public-nav {
+    padding: 0 20px;
+  }
+  .public-nav.is-scrolled {
+    top: 14px;
+    width: calc(100% - 32px);
+    padding: 0 16px;
+    border-radius: 28px;
+  }
+  .public-links {
+    gap: 14px;
+  }
+  .public-links a {
+    padding: 6px 10px;
+    font-size: 12.5px;
+  }
+  .public-cta-button {
+    padding: 0 16px;
+    font-size: 12.5px;
+  }
+  .public-signin {
+    padding: 6px 10px;
+    font-size: 12.5px;
+  }
+}
+
+@media (max-width: 800px) {
+  .public-nav {
+    top: 0;
+    width: 100%;
+    min-height: 64px;
+    height: 64px;
+    padding: 0 16px;
+    border-radius: 0;
+  }
+  .public-nav.is-scrolled {
+    top: 12px;
+    width: calc(100% - 24px);
+    min-height: 58px;
+    height: 58px;
+    padding: 0 14px;
+    border-radius: 22px;
+    background: rgba(225, 232, 210, 0.88);
+  }
+  .public-links {
+    display: none;
+  }
+  .public-nav-actions .public-signin,
+  .public-nav-actions .public-cta-button {
+    display: none;
+  }
+  .public-menu {
+    display: inline-flex;
+  }
+
+  /* Polished Liquid Glass Mobile Drawer */
+  .public-links.is-open {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    right: 0;
+    width: 100%;
+    padding: 16px;
+    background: rgba(245, 243, 234, 0.95);
+    backdrop-filter: blur(28px) saturate(170%);
+    -webkit-backdrop-filter: blur(28px) saturate(170%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 22px;
+    box-shadow:
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.95),
+      0 20px 50px rgba(16, 37, 27, 0.18),
+      0 4px 16px rgba(16, 37, 27, 0.06);
+    gap: 4px;
+    z-index: 60;
+    animation: publicDrawerSlide 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .public-links.is-open a {
+    padding: 12px 14px;
+    color: #173F2A !important;
+    text-shadow: none !important;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .public-links.is-open a:hover {
+    background: #DDE9D4;
+    color: #173F2A !important;
+  }
+  .public-mobile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(23, 63, 42, 0.1);
+  }
+  .public-mobile-signin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px;
+    border: 1px solid rgba(23, 63, 42, 0.16);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.6);
+    color: #173F2A !important;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .public-mobile-signin:hover {
+    background: #DDE9D4;
+  }
+}
+
+@keyframes publicDrawerSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Reduced Motion Preference Compliance */
+@media (prefers-reduced-motion: reduce) {
+  .public-nav,
+  .public-nav *,
+  .public-links.is-open {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
 .public-hero { min-height: min(840px, 100vh); position: relative; display: flex; align-items: flex-end; padding: 170px clamp(20px, 8vw, 120px) 58px; color: #fff; background: #173f2a; }
 .public-hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(16,37,27,.3), rgba(16,37,27,.05) 35%, rgba(16,37,27,.8)); }
 .public-hero-content { position: relative; max-width: 950px; z-index: 1; }
@@ -2718,7 +3164,7 @@ h1, h2, h3, h4, .workspace-eyebrow, .brand-name, .decision-copy h2 {
 }
 
 @media (max-width: 800px) {
-  .public-nav { padding: 20px; }.public-links { display: none; position: absolute; left: 15px; right: 15px; top: 75px; padding: 15px; border-radius: 18px; background: #173f2a; }.public-links.is-open { display: grid; gap: 15px; }.public-menu { display: block; }.public-nav-actions .public-signin, .public-nav-actions .pill-button { display: none; }.public-hero { min-height: 760px; padding: 150px 20px 32px; }.hero-caption { right: 20px; bottom: 30px; left: 20px; justify-content: space-between; }.hero-actions { align-items: flex-start; flex-direction: column; gap: 17px; }.intro-grid, .section-heading-row, .editorial-split, .story-section { grid-template-columns: 1fr; gap: 40px; }.platform-cards, .signal-grid { grid-template-columns: 1fr; }.platform-card { min-height: 420px; }.editorial-photo, .story-image { min-height: 480px; }.impact-grid { grid-template-columns: 1fr; gap: 25px; }.impact-grid > div, .impact-grid > div:not(:first-child) { padding: 22px 0 0; border-right: 0; border-top: 1px solid rgba(16,37,27,.22); }.footer-links { justify-content: flex-start; margin: 60px 0; gap: 45px; }.auth-page { grid-template-columns: 1fr; }.auth-visual { min-height: 320px; }.auth-quote { margin-top: 50px; }.auth-quote h2 { font-size: 48px; }.auth-panel { min-height: 650px; }.product-header-inner, .product-main, .product-footer { width: calc(100% - 32px); }.product-nav { display: none; }.product-menu { display: inline-flex; padding: 7px; border: 0; background: transparent; color: #10251b; }.product-mobile-nav { display: grid; gap: 4px; padding: 10px 16px 16px; border-top: 1px solid rgba(16,37,27,.12); }.product-mobile-link { display: flex; align-items: center; gap: 10px; padding: 13px; color: rgba(16,37,27,.65); text-decoration: none; font-size: 13px; border-radius: 10px; }.product-mobile-link.is-active { color: #173f2a; background: #dde9d4; }.product-main { padding-top: 40px; }.workspace-heading { align-items: flex-start; flex-direction: column; gap: 22px; }.signal-card { min-height: 300px; }.settings-layout { grid-template-columns: 1fr; gap: 20px; }.settings-menu { display: flex; overflow-x: auto; }.settings-menu button { white-space: nowrap; }.product-footer { display: grid; gap: 9px; }
+  .public-hero { min-height: 760px; padding: 150px 20px 32px; }.hero-caption { right: 20px; bottom: 30px; left: 20px; justify-content: space-between; }.hero-actions { align-items: flex-start; flex-direction: column; gap: 17px; }.intro-grid, .section-heading-row, .editorial-split, .story-section { grid-template-columns: 1fr; gap: 40px; }.platform-cards, .signal-grid { grid-template-columns: 1fr; }.platform-card { min-height: 420px; }.editorial-photo, .story-image { min-height: 480px; }.impact-grid { grid-template-columns: 1fr; gap: 25px; }.impact-grid > div, .impact-grid > div:not(:first-child) { padding: 22px 0 0; border-right: 0; border-top: 1px solid rgba(16,37,27,.22); }.footer-links { justify-content: flex-start; margin: 60px 0; gap: 45px; }.auth-page { grid-template-columns: 1fr; }.auth-visual { min-height: 320px; }.auth-quote { margin-top: 50px; }.auth-quote h2 { font-size: 48px; }.auth-panel { min-height: 650px; }.product-header-inner, .product-main, .product-footer { width: calc(100% - 32px); }.product-nav { display: none; }.product-menu { display: inline-flex; padding: 7px; border: 0; background: transparent; color: #10251b; }.product-mobile-nav { display: grid; gap: 4px; padding: 10px 16px 16px; border-top: 1px solid rgba(16,37,27,.12); }.product-mobile-link { display: flex; align-items: center; gap: 10px; padding: 13px; color: rgba(16,37,27,.65); text-decoration: none; font-size: 13px; border-radius: 10px; }.product-mobile-link.is-active { color: #173f2a; background: #dde9d4; }.product-main { padding-top: 40px; }.workspace-heading { align-items: flex-start; flex-direction: column; gap: 22px; }.signal-card { min-height: 300px; }.settings-layout { grid-template-columns: 1fr; gap: 20px; }.settings-menu { display: flex; overflow-x: auto; }.settings-menu button { white-space: nowrap; }.product-footer { display: grid; gap: 9px; }
   .dashboard-intro, .decision-panel, .dashboard-section-heading { align-items: flex-start; flex-direction: column; }.dashboard-intro { gap: 20px; }.decision-panel { padding: 28px 22px; }.decision-action { width: 100%; align-items: flex-start; flex-direction: row; }.measure-row { grid-template-columns: 1fr; gap: 22px; margin-bottom: 45px; }.measure-row > div, .measure-row > div:first-child { padding: 0 0 20px; border-right: 0; border-bottom: 1px solid rgba(16,37,27,.15); }.measure-row > div:last-child { padding-bottom: 0; border-bottom: 0; }.empty-workspace h1 { font-size: 50px; }.empty-workspace > div { flex-direction: column; align-items: flex-start; }
 }
 
@@ -3306,26 +3752,7 @@ h1, h2, h3, h4, .workspace-eyebrow, .brand-name, .decision-copy h2 {
 }
 
 /* Motion and scroll-state refinements for the Acre-style public experience. */
-.public-nav {
-  position: fixed;
-  transition: padding .45s cubic-bezier(.22,.7,.2,1), background .45s cubic-bezier(.22,.7,.2,1), color .3s ease, box-shadow .45s ease;
-}
-.public-nav.is-scrolled {
-  padding-top: 15px;
-  padding-bottom: 15px;
-  color: #10251b;
-  background: rgba(245,243,234,.95);
-  box-shadow: 0 10px 30px -18px rgba(16,37,27,.35);
-  backdrop-filter: blur(16px);
-}
-.public-nav.is-scrolled .public-brand,
-.public-nav.is-scrolled .public-links a,
-.public-nav.is-scrolled .public-signin { color: #10251b; }
-.public-nav.is-scrolled .pill-button.light { color: #fff; background: #173f2a; }
-.public-nav.is-scrolled .public-menu { color: #10251b; }
-.public-links a { position: relative; }
-.public-links a::after { content: ''; position: absolute; right: 0; bottom: -7px; left: 0; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: right; transition: transform .35s cubic-bezier(.22,.7,.2,1); }
-.public-links a:hover::after { transform: scaleX(1); transform-origin: left; }
+.public-hero { overflow: hidden; background: #173f2a; }
 .public-hero { overflow: hidden; background: #173f2a; }
 .public-hero-video { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; animation: hero-video-in 1.4s cubic-bezier(.22,.7,.2,1) both; }
 .reveal-on-load { animation: hero-copy-in 1s .2s cubic-bezier(.22,.7,.2,1) both; }
@@ -3340,10 +3767,6 @@ h1, h2, h3, h4, .workspace-eyebrow, .brand-name, .decision-copy h2 {
 @keyframes hero-video-in { from { opacity: 0; transform: scale(1.05); } to { opacity: 1; transform: scale(1); } }
 @keyframes hero-copy-in { from { opacity: 0; transform: translateY(32px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 850px) {
-  .public-nav.is-scrolled { padding-top: 13px; padding-bottom: 13px; }
-  .public-links { transform: translateY(-8px); opacity: 0; transition: opacity .3s ease, transform .3s ease; }
-  .public-links.is-open { opacity: 1; transform: translateY(0); }
-  .public-links.is-open a { color: rgba(255,255,255,.82); }
   .public-cta { background-position: center 55%; }
 }
 /* --- AGR002 Dashboard Arrival & Pitch Dynamics --- */

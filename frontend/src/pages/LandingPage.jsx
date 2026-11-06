@@ -25,6 +25,28 @@ export default function LandingPage() {
   );
   const heroRef = useRef(null);
   const heroVideoRef = useRef(null);
+  const navRef = useRef(null);
+
+  // Close mobile navigation on Escape key or outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    const handleClickOutside = (e) => {
+      if (navRef.current && !navRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [menuOpen]);
 
   // Simulator State
   const [simAcres, setSimAcres] = useState(5);
@@ -38,7 +60,17 @@ export default function LandingPage() {
   const impactRef = useRef(null);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 24);
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const isPast = window.scrollY > 40;
+          setScrolled((prev) => (prev !== isPast ? isPast : prev));
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
     handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
     const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -101,18 +133,34 @@ export default function LandingPage() {
 
   return (
     <div className="public-site">
-      <header className={`public-nav ${scrolled ? 'is-scrolled' : ''}`}>
-        <Link to="/" className="public-brand"><BrandLogo theme="light" size="small" /></Link>
-        <nav className={menuOpen ? 'public-links is-open' : 'public-links'}>
+      <header className={`public-nav ${scrolled ? 'is-scrolled' : ''}`} ref={navRef}>
+        <Link to="/" className="public-brand" aria-label="AquaGrow AI Home">
+          <BrandLogo theme={scrolled ? 'dark' : 'light'} size="small" />
+        </Link>
+        <nav className={menuOpen ? 'public-links is-open' : 'public-links'} aria-label="Primary Navigation">
           <a href="#simulator" onClick={() => setMenuOpen(false)}>Savings Simulator</a>
           <a href="#showcase" onClick={() => setMenuOpen(false)}>5 Pillars</a>
           <a href="#platform" onClick={() => setMenuOpen(false)}>Platform</a>
           <a href="#impact" onClick={() => setMenuOpen(false)}>Impact</a>
+          <div className="public-mobile-actions">
+            <Link to="/login" className="public-mobile-signin" onClick={() => setMenuOpen(false)}>Sign in</Link>
+            <Link to="/app" className="public-cta-button w-full justify-center" onClick={() => setMenuOpen(false)}>
+              Enter AquaGrow <ArrowRight size={15} />
+            </Link>
+          </div>
         </nav>
         <div className="public-nav-actions">
           <Link to="/login" className="public-signin">Sign in</Link>
-          <Link to="/app" className="pill-button light">Enter AquaGrow <ArrowRight size={15} /></Link>
-          <button className="public-menu" onClick={() => setMenuOpen(!menuOpen)}>
+          <Link to="/app" className="public-cta-button">
+            Enter AquaGrow <ArrowRight size={15} />
+          </Link>
+          <button
+            type="button"
+            className="public-menu"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={menuOpen}
+          >
             {menuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
