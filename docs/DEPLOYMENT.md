@@ -1,122 +1,130 @@
-# Production Deployment: Render and Vercel
+# AGR002 Production Deployment Guide
 
-This repository deploys its FastAPI backend to Render and React/Vite frontend to
-Vercel. Render's service root must remain the repository root so the backend can
-import the sibling `ml/` package. Configuration examples contain placeholders,
-not deployable credentials.
+This guide covers deploying the FastAPI backend to Render and the React/Vite
+single-page application to Vercel. It describes the repository's current
+configuration and limitations; it does not imply that a cloud deployment has
+already been created.
 
-## 1. Prepare GitHub
+## Deployment overview
 
-1. Push the repository with `render.yaml`, `frontend/vercel.json`, and both
-   app-specific `.env.example` files.
-2. Verify secrets are ignored and only example templates are tracked:
+| Component | Host | Repository configuration |
+| --- | --- | --- |
+| FastAPI API | Render | `render.yaml` |
+| React/Vite frontend | Vercel | `frontend/vercel.json` |
+| SQLite database | Render persistent disk | Configure the disk in Render |
+| Supabase | Supabase project | Auth UI configuration in Vercel |
+| Gemini chat | Google AI API, called by backend | Secret configuration in Render only |
 
-   ```powershell
-   git check-ignore -v .env backend/.env frontend/.env
-   git check-ignore -v .env.example backend/.env.example frontend/.env.example
-   git ls-files | Select-String '(^|/)\.env($|\.)'
-   ```
+Render must build from the repository root. The backend imports the sibling
+`ml/` package, so setting its root directory to `backend/` will break the
+deployment. Vercel should use `frontend/` as its root directory.
 
-   Real environment paths should be ignored; example templates should not be.
-   If real environment files are already tracked, untrack them without deleting
-   local copies, then rotate any exposed credentials:
+## Before deploying
 
-   ```powershell
-   git rm --cached --ignore-unmatch .env backend/.env frontend/.env
-   ```
+1. Push the intended changes to the Git branch connected to Render and Vercel.
+2. Confirm `.env`, `backend/.env`, and `frontend/.env` are not tracked. Keep
+   secrets in the hosting dashboards, not in source files or commits.
+3. If an API key has been shared in chat, committed, or otherwise exposed,
+   revoke it and create a replacement before deployment.
+4. Have a stable Vercel production domain ready before finalizing Render's
+   `CORS_ORIGINS` value.
 
-3. This checkout tracks crop-planner model files, including
-   `crop_suitability_rf.joblib` and `price_models.joblib`; the backend loads
-   them when available and has fallback behavior. Verify model provenance and
-   predictions before relying on them for production decisions. In particular,
-   `SYNTHETIC_prices_NOT_REAL.csv` is explicitly synthetic and must not be
-   presented as real market data. The optional
-   `ml/crop_planner/requirements.txt` pins XGBoost 3.4.1, which requires Python
-   3.12 or newer; Render uses Python 3.11.11 and installs
-   `backend/requirements.txt`, not that optional file. Confirm model
-   compatibility before changing the runtime or enabling any XGBoost-dependent
-   inference.
+The checked-in `.env.example` files contain placeholders for local development.
+They are not production credentials. Do not copy real values into an example
+file.
 
-   ```powershell
-   git ls-files 'ml/crop_planner/**/*.joblib'
-   ```
+## 1. Deploy the backend to Render
 
-   The separate irrigation adapter is wired into the recommendation route, but
-   its production model remains disabled (`ML_MODEL_ENABLED=false`). Do not
-   copy irrigation artifacts into `ml/crop_planner/`; enable irrigation ML only
-   after the matching artifacts, compatible runtime, and inference have been
-   verified.
+### Create the service
 
-## 2. Deploy the backend to Render
+In Render, create a Web Service from this GitHub repository, or use the
+repository's `render.yaml` Blueprint. Configure the service as follows:
 
-1. Connect the GitHub repository to Render and create a Web Service (or deploy
-   the checked-in Blueprint).
-2. Keep the **Root Directory** at the repository root (`.`), not `backend/`.
-   Confirm:
+| Setting | Value |
+| --- | --- |
+| Runtime | Python |
+| Root Directory | `.` (repository root) |
+| Build Command | `pip install -r backend/requirements.txt` |
+| Start Command | `cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+| Health Check Path | `/health` |
+| Python version | `3.11.11`, from `.python-version` |
 
-   | Setting | Value |
-   | --- | --- |
-   | Runtime | Python |
-   | Root Directory | `.` |
-   | Build Command | `pip install -r backend/requirements.txt` |
-   | Start Command | `cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
-   | Health Check Path | `/health` |
-   | Python | `3.11.11` from `.python-version` |
+The start command changes into `backend/`, listens on all interfaces, and uses
+Render's assigned port. Do not replace `$PORT` with a fixed port.
 
-   The start command runs from `backend/`, listens on all interfaces and uses
-   Render's `$PORT`. The route module resolves the root-level `ml/` directory.
-   The service does not depend on a developer's local `.env`.
+### Set backend environment variables
 
-3. Set these values in the Render Dashboard:
+Set the following in Render's Environment settings. The Blueprint supplies
+defaults for non-secret settings and marks `DATABASE_URL`, `CORS_ORIGINS`, and
+`GEMINI_API_KEY` as values that must be set in the Dashboard.
 
-   | Key | Value |
-   | --- | --- |
-   | `APP_ENV` | `production` |
-   | `DATABASE_URL` | `sqlite:////var/data/irrigation.db` |
-   | `CORS_ORIGINS` | Exact Vercel production origin, e.g. `https://<your-vercel-domain>` |
-   | `ML_MODEL_ENABLED` | `false` |
-   | `ML_MODEL_DIR` | `ml/models/models` |
-   | `WEATHER_CACHE_TTL_SECONDS` | `3600` |
-   | `WEATHER_API_TIMEOUT_SECONDS` | `8.0` |
-   | `OPEN_METEO_BASE_URL` | `https://api.open-meteo.com/v1/forecast` |
-   | `GEMINI_API_KEY` | A newly generated key, entered only in Render |
-   | `GEMINI_MODEL` | `gemini-3.6-flash` |
-   | `GEMINI_API_TIMEOUT_SECONDS` | `25.0` |
-   | `GEMINI_MAX_OUTPUT_TOKENS` | `2400` |
+| Variable | Production value |
+| --- | --- |
+| `APP_ENV` | `production` |
+| `DATABASE_URL` | `sqlite:////var/data/irrigation.db` |
+| `CORS_ORIGINS` | Your exact Vercel origin, for example `https://your-app.vercel.app` |
+| `ML_MODEL_ENABLED` | `false` |
+| `ML_MODEL_DIR` | `ml/models/models` |
+| `WEATHER_CACHE_TTL_SECONDS` | `3600` |
+| `WEATHER_API_TIMEOUT_SECONDS` | `8.0` |
+| `OPEN_METEO_BASE_URL` | `https://api.open-meteo.com/v1/forecast` |
+| `GEMINI_API_KEY` | A valid, newly issued key, if enabling the chat service |
+| `GEMINI_MODEL` | `gemini-3.6-flash` |
+| `GEMINI_API_TIMEOUT_SECONDS` | `25.0` |
+| `GEMINI_MAX_OUTPUT_TOKENS` | `2400` |
 
-   `DATABASE_URL`, `CORS_ORIGINS`, and `GEMINI_API_KEY` use unsynchronized
-   Blueprint variables and must be entered in the Dashboard. `CORS_ORIGINS` is a
-   comma-separated list of exact origins. Add exact preview origins if needed;
-   never use an unrestricted wildcard with credentials. Since the previously
-   supplied Gemini key was shared in chat, revoke it and create a replacement
-   before adding the new value directly to Render.
+Only add the Gemini key in Render. Do not add it to Vercel, a `VITE_` variable,
+the repository, or frontend code. If Gemini reports that the configured model
+is unavailable, verify the model name and access for your Google AI project.
+The chat service cannot use Gemini without a valid backend key.
 
-4. **SQLite persistence must be configured separately.** Attach a Render
-   persistent disk on a plan that supports it and mount it at `/var/data`. The
-   application creates the SQLite parent directory when possible, enables WAL
-   and a 30-second busy timeout, and reports initialization errors if the disk is
-   not writable. `/health` performs a database query and reports failure instead
-   of claiming the database is ready.
+### Configure persistent SQLite storage
 
-   Render's default filesystem is ephemeral. Without a supported persistent
-   disk, SQLite data may be lost on redeploy or instance replacement; that is
-   appropriate only for temporary demonstrations.
+The configured database path is persistent only when a Render disk is attached:
 
-5. After deploy, verify the Render URLs:
+1. In the Render service's **Disks** settings, add a persistent disk on a plan
+   that supports it.
+2. Set its mount path to `/var/data`.
+3. Keep `DATABASE_URL` set to `sqlite:////var/data/irrigation.db`.
+4. Save the settings and redeploy if Render requests it.
 
-   ```powershell
-   Invoke-RestMethod https://<your-render-service>.onrender.com/health
-   Invoke-WebRequest https://<your-render-service>.onrender.com/docs
-   ```
+Without a persistent disk, Render's filesystem is ephemeral and database data
+can be lost when an instance is replaced or redeployed. The backend creates the
+database parent directory when possible, enables SQLite WAL and a busy timeout,
+and `/health` checks database availability. Persistent storage is not a
+substitute for a backup plan.
 
-   The health response should include `status: healthy` and
-   `database: sqlite_ready`. Replace placeholders with the actual Render URL.
+### Configure CORS
 
-## 3. Deploy the frontend to Vercel
+Set `CORS_ORIGINS` to a comma-separated list of exact browser origins, with no
+trailing slash or path. For example:
 
-1. Connect the same GitHub repository in Vercel.
-2. Set **Root Directory** to `frontend` and **Framework Preset** to Vite.
-3. Use:
+```text
+https://your-app.vercel.app,https://www.example.org
+```
+
+Add a Vercel preview origin only if that specific preview needs API access.
+Avoid wildcard origins. When the Vercel production domain changes, update this
+setting and redeploy the Render service.
+
+### Verify the Render service
+
+Replace the placeholder with the service's actual Render hostname:
+
+```powershell
+Invoke-RestMethod https://your-service.onrender.com/health
+Invoke-WebRequest https://your-service.onrender.com/docs
+```
+
+The health endpoint should report a healthy service and a ready database. If
+the database check fails, verify the disk mount and `DATABASE_URL` before
+troubleshooting application routes.
+
+## 2. Deploy the frontend to Vercel
+
+1. Import the same GitHub repository into Vercel.
+2. Set **Root Directory** to `frontend` and **Framework Preset** to **Vite**.
+3. Use these build settings:
 
    | Setting | Value |
    | --- | --- |
@@ -124,112 +132,141 @@ not deployable credentials.
    | Build Command | `npm run build` |
    | Output Directory | `dist` |
 
-   `frontend/package-lock.json` exists, so `npm ci` is preferred for reproducible
-   installs. `frontend/vercel.json` rewrites requests to `index.html`; the
-   rewrite does not create React Router routes missing from the source.
+   The frontend package lockfile is checked in. `frontend/vercel.json` rewrites
+   browser routes to the SPA entry point so direct navigation and refreshes can
+   load the frontend; routes must also exist in the React application.
 
-4. Configure Vercel Production (and Preview, if needed) environment variables:
+### Set frontend environment variables
 
-   | Key | Value |
-   | --- | --- |
-   | `VITE_API_BASE_URL` | Render origin only, with no `/api` suffix |
-   | `VITE_USE_MOCK_DATA` | `false` |
-   | `VITE_DEFAULT_LANGUAGE` | `en` |
-   | `VITE_SUPABASE_URL` | Public Supabase project URL, required for authentication |
-   | `VITE_SUPABASE_PUBLISHABLE_KEY` | Public Supabase publishable key, required for authentication |
+In Vercel's **Settings → Environment Variables**, set the following for
+Production. Add them to Preview only if you intend to use those preview
+deployments.
 
-   Example shape: `https://<your-render-service>.onrender.com`. The frontend
-   appends `/api/...` to this base. Vite variables are public in the browser
-   bundle; never put backend secrets, a Gemini key, or a Supabase service-role
-   secret in a `VITE_` variable. The Gemini key belongs only in Render; do not
-   add it to Vercel.
+| Variable | Value |
+| --- | --- |
+| `VITE_API_BASE_URL` | Render origin only, e.g. `https://your-service.onrender.com` |
+| `VITE_USE_MOCK_DATA` | `false` |
+| `VITE_DEFAULT_LANGUAGE` | `en` |
+| `VITE_SUPABASE_URL` | Your Supabase project URL |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Your Supabase publishable key |
 
-5. Vercel environment variables are applied at **build time**; redeploy after
-   changing them. If `VITE_API_BASE_URL` is missing in production, the frontend
-   logs a configuration error and does not fall back to localhost. Local
-   development still defaults to `http://localhost:8000`.
+Do not append `/api` to `VITE_API_BASE_URL`; the frontend builds API paths from
+the base URL. All `VITE_` values are public in the browser bundle. Supabase's
+publishable key is intended for client-side use, but never use a Supabase
+service-role/secret key in the frontend.
 
-6. Demo mode remains user-selectable. The saved local-storage key
-   `agr002_use_mock=true` overrides the environment's initial setting. To test
-   production live mode, use the app's mode selector or run this in the browser
-   console:
+Vercel applies environment variables at build time. Redeploy after adding or
+changing them. In production, a missing API base URL should be fixed in Vercel;
+the frontend does not use localhost as a production fallback.
 
-   ```javascript
-   localStorage.removeItem('agr002_use_mock');
-   location.reload();
-   ```
+After obtaining the Vercel production domain, add that exact origin to Render's
+`CORS_ORIGINS` and redeploy the backend.
 
-7. Once the actual Vercel domain is known, set it in Render's
-   `CORS_ORIGINS` and redeploy Render. Add exact preview origins as required;
-   do not invent the domain or allow every origin.
-
-## 4. Supabase authentication UI
+## 3. Configure Supabase authentication
 
 The frontend uses Supabase for sign-in, registration, email recovery, password
-reset, and sign-out. Authentication routes show a clear configuration error
-until `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` contain valid
-project values. Obtain these public values from the Supabase Dashboard; never
-put a service-role or secret key in a `VITE_` variable.
+reset, and sign-out. Set the project URL and publishable key in Vercel as
+described above. The authentication pages display a configuration error if
+those settings are absent or invalid.
 
-In Supabase Authentication settings, allow the deployed site's origin and these
-redirect paths:
+In Supabase Authentication URL settings:
 
-- `/login` for email confirmation after registration.
-- `/reset-password` for password recovery.
+1. Add the deployed Vercel site origin to the allowed site URLs/redirect URLs.
+2. Allow the `/login` redirect used after registration email confirmation.
+3. Allow the `/reset-password` redirect used for password recovery.
+4. Add exact preview URLs only when authentication on preview deployments is
+   needed.
 
-Set the same public values in Vercel Production and Preview environments as
-needed, then redeploy because Vite reads them at build time.
+Use the callback URLs configured by the frontend when setting up the Supabase
+project. Redeploy Vercel after changing its environment variables.
 
-**This is authentication UI only.** The FastAPI endpoints do not validate
-Supabase JWTs, and farm data is not scoped to authenticated users. This includes
-the backend `/api/community-water` endpoints, which can read and write shared
-water resources and requests. Do not treat sign-in as API or data protection;
-do not expose the backend as a production service for private data until
-server-side authentication and authorization are implemented.
+**Important security boundary:** Supabase authentication is currently a
+frontend UI integration. FastAPI does not validate Supabase access tokens and
+does not scope farm records to a user. Signing in does not protect API routes or
+farm data. Do not use this deployment for private or multi-user-sensitive data
+until backend authentication, authorization, and data ownership checks are
+implemented.
 
-## 5. Community Water showcase
+## 4. Features and deployment limitations
 
-`/app/community-water` is a static hackathon showcase. Names, availability,
-volumes, locations, and activity are illustrative, not live community data.
-The request form demonstrates a local browser-only preview; it does not contact
-an API or persist or share requests. Refreshing or leaving the page clears the
-preview. Separate backend `/api/community-water` endpoints do persist data;
-they are not called by this showcase and currently have no Supabase
-authentication or authorization.
+### Irrigation and crop-planner models
 
-## 6. Verify the deployed frontend
+- The irrigation recommendation endpoint uses the deterministic irrigation
+  engine. Its optional ML adapter is disabled in the Render configuration
+  (`ML_MODEL_ENABLED=false`). Do not enable it until the corresponding model
+  artifacts, dependencies, supported runtime, and inference results have all
+  been verified.
+- Crop-planner model artifacts are present in the repository and may be used
+  when compatible. Verify their provenance and predictions before relying on
+  them for production decisions.
+- `ml/crop_planner/SYNTHETIC_prices_NOT_REAL.csv` contains synthetic data. Do
+  not present it as real market evidence.
+- The optional `ml/crop_planner/requirements.txt` pins XGBoost 3.4.1, which
+  requires Python 3.12 or newer. The Render configuration uses Python 3.11.11
+  and installs `backend/requirements.txt`, not the optional crop-planner
+  requirements. Do not enable XGBoost-dependent inference without resolving
+  and testing this compatibility.
 
-1. Open the Vercel site with demo mode disabled, including any saved local
-   storage override.
-2. In Developer Tools → **Network**, verify API calls use the configured Render
-   origin and the existing `/api/...` endpoint paths.
-3. Check responses and the browser console for CORS or missing-configuration
-   errors. Test Render `/health` and `/docs` directly if API calls fail.
+### Community Water
 
-Routes declared in `frontend/src/App.jsx` include `/`, `/login`, `/register`,
-`/recover`, `/reset-password`, `/app`, `/app/farms`, `/app/setup`,
-`/app/schedule`, `/app/history`, `/app/intelligence`, its crop-suitability,
-crop-planner, market, adaptive-irrigation, water-resilience, and hybrid
-subroutes, `/app/community-water`, `/app/profile`, and `/app/assistant`, plus
-redirects from `/dashboard`, `/setup`, `/schedule`, `/history`, and
-`/community-water`. Vercel's rewrite returns the SPA shell but cannot add
-application routes.
+The `/app/community-water` page is an illustrative showcase. Its sample names,
+availability, volumes, locations, and activity are not live community data;
+the page's request preview is local to the browser and is not submitted or
+persisted. The separate backend `/api/community-water` endpoints do persist
+shared data and currently do not have authentication or authorization. Do not
+expose those endpoints as private-user data.
 
-## 7. Local deployment-readiness checks
+### Other production considerations
 
-From the repository root:
+- SQLite on a single persistent disk is suitable for a small demonstration, not
+  a general multi-instance or high-concurrency database architecture. Plan and
+  test backups and recovery before relying on stored data.
+- Open-Meteo is configured as the weather provider; it does not require an API
+  key in this application configuration.
+- The backend sends chat requests to Google's Gemini API when configured.
+  Avoid sending sensitive personal or farm information unless the applicable
+  data-handling and provider requirements have been reviewed.
+- A successful hosting build confirms packaging, not agronomic validity, data
+  provenance, or live third-party service availability.
+
+## 5. Post-deployment smoke test
+
+1. Open the Vercel production URL and refresh the root page.
+2. Open `/login` and confirm the authentication page loads. Sign-in requires
+   valid Supabase configuration and an appropriately configured Supabase
+   redirect allowlist.
+3. Open a nested route directly, such as `/app/community-water`, and refresh.
+   The SPA shell should load; the page's sample community data is illustrative.
+4. In browser Developer Tools → **Network**, confirm live API requests target
+   the configured Render origin and use the expected `/api/...` paths.
+5. Check browser console and network responses for CORS, missing environment
+   configuration, or API errors.
+6. Confirm Render `/health` reports a ready database and Render `/docs` loads.
+7. Test only with non-sensitive sample data until server-side authorization and
+   user-level data separation are implemented.
+
+The Vercel rewrite only returns the SPA shell; it cannot create application
+routes that are not declared in the frontend.
+
+## 6. Local checks before a deployment
+
+Run these commands from the repository root in PowerShell. Use Python 3.11.11
+for parity with the Render service, and install dependencies only in your
+development environment:
 
 ```powershell
-pip install -r backend/requirements.txt
-Set-Location backend
-pytest tests -q
+python -m pip install -r backend/requirements.txt
+Push-Location backend
+python -m pytest tests -q
 python -c "from app.main import app; print(app.title)"
-Set-Location ..
-npm --prefix frontend ci
-npm --prefix frontend run build
+Pop-Location
+Push-Location frontend
+npm ci
+npm run build
+Pop-Location
 ```
 
-Validate the configuration and ignore behavior:
+Check the deployment files and environment-file ignore behavior:
 
 ```powershell
 python -c "import yaml; yaml.safe_load(open('render.yaml', encoding='utf-8')); print('render.yaml: valid')"
@@ -240,28 +277,39 @@ git check-ignore -v .env.example backend/.env.example frontend/.env.example
 git ls-files | Select-String '(^|/)\.env($|\.)'
 ```
 
-If PyYAML is absent, use Render's Blueprint validation rather than adding a
-project dependency. These checks do not claim that a cloud deployment succeeded.
+The YAML check requires PyYAML; if it is unavailable, validate the Blueprint
+with Render rather than adding a project dependency solely for this check.
+These commands do not deploy the application or verify cloud credentials.
 
-## 8. Troubleshooting
+## 7. Troubleshooting
 
-- **Render cannot import `app`:** Keep Root Directory at `.` and retain `cd
-  backend` in the start command.
-- **Port or health-check failure:** Use `--host 0.0.0.0 --port $PORT` and health
-  path `/health`.
-- **SQLite data disappears:** Attach a supported persistent disk at `/var/data`;
-  the default filesystem is not persistent.
-- **Database permission/startup failure:** Verify the disk mount and write
-  access, and use `sqlite:////var/data/irrigation.db`.
-- **Browser CORS failure:** Add the exact Vercel origin to Render's
-  comma-separated `CORS_ORIGINS` and redeploy.
-- **Wrong API URL:** Set `VITE_API_BASE_URL` to the Render origin only and
-  rebuild/redeploy Vercel.
-- **Demo data still appears:** Clear `agr002_use_mock` or switch to live mode.
-- **Direct navigation shows no page:** The rewrite serves `index.html`, but the
-  path must also be declared in React Router.
-- **ML does not run:** The irrigation model is intentionally disabled while
-  `ML_MODEL_ENABLED=false` or its required artifacts/dependencies are
-  unavailable; the irrigation engine continues with deterministic FAO-56
-  recommendations. Crop-planner model files are tracked, but verify their
-  provenance, runtime compatibility, and predictions before production use.
+| Symptom | Checks |
+| --- | --- |
+| Render cannot import `app` or `ml` | Keep Render's root directory at `.` and use the configured start command. |
+| Render port or health check fails | Listen on `0.0.0.0`, use `$PORT`, and set the health path to `/health`. |
+| Database is not ready | Confirm the persistent disk is mounted at `/var/data` and the URL is `sqlite:////var/data/irrigation.db`. |
+| Database data disappears after deploy | Confirm the service has a supported persistent disk; the default filesystem is ephemeral. |
+| Browser reports a CORS error | Set Render `CORS_ORIGINS` to the exact Vercel origin and redeploy Render. |
+| API calls use the wrong host | Set `VITE_API_BASE_URL` to the Render origin without `/api`, then rebuild/redeploy Vercel. |
+| Authentication reports missing configuration | Set the Supabase URL and publishable key in Vercel and redeploy. Never substitute a service-role key. |
+| Supabase email link fails | Check the Supabase site's allowed redirect URLs, including `/login` and `/reset-password`. |
+| Gemini chat is unavailable | Check that a valid key is set only in Render and that `GEMINI_MODEL` is available to the Google AI project. |
+| App still shows demo data | Switch to live mode in the app or clear the `agr002_use_mock` local-storage override. |
+| Direct route refresh returns an error | Confirm `frontend/vercel.json` is deployed and the route is declared in the React app. |
+| Irrigation ML does not run | It is intentionally disabled by `ML_MODEL_ENABLED=false`; the deterministic irrigation engine remains the fallback. |
+| Crop-planner output is unexpected | Verify model provenance, runtime/dependency compatibility, and data origin; synthetic prices are not market evidence. |
+
+## 8. Deployment checklist
+
+- [ ] Latest intended commit is pushed to the branch connected to hosting.
+- [ ] Render root, build/start commands, Python version, and `/health` path match
+      this guide.
+- [ ] A persistent Render disk is mounted at `/var/data`.
+- [ ] Render secrets are entered through its Dashboard; the previously exposed
+      Gemini key has been rotated.
+- [ ] `CORS_ORIGINS` contains the exact deployed Vercel origin.
+- [ ] Vercel root is `frontend`; production build settings and environment
+      variables are configured.
+- [ ] Supabase redirect URLs match the deployed site.
+- [ ] Render health/docs and Vercel direct-route refresh have been checked.
+- [ ] No private data is used as if protected by the frontend-only auth UI.
