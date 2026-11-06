@@ -16,6 +16,8 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional
 
+from app.core.config import settings
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -41,7 +43,12 @@ DEFAULT_MODEL_DIR = PROJECT_ROOT / "ml" / "models"
 
 
 def _resolve_model_dir() -> Path:
+    configured_dir = Path(settings.ML_MODEL_DIR)
+    if not configured_dir.is_absolute():
+        configured_dir = (PROJECT_ROOT / configured_dir).resolve()
     candidates = [
+        configured_dir,
+        configured_dir / "models",
         DEFAULT_MODEL_DIR,
         DEFAULT_MODEL_DIR / "models",
     ]
@@ -147,6 +154,10 @@ class MLModelManager:
             self.feature_names = EXPECTED_FEATURE_NAMES[:]
 
     def _load_all_models(self) -> None:
+        if not settings.ML_MODEL_ENABLED:
+            logger.info("ML inference is disabled by ML_MODEL_ENABLED; using deterministic fallback.")
+            return
+
         if joblib is None:
             logger.warning("joblib is unavailable; ML inference is disabled.")
             return
@@ -370,11 +381,25 @@ class MLModelManager:
             over_irrigation_risk = self._predict_with_booster("over_irrigation", classifier_features, "classifier")
             under_irrigation_risk = self._predict_with_booster("under_irrigation", classifier_features, "classifier")
 
+            predictions = {
+                "irrigation probability": classifier_probability,
+                "irrigation amount": irrigation_amount_mm,
+                "over-irrigation risk": over_irrigation_risk,
+                "under-irrigation risk": under_irrigation_risk,
+            }
+            if any(not math.isfinite(float(value)) for value in predictions.values()):
+                raise ValueError("ML bundle returned a non-finite prediction.")
+            if not 0.0 <= classifier_probability <= 1.0:
+                raise ValueError("ML irrigation probability must be between 0 and 1.")
+            if not 0.0 <= irrigation_amount_mm <= 100.0:
+                raise ValueError("ML irrigation amount must be between 0 and 100 mm.")
+            if not 0.0 <= over_irrigation_risk <= 1.0 or not 0.0 <= under_irrigation_risk <= 1.0:
+                raise ValueError("ML risk probabilities must be between 0 and 1.")
+
             irrigation_required = bool(classifier_probability >= 0.5)
-            finite_amount = float(irrigation_amount_mm) if math.isfinite(float(irrigation_amount_mm)) else 0.0
-            irrigation_amount_mm = max(0.0, finite_amount)
-            over_irrigation_risk = max(0.0, min(1.0, float(over_irrigation_risk)))
-            under_irrigation_risk = max(0.0, min(1.0, float(under_irrigation_risk)))
+            irrigation_amount_mm = float(irrigation_amount_mm)
+            over_irrigation_risk = float(over_irrigation_risk)
+            under_irrigation_risk = float(under_irrigation_risk)
 
             risk_category = "Low"
             if over_irrigation_risk >= 0.65 or under_irrigation_risk >= 0.65:

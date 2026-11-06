@@ -1,8 +1,12 @@
 import axios from 'axios';
-import supabase from '../lib/supabaseClient';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+const API_BASE_URL = (configuredBaseUrl || (import.meta.env.DEV ? 'http://localhost:8000' : '')).replace(/\/+$/, '');
 const API_TIMEOUT_MS = 6000;
+
+if (import.meta.env.PROD && !configuredBaseUrl) {
+  console.error('VITE_API_BASE_URL must be set to the deployed backend URL for production builds.');
+}
 
 export class ApiError extends Error {
   constructor(message, { status = null, code = 'API_ERROR', details = null, cause = null } = {}) {
@@ -79,11 +83,12 @@ const apiClient = axios.create({
   },
 });
 
-apiClient.interceptors.request.use(async (config) => {
-  const { data } = await supabase.auth.getSession();
-  const accessToken = data.session?.access_token;
-  if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
+apiClient.interceptors.request.use((config) => {
+  if (import.meta.env.PROD && !configuredBaseUrl) {
+    return Promise.reject(new ApiError(
+      'VITE_API_BASE_URL must be set to the deployed backend URL before API requests can be made.',
+      { code: 'CONFIGURATION_ERROR' },
+    ));
   }
   return config;
 });

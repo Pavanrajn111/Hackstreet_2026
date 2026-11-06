@@ -13,13 +13,12 @@ Features:
 from __future__ import annotations
 
 import logging
-import os
-import sqlite3
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 from sqlalchemy import create_engine, event, text
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from app.core.config import settings
@@ -34,47 +33,53 @@ BACKEND_DIR = APP_DIR.parent
 
 def resolve_database_url(raw_url: str) -> str:
     """Resolves relative SQLite database URLs relative to the backend/ root."""
-    if not raw_url.startswith("sqlite"):
+    url = make_url(raw_url)
+    if url.get_backend_name() != "sqlite":
         return raw_url
 
-    if raw_url.startswith("sqlite:///:memory:"):
+    database_path = url.database
+    if not database_path or database_path == ":memory:" or database_path.startswith("file:"):
         return raw_url
 
-    prefix = "sqlite:///"
-    if not raw_url.startswith(prefix):
-        return raw_url
-
-    path_part = raw_url[len(prefix) :]
-    # If path is already absolute, preserve it
-    p = Path(path_part)
-    if p.is_absolute():
-        return f"sqlite:///{p.as_posix()}"
-
-    # Handle relative paths like ./irrigation.db or irrigation.db
-    clean_rel = path_part.lstrip("./").lstrip(".\\")
-    resolved_path = (BACKEND_DIR / clean_rel).resolve()
-    return f"sqlite:///{resolved_path.as_posix()}"
+    path = Path(database_path).expanduser()
+    if not path.is_absolute():
+        path = BACKEND_DIR / path
+    return url.set(database=path.resolve().as_posix()).render_as_string(hide_password=False)
 
 
 RESOLVED_DATABASE_URL = resolve_database_url(settings.DATABASE_URL)
 
-# SQLite connection arguments
-connect_args = {"check_same_thread": False} if RESOLVED_DATABASE_URL.startswith("sqlite") else {}
+def _ensure_sqlite_directory(database_url: str) -> bool:
+    url = make_url(database_url)
+    if url.get_backend_name() != "sqlite":
+        return False
+
+    database_path = url.database
+    if not database_path or database_path == ":memory:" or database_path.startswith("file:"):
+        return True
+
+    parent = Path(database_path).expanduser().parent
+    try:
+        parent.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise RuntimeError(f"Cannot create SQLite database directory '{parent}': {exc}") from exc
+    return True
+
+
+is_sqlite = _ensure_sqlite_directory(RESOLVED_DATABASE_URL)
+connect_args = {"check_same_thread": False, "timeout": 30} if is_sqlite else {}
 
 engine = create_engine(RESOLVED_DATABASE_URL, connect_args=connect_args)
 
 
-# Enable SQLite WAL mode, busy timeout, and foreign keys on connection
-@event.listens_for(engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
-    if isinstance(dbapi_connection, (sqlite3.Connection, getattr(sqlite3, "Connection", type(None)))):
+if is_sqlite:
+    @event.listens_for(engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
         try:
             cursor.execute("PRAGMA journal_mode=WAL;")
-            cursor.execute("PRAGMA busy_timeout=5000;")
+            cursor.execute("PRAGMA busy_timeout=30000;")
             cursor.execute("PRAGMA foreign_keys=ON;")
-        except Exception as exc:
-            logger.warning("Could not set SQLite pragmas: %s", exc)
         finally:
             cursor.close()
 
@@ -159,4 +164,5 @@ def run_lightweight_migrations(target_engine, target_base) -> None:
                         conn.execute(text(alter_stmt))
             conn.commit()
     except Exception as exc:
-        logger.warning("Lightweight migration scan encountered an issue: %s", exc)
+        logger.exception("Lightweight database migration failed.")
+        raise RuntimeError("Database schema migration failed.") from exc
