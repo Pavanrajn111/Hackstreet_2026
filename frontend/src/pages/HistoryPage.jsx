@@ -178,9 +178,9 @@ export default function HistoryPage() {
   return (
     <div className="space-y-4 max-w-3xl mx-auto">
       {/* Header Bar */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="glass-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-purple-100 text-purple-800 rounded-xl">
+          <div className="w-11 h-11 rounded-14px bg-[#173F2A] text-white flex items-center justify-center shadow-sm shrink-0">
             <History className="w-6 h-6" />
           </div>
           <div>
@@ -193,7 +193,7 @@ export default function HistoryPage() {
         <button
           type="button"
           onClick={() => setShowLogModal(true)}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer min-h-[44px]"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#173F2A] hover:bg-[#1F5237] text-white rounded-full text-xs font-semibold shadow-sm transition-all active:scale-95 cursor-pointer min-h-[44px]"
         >
           <Plus className="w-4 h-4" />
           <span>{t('log_irrigation_btn')}</span>
@@ -288,7 +288,7 @@ export default function HistoryPage() {
       )}
 
       {/* History Log List */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100 overflow-hidden">
+      <div className="glass-card divide-y divide-[#173F2A]/10 overflow-hidden">
         {historyList.length === 0 ? (
           <div className="p-8 text-center text-slate-400 text-sm">
             {t('history_empty')}
@@ -299,10 +299,10 @@ export default function HistoryPage() {
               key={item.id}
               type="button"
               onClick={() => setSelectedRecord(item)}
-              className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 transition-colors"
+              className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#173F2A]/[0.03] transition-colors w-full text-left"
             >
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center shrink-0 mt-0.5 border border-sky-100">
+                <div className="w-10 h-10 rounded-xl bg-[#DDE9D4] text-[#173F2A] flex items-center justify-center shrink-0 mt-0.5 border border-[#173F2A]/10">
                   <Droplets className="w-5 h-5" />
                 </div>
                 <div>
@@ -347,8 +347,8 @@ export default function HistoryPage() {
       </div>
 
       {selectedRecord && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-5 w-full max-w-md shadow-xl">
+        <div className="fixed inset-0 z-50 bg-[#10251B]/50 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-modal p-6 w-full max-w-md">
             <div className="flex items-start justify-between gap-3 mb-4">
               <div>
                 <span className="workspace-eyebrow">IRRIGATION RECORD</span>
@@ -373,10 +373,10 @@ export default function HistoryPage() {
       {/* Manual Log Modal */}
       {showLogModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-5 space-y-4 shadow-xl border border-slate-200">
+          <div className="glass-modal max-w-md w-full p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Droplets className="w-4 h-4 text-purple-600" />
+                <Droplets className="w-4 h-4 text-[#426930]" />
                 Record Irrigation Event
               </h3>
               <button
@@ -398,7 +398,7 @@ export default function HistoryPage() {
                   required
                   value={logForm.irrigation_date}
                   onChange={(e) => setLogForm({ ...logForm, irrigation_date: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#426930] focus:outline-none"
                 />
               </div>
 
@@ -412,7 +412,7 @@ export default function HistoryPage() {
                   required
                   value={logForm.depth_applied_mm}
                   onChange={(e) => setLogForm({ ...logForm, depth_applied_mm: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#426930] focus:outline-none"
                 />
                 <span className="text-[10px] text-slate-500">
                   Approx {Math.round((logForm.depth_applied_mm || 0) * (farm?.farm_area_hectares || 1.5) * 10000).toLocaleString()} Litres for your {farm?.farm_area_hectares || 1.5} ha
@@ -426,7 +426,7 @@ export default function HistoryPage() {
                   value={logForm.notes}
                   onChange={(e) => setLogForm({ ...logForm, notes: e.target.value })}
                   placeholder="e.g. Morning drip run"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-[#426930] focus:outline-none"
                 />
               </div>
 
@@ -440,7 +440,7 @@ export default function HistoryPage() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+                  className="flex-1 py-2.5 rounded-full bg-[#173F2A] hover:bg-[#1F5237] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
                 >
                   Save Record
                 </button>

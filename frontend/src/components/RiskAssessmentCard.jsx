@@ -12,7 +12,7 @@ export default function RiskAssessmentCard({
   const { t } = useI18n();
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
+    <div className="glass-card p-5 space-y-4">
       <div className="flex items-center gap-2">
         <ShieldCheck className="w-5 h-5 text-emerald-700" />
         <h3 className="text-sm font-bold text-slate-800">

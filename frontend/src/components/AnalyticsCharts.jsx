@@ -101,7 +101,7 @@ export default function AnalyticsCharts({ recommendation, history = [] }) {
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-4">
+    <div className="glass-card p-5 space-y-4">
       {/* Top Header & Demo indicator */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
         <div>

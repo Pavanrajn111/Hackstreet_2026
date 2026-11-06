@@ -110,7 +110,7 @@ export default function IrrigationSchedule({ schedule = [] }) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-4">
+    <div className="glass-card p-5 space-y-5">
       {/* Header & Graph Switcher Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
         <div>

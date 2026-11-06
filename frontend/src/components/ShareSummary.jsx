@@ -50,7 +50,7 @@ ${rain_warning ? `🌧️ *Rain Note:* ${rain_warning}` : ''}
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+    <div className="glass-card p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
       <div>
         <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
           {t('share_title')}

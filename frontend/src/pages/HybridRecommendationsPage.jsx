@@ -124,10 +124,10 @@ function LayoutResult({ layout }) {
         </div>
         <div className="layout-visual-controls"><button type="button" onClick={() => setShowMain((value) => !value)} className={showMain ? 'is-on' : ''}>{showMain ? <Eye size={14} /> : <EyeOff size={14} />} {cropShortName(layout.main_crop)}</button><button type="button" onClick={() => setShowIntercrop((value) => !value)} className={showIntercrop ? 'is-on' : ''}>{showIntercrop ? <Eye size={14} /> : <EyeOff size={14} />} {cropShortName(layout.intercrop)}</button>{view === '2d' && <span className="layout-zoom-controls"><button type="button" onClick={() => setZoom((value) => Math.max(.85, value - .1))} aria-label="Zoom out"><ZoomOut size={14} /></button><strong>{Math.round(zoom * 100)}%</strong><button type="button" onClick={() => setZoom((value) => Math.min(1.25, value + .1))} aria-label="Zoom in"><ZoomIn size={14} /></button></span>}{view === '3d' && (
             <>
-              <div className="layout-camera-presets" style={{ display: 'inline-flex', gap: '6px', marginLeft: 'auto', marginRight: '6px' }}>
-                <button type="button" className={`text-xs px-2.5 py-1 rounded font-medium transition-all ${cameraPreset === 'isometric' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white/80 text-slate-600 border border-slate-200 hover:bg-slate-50'}`} onClick={() => setCameraPreset('isometric')}>Isometric 3D</button>
-                <button type="button" className={`text-xs px-2.5 py-1 rounded font-medium transition-all ${cameraPreset === 'topdown' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white/80 text-slate-600 border border-slate-200 hover:bg-slate-50'}`} onClick={() => setCameraPreset('topdown')}>Top-Down Plan</button>
-                <button type="button" className={`text-xs px-2.5 py-1 rounded font-medium transition-all ${cameraPreset === 'canopy' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white/80 text-slate-600 border border-slate-200 hover:bg-slate-50'}`} onClick={() => setCameraPreset('canopy')}>Canopy Eye-Level</button>
+              <div className="layout-camera-presets" role="group" aria-label="3D Camera Viewpoints">
+                <button type="button" className={cameraPreset === 'isometric' ? 'is-active' : ''} onClick={() => setCameraPreset('isometric')}>Isometric 3D</button>
+                <button type="button" className={cameraPreset === 'topdown' ? 'is-active' : ''} onClick={() => setCameraPreset('topdown')}>Top-Down Plan</button>
+                <button type="button" className={cameraPreset === 'canopy' ? 'is-active' : ''} onClick={() => setCameraPreset('canopy')}>Canopy Eye-Level</button>
               </div>
               <button type="button" className="layout-reset-button" onClick={() => { setCameraPreset('isometric'); setResetToken((value) => value + 1); }}><RotateCcw size={14} /> Reset view</button>
             </>

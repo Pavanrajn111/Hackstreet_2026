@@ -149,9 +149,9 @@ export default function FarmSetupPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       {/* Top Title & Preset Action */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="glass-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-emerald-100 text-emerald-800 rounded-xl">
+          <div className="w-11 h-11 rounded-14px bg-[#173F2A] text-white flex items-center justify-center shadow-sm shrink-0">
             <Sprout className="w-6 h-6" />
           </div>
           <div>
@@ -164,7 +164,7 @@ export default function FarmSetupPage() {
         <button
           type="button"
           onClick={handleLoadDemo}
-          className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer self-start sm:self-center min-h-[44px]"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#DDE9D4] hover:bg-[#D4E3C9] text-[#173F2A] border border-[#173F2A]/15 rounded-full text-xs font-semibold transition-all active:scale-95 cursor-pointer self-start sm:self-center min-h-[44px]"
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-700" />
           <span>{t('load_demo_preset')}</span>
@@ -179,7 +179,7 @@ export default function FarmSetupPage() {
       )}
 
       {/* Main Farm Registration Form */}
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-4">
+      <form onSubmit={handleSubmit} className="glass-card p-5 sm:p-7 space-y-5">
         {/* Farm Name */}
         <div>
           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -205,7 +205,7 @@ export default function FarmSetupPage() {
         </div>
 
         {/* Location Section */}
-        <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+        <div className="p-4.5 bg-white/50 backdrop-blur-md border border-[#173F2A]/10 rounded-2xl space-y-3.5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -506,7 +506,7 @@ export default function FarmSetupPage() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-extrabold rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 text-base"
+            className="w-full h-13 bg-[#173F2A] hover:bg-[#1F5237] active:scale-[0.99] text-white font-semibold rounded-full shadow-lg shadow-[#173F2A]/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 text-sm"
           >
             <Save className="w-5 h-5" />
             <span>{saving ? t('saving') : t('save_profile')}</span>

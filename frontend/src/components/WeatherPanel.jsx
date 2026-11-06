@@ -33,7 +33,7 @@ export default function WeatherPanel({ weatherData = [], rainWarning = null, isD
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
+    <div className="glass-card p-5 space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-bold text-slate-800">
@@ -99,10 +99,10 @@ export default function WeatherPanel({ weatherData = [], rainWarning = null, isD
         {weatherData.map((day, index) => (
           <div
             key={day.date || index}
-            className={`flex-1 min-w-[82px] p-2.5 rounded-xl border flex flex-col items-center text-center transition-all ${
+            className={`flex-1 min-w-[84px] p-3 rounded-2xl border flex flex-col items-center text-center transition-all ${
               index === 0
-                ? 'bg-emerald-50/80 border-emerald-300 font-semibold text-emerald-950 shadow-xs'
-                : 'bg-slate-50 border-slate-200 text-slate-700'
+                ? 'bg-[#DDE9D4]/80 border-[#426930]/40 font-semibold text-[#10251B] shadow-xs'
+                : 'bg-white/70 border-[#173F2A]/10 text-[#173F2A]/80 hover:bg-white'
             }`}
           >
             <span className="text-xs font-bold opacity-80">{day.day || formatDate(day.date)}</span>
