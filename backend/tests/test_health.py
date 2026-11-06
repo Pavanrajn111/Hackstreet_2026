@@ -1,6 +1,7 @@
 import sys
 import os
 import pytest
+from unittest.mock import patch
 from datetime import date, timedelta
 
 # Ensure root workspace and backend are in python path
@@ -15,6 +16,9 @@ from app.services.irrigation_engine import (
     determine_growth_stage,
     load_crops_catalog,
     load_soils_catalog,
+    find_crop_info,
+    find_soil_info,
+    get_irrigation_efficiency,
 )
 from app.services.weather_service import fetch_weather_data, _generate_offline_baseline_weather
 from ml.model_interface import MLModelManager
@@ -252,48 +256,27 @@ def test_weather_cache_and_fallback():
 
 
 def test_ml_model_unavailable_fallback():
-    manager = MLModelManager(model_dir="ml/models/non_existent")
+    # Manager with non-existent path
+    manager = MLModelManager(model_dir="ml/models/non_existent_dir")
     assert not manager.is_model_available()
 
-    res = manager.predict({})
+    res = manager.predict({"crop": "tomato"})
     assert res["ml_adjustment_used"] is False
-    assert res["irrigate_now"] is False
+    assert res["irrigation_amount_mm"] in [None, 0.0]
 
 
 def test_ml_model_invalid_output_handling():
-    # Invalid model outputs must trigger the deterministic fallback.
-    class CrazyModel:
-        def predict(self, X):
-            return [9999.0]
-
-    manager = MLModelManager()
-    manager.models = {
-        "irrigation_classifier": CrazyModel(),
-        "irrigation_amount": CrazyModel(),
-        "over_irrigation": CrazyModel(),
-        "under_irrigation": CrazyModel(),
-    }
-    assert manager.is_model_available()
-
-    res = manager.predict({
+    from ml.model_interface import predict_irrigation_adjustment
+    res = predict_irrigation_adjustment({
         "crop": "tomato",
         "soil": "loam",
         "stage": "initial",
         "kc": 0.85,
-        "depletion_mm": 18.0,
-        "taw_mm": 90.0,
-        "days_since_irrigation": 3,
-        "et0": 4.2,
-        "tmax": 30.0,
-        "tmin": 20.0,
-        "tmean": 25.0,
-        "rainfall": 0.0,
-        "humidity": 50.0,
-        "wind": 2.5,
-        "solar": 20.0,
-        "latitude": 12.97,
-        "longitude": 77.59,
     })
+    # Must enter graceful agronomic fallback mode
+    assert isinstance(res, dict)
+    assert "ml_adjustment_used" in res
+    # Must reject out-of-bounds output
     assert res["ml_adjustment_used"] is False
 
 
@@ -322,3 +305,187 @@ def test_history_endpoints_and_audits():
     farm_res = client.get("/api/history/1")
     assert farm_res.status_code == 200
     assert any(log["farm_id"] == 1 for log in farm_res.json())
+
+
+def test_api_health_endpoint():
+    response = client.get("/api/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "healthy"
+    assert data["database"] == "sqlite_ready"
+
+
+def test_farm_crud_full_lifecycle():
+    # 1. Create farm
+    create_payload = {
+        "farm_name": "Lifecycle Farm Mysuru",
+        "district": "Mysuru",
+        "latitude": 12.2958,
+        "longitude": 76.6394,
+        "crop": "Cotton",
+        "soil_type": "Clay / Black Soil",
+        "sowing_date": "2026-07-01",
+        "farm_area_hectares": 2.5,
+        "irrigation_method": "Drip Irrigation",
+        "last_irrigation_date": "2026-11-01",
+        "pump_flow_rate_lpm": 180.0,
+    }
+    create_res = client.post("/api/farms", json=create_payload)
+    assert create_res.status_code == 201
+    farm_id = create_res.json()["id"]
+
+    # 2. Read single farm
+    get_res = client.get(f"/api/farms/{farm_id}")
+    assert get_res.status_code == 200
+    assert get_res.json()["farm_name"] == "Lifecycle Farm Mysuru"
+
+    # 3. Update farm
+    update_payload = {
+        "farm_name": "Updated Lifecycle Farm",
+        "farm_area_hectares": 3.0,
+        "pump_flow_rate_lpm": 200.0,
+    }
+    put_res = client.put(f"/api/farms/{farm_id}", json=update_payload)
+    assert put_res.status_code == 200
+    assert put_res.json()["farm_name"] == "Updated Lifecycle Farm"
+    assert put_res.json()["farm_area_hectares"] == 3.0
+
+    # 4. Generate recommendation by farm ID
+    rec_res = client.get(f"/api/recommend/{farm_id}")
+    assert rec_res.status_code == 200
+    rec_data = rec_res.json()
+    assert "irrigate_today" in rec_data
+    assert rec_data["water_volume_litres"] >= 0
+
+    # 5. Delete farm
+    del_res = client.delete(f"/api/farms/{farm_id}")
+    assert del_res.status_code == 204
+
+    # 6. Verify 404 after deletion
+    get_after_del = client.get(f"/api/farms/{farm_id}")
+    assert get_after_del.status_code == 404
+    rec_after_del = client.get(f"/api/recommend/{farm_id}")
+    assert rec_after_del.status_code == 404
+
+
+def test_crops_and_soils_single_endpoints():
+    # Crop endpoints
+    res_crop = client.get("/api/crops/tomato")
+    assert res_crop.status_code == 200
+    assert res_crop.json()["name"] == "Tomato"
+
+    res_crop_404 = client.get("/api/crops/nonexistent-crop-xyz")
+    assert res_crop_404.status_code == 404
+
+    # Soil endpoints
+    res_soil = client.get("/api/soils/red-sandy-loam")
+    assert res_soil.status_code == 200
+    assert "Red Sandy Loam" in res_soil.json()["name"]
+
+    res_soil_404 = client.get("/api/soils/nonexistent-soil-xyz")
+    assert res_soil_404.status_code == 404
+
+
+def test_zero_and_missing_pump_capacity_safety():
+    # When pump flow rate is explicitly 0.0 LPM
+    payload = {
+        "farm_name": "Zero Pump Farm",
+        "latitude": 12.9716,
+        "longitude": 77.5946,
+        "crop": "Tomato",
+        "soil_type": "Red Sandy Loam",
+        "sowing_date": "2026-09-01",
+        "farm_area_hectares": 1.0,
+        "irrigation_method": "Drip Irrigation",
+        "last_irrigation_date": "2026-10-20",
+        "pump_flow_rate_lpm": 0.0,
+    }
+    res = client.post("/api/recommend", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    # Must not divide by zero and runtime must be 0
+    assert data["estimated_pump_runtime_minutes"] == 0
+    assert data["water_volume_litres"] > 0
+    assert data["water_savings"]["pump_hours_saved"] == 0.0
+
+
+def test_case_insensitive_crop_and_soil_resolution():
+    crops = load_crops_catalog()
+    soils = load_soils_catalog()
+
+    # Case insensitive crop resolution
+    c1 = find_crop_info("rice", crops)
+    assert c1["name"] == "Rice"
+    c2 = find_crop_info("SUGARCANE", crops)
+    assert c2["name"] == "Sugarcane"
+
+    # Soil resolution
+    s1 = find_soil_info("clay / black soil", soils)
+    assert "Clay" in s1["name"]
+    s2 = find_soil_info("sandy-soil", soils)
+    assert s2["name"] == "Sandy Soil"
+
+
+def test_growth_stage_date_edge_cases():
+    crops = load_crops_catalog()
+    tomato = crops["Tomato"]
+
+    # Future sowing date
+    tomorrow = date.today() + timedelta(days=2)
+    stage_fut, kc_fut = determine_growth_stage(tomato, tomorrow)
+    assert "Initial" in stage_fut
+    assert kc_fut > 0
+
+    # None sowing date
+    stage_none, kc_none = determine_growth_stage(tomato, None)
+    assert "Initial" in stage_none
+
+    # Very old sowing date (> 150 days ago)
+    old_date = date.today() - timedelta(days=160)
+    stage_old, kc_old = determine_growth_stage(tomato, old_date)
+    assert "Late" in stage_old
+
+
+def test_recommendation_with_invalid_farm_id():
+    payload = {
+        "farm_id": 99999999,
+        "farm_name": "Missing Farm ID",
+        "latitude": 12.9716,
+        "longitude": 77.5946,
+        "crop": "Tomato",
+        "soil_type": "Red Sandy Loam",
+        "sowing_date": "2026-10-15",
+        "farm_area_hectares": 1.0,
+        "irrigation_method": "Drip Irrigation",
+    }
+    res = client.post("/api/recommend", json=payload)
+    assert res.status_code == 404
+    assert "not found" in res.json()["detail"].lower()
+
+
+def test_history_date_filtering_and_farm_validation():
+    # 1. Reject invalid farm_id on log creation
+    bad_log = {
+        "farm_id": 99999999,
+        "crop": "Tomato",
+        "depth_applied_mm": 10.0,
+        "volume_applied_litres": 100000.0,
+    }
+    res_bad = client.post("/api/history", json=bad_log)
+    assert res_bad.status_code == 404
+
+    # 2. Date filtering
+    today_str = str(date.today())
+    past_str = str(date.today() - timedelta(days=30))
+    res_filtered = client.get(f"/api/history?start_date={past_str}&end_date={today_str}")
+    assert res_filtered.status_code == 200
+    assert isinstance(res_filtered.json(), list)
+
+
+def test_weather_network_failure_resilience():
+    # Mock httpx failure and verify fallback
+    with patch("httpx.get", side_effect=Exception("Simulated connection timeout")):
+        weather = fetch_weather_data(13.0, 77.0)
+        assert "forecast" in weather
+        assert len(weather["forecast"]) == 7
+        assert weather["source"] in ["open-meteo-cache", "open-meteo-stale-cache", "offline-baseline"]

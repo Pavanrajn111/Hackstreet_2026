@@ -1,0 +1,8 @@
+crop,layout,fit,ml_prob,plants,first_income_year,payback_year,npv_per_plant,npv_total,water_l_day,notes
+pepper,understorey,0.735,,134,3,3,7598,748306,1340,rainfall is a weak match; needs extra irrigation
+moringa,boundary,1.0,,144,1,1,3501,504101,1152,
+turmeric,understorey,0.792,,13490,1,1,19,204535,53960,needs extra irrigation
+coconut,boundary,0.896,0.0,48,5,7,3890,167311,2400,needs extra irrigation
+papaya,intercrop,0.792,0.0,303,1,1,667,160039,4545,needs extra irrigation
+tulsi,intercrop,1.0,,5995,1,2,8,47830,5995,
+marigold,border,1.0,,900,1,1,42,38201,1350,

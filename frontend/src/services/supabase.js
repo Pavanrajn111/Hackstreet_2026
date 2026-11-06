@@ -37,6 +37,7 @@ export function getSupabaseClient() {
     }
     client = createClient(url, publishableKey, {
       auth: {
+        autoRefreshToken: true,
         detectSessionInUrl: true,
         flowType: 'pkce',
         persistSession: true,

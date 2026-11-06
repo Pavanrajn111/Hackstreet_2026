@@ -1,19 +1,24 @@
-"""
-AGR002 Smart Irrigation - Open-Meteo Weather Service
+"""AGR002 Smart Irrigation - Open-Meteo Weather Service
 -----------------------------------------------------
 Connects to Open-Meteo (open-access agro-meteorological API).
 Retrieves:
   - 7-day future forecast (temperature, rain sum, rain probability, ET0, wind, solar radiation)
   - 7-day past observed weather for accurate water-depletion back-calculation
-Includes a transparent in-memory and disk cache (TTL 3600s) with clear attribution.
+Includes a thread-safe in-memory and disk cache with size eviction, corruption recovery,
+and explicit freshness metadata (source and stale attributes).
 """
 
-import os
+from __future__ import annotations
+
 import json
-import time
 import logging
-from datetime import datetime, date, timedelta
-from typing import Dict, Any, List, Optional, Tuple
+import os
+import tempfile
+import threading
+import time
+from datetime import date, datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional, Tuple
+
 import httpx
 
 from app.core.config import settings
@@ -21,12 +26,13 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "../cache")
-os.makedirs(CACHE_DIR, exist_ok=True)
 CACHE_FILE = os.path.join(CACHE_DIR, "weather_cache.json")
 CACHE_TTL_SECONDS = settings.WEATHER_CACHE_TTL_SECONDS
+MAX_CACHE_ENTRIES = 100
 
-# In-memory fast cache
+_CACHE_LOCK = threading.Lock()
 _MEMORY_CACHE: Dict[str, Dict[str, Any]] = {}
+_DISK_CACHE_WRITABLE = True
 
 # WMO Weather Interpretation Codes (WW)
 WMO_CODE_MAP = {
@@ -52,67 +58,137 @@ WMO_CODE_MAP = {
 }
 
 
+def _ensure_cache_dir() -> bool:
+    """Lazily ensure cache directory exists. Returns False if filesystem is read-only."""
+    global _DISK_CACHE_WRITABLE
+    if not _DISK_CACHE_WRITABLE:
+        return False
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        return True
+    except Exception as exc:
+        logger.warning("Cache directory %s is not writable: %s. Using memory cache only.", CACHE_DIR, exc)
+        _DISK_CACHE_WRITABLE = False
+        return False
+
+
 def _cache_key(lat: float, lon: float) -> str:
     return f"{round(lat, 2)}_{round(lon, 2)}"
 
 
-def _load_from_cache(key: str) -> Optional[Tuple[Dict[str, Any], str]]:
-    """Loads weather from in-memory or disk cache if fresh."""
+def _load_from_cache(key: str) -> Optional[Tuple[Dict[str, Any], str, bool]]:
+    """Loads weather from in-memory or disk cache if fresh.
+
+    Returns (data, source, is_stale).
+    """
     now = time.time()
+    with _CACHE_LOCK:
+        # 1. Check memory cache
+        if key in _MEMORY_CACHE:
+            entry = _MEMORY_CACHE[key]
+            is_stale = (now - entry.get("timestamp", 0)) >= CACHE_TTL_SECONDS
+            if not is_stale:
+                return entry["data"], "open-meteo-cache", False
 
-    # 1. Check memory cache
-    if key in _MEMORY_CACHE:
-        entry = _MEMORY_CACHE[key]
-        if now - entry["timestamp"] < CACHE_TTL_SECONDS:
-            return entry["data"], "open-meteo-cache"
-
-    # 2. Check disk cache
-    if os.path.exists(CACHE_FILE):
-        try:
-            with open(CACHE_FILE, "r", encoding="utf-8") as f:
-                disk_data = json.load(f)
-                if key in disk_data:
-                    entry = disk_data[key]
-                    if now - entry.get("timestamp", 0) < CACHE_TTL_SECONDS:
-                        _MEMORY_CACHE[key] = entry
-                        return entry["data"], "open-meteo-cache"
-        except Exception as e:
-            logger.warning("Could not read weather cache file: %s", e)
+        # 2. Check disk cache
+        if os.path.exists(CACHE_FILE):
+            try:
+                with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                    disk_data = json.load(f)
+                    if isinstance(disk_data, dict) and key in disk_data:
+                        entry = disk_data[key]
+                        is_stale = (now - entry.get("timestamp", 0)) >= CACHE_TTL_SECONDS
+                        if not is_stale:
+                            _MEMORY_CACHE[key] = entry
+                            return entry["data"], "open-meteo-cache", False
+            except Exception as e:
+                logger.warning("Weather cache corrupted or unreadable (%s). Recovering...", e)
+                _recover_corrupt_cache()
 
     return None
 
 
-def _save_to_cache(key: str, data: Dict[str, Any]) -> None:
-    """Saves weather to memory and disk cache."""
-    now = time.time()
-    entry = {"timestamp": now, "cached_at": datetime.utcnow().isoformat(), "data": data}
-    _MEMORY_CACHE[key] = entry
-
+def _recover_corrupt_cache() -> None:
+    """Quarantine corrupted cache file and reset."""
     try:
-        disk_data = {}
         if os.path.exists(CACHE_FILE):
-            with open(CACHE_FILE, "r", encoding="utf-8") as f:
-                disk_data = json.load(f)
-        disk_data[key] = entry
-        with open(CACHE_FILE, "w", encoding="utf-8") as f:
-            json.dump(disk_data, f, indent=2)
-    except Exception as e:
-        logger.warning("Could not write weather cache file: %s", e)
+            quarantine_path = f"{CACHE_FILE}.corrupt.{int(time.time())}"
+            os.rename(CACHE_FILE, quarantine_path)
+            logger.info("Quarantined corrupt weather cache to %s", quarantine_path)
+    except Exception as exc:
+        logger.warning("Could not quarantine corrupt cache: %s", exc)
+
+
+def _evict_old_entries(cache_dict: Dict[str, Any]) -> None:
+    """Keep only the most recent MAX_CACHE_ENTRIES entries."""
+    if len(cache_dict) <= MAX_CACHE_ENTRIES:
+        return
+    # Sort items by timestamp ascending and delete the oldest
+    sorted_items = sorted(
+        cache_dict.items(),
+        key=lambda item: item[1].get("timestamp", 0) if isinstance(item[1], dict) else 0,
+    )
+    excess = len(cache_dict) - MAX_CACHE_ENTRIES
+    for k, _ in sorted_items[:excess]:
+        cache_dict.pop(k, None)
+
+
+def _save_to_cache(key: str, data: Dict[str, Any]) -> None:
+    """Thread-safe and atomic save to memory and disk cache."""
+    now = time.time()
+    entry = {"timestamp": now, "cached_at": datetime.now(timezone.utc).isoformat(), "data": data}
+
+    with _CACHE_LOCK:
+        _MEMORY_CACHE[key] = entry
+        _evict_old_entries(_MEMORY_CACHE)
+
+        if not _ensure_cache_dir():
+            return
+
+        try:
+            disk_data: Dict[str, Any] = {}
+            if os.path.exists(CACHE_FILE):
+                try:
+                    with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                        loaded = json.load(f)
+                        if isinstance(loaded, dict):
+                            disk_data = loaded
+                except Exception:
+                    _recover_corrupt_cache()
+                    disk_data = {}
+
+            disk_data[key] = entry
+            _evict_old_entries(disk_data)
+
+            # Atomic write via temporary file
+            dir_name = os.path.dirname(CACHE_FILE)
+            with tempfile.NamedTemporaryFile("w", dir=dir_name, delete=False, encoding="utf-8") as tf:
+                json.dump(disk_data, tf, indent=2)
+                temp_path = tf.name
+
+            os.replace(temp_path, CACHE_FILE)
+        except Exception as e:
+            logger.warning("Could not atomically write weather cache file: %s", e)
 
 
 def fetch_weather_data(lat: float, lon: float) -> Dict[str, Any]:
-    """
-    Fetches real-time weather from Open-Meteo including 7-day past observed
+    """Fetches real-time weather from Open-Meteo including 7-day past observed
+
     and 7-day future forecast.
     Falls back to valid cache or documented baseline on network failure.
     """
+    # 0. Validate coordinate ranges
+    if not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):
+        logger.warning("Coordinates out of range: lat=%.4f, lon=%.4f. Returning offline baseline.", lat, lon)
+        return _generate_offline_baseline_weather(lat, lon)
+
     key = _cache_key(lat, lon)
 
     # 1. Try fresh cache
     cached = _load_from_cache(key)
     if cached:
-        data, source = cached
-        return {**data, "source": source}
+        data, source, is_stale = cached
+        return {**data, "source": source, "stale": is_stale}
 
     # 2. Live API Request to Open-Meteo
     url = settings.OPEN_METEO_BASE_URL
@@ -141,16 +217,28 @@ def fetch_weather_data(lat: float, lon: float) -> Dict[str, Any]:
             raw = response.json()
             parsed = _parse_open_meteo_response(raw)
             _save_to_cache(key, parsed)
-            return {**parsed, "source": "open-meteo"}
+            return {**parsed, "source": "open-meteo", "stale": False}
         else:
             logger.error("Open-Meteo responded with status %s: %s", response.status_code, response.text)
     except Exception as exc:
         logger.warning("Failed to reach Open-Meteo API (%s). Attempting stale cache fallback.", exc)
 
-    # 3. Fallback: Check stale cache if network failed
-    if key in _MEMORY_CACHE:
-        entry = _MEMORY_CACHE[key]
-        return {**entry["data"], "source": "open-meteo-stale-cache"}
+    # 3. Fallback: Check in-memory or disk cache for stale data if network failed
+    with _CACHE_LOCK:
+        if key in _MEMORY_CACHE:
+            entry = _MEMORY_CACHE[key]
+            return {**entry["data"], "source": "open-meteo-stale-cache", "stale": True}
+
+        if os.path.exists(CACHE_FILE):
+            try:
+                with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                    disk_data = json.load(f)
+                    if isinstance(disk_data, dict) and key in disk_data:
+                        entry = disk_data[key]
+                        _MEMORY_CACHE[key] = entry
+                        return {**entry["data"], "source": "open-meteo-stale-cache", "stale": True}
+            except Exception as e:
+                logger.warning("Could not read weather cache file for stale fallback: %s", e)
 
     # 4. Ultimate fallback: Documented local baseline
     logger.info("Using deterministic offline baseline weather for lat=%.4f, lon=%.4f", lat, lon)
@@ -169,6 +257,8 @@ def _parse_open_meteo_response(raw: Dict[str, Any]) -> Dict[str, Any]:
     precip: List[float] = daily.get("precipitation_sum", [])
     precip_prob: List[int] = daily.get("precipitation_probability_max", [])
     et0: List[float] = daily.get("et0_fao_evapotranspiration", [])
+    wind_max: List[float] = daily.get("wind_speed_10m_max", [])
+    solar_sum: List[float] = daily.get("shortwave_radiation_sum", [])
 
     # Calculate daily mean humidity from hourly readings (24 readings per day)
     hourly_humidity = hourly.get("relative_humidity_2m", [])
@@ -181,21 +271,43 @@ def _parse_open_meteo_response(raw: Dict[str, Any]) -> Dict[str, Any]:
 
     today_str = date.today().isoformat()
     today_index = 0
+    found_today = False
     for idx, t in enumerate(times):
         if t == today_str:
             today_index = idx
+            found_today = True
             break
+        elif t > today_str and not found_today:
+            today_index = max(0, idx - 1)
+            found_today = True
+            break
+
+    if not found_today and times:
+        today_index = max(0, len(times) - 7)
 
     day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
     # 7-day Future Forecast (starting from today)
     forecast_items = []
-    for i in range(today_index, min(today_index + 7, len(times))):
-        dt = date.fromisoformat(times[i])
-        day_label = "Today" if i == today_index else day_names[dt.weekday()]
-        w_code = weather_codes[i] if i < len(weather_codes) else 0
+    end_index = min(today_index + 7, len(times))
+    for i in range(today_index, end_index):
+        try:
+            dt = date.fromisoformat(times[i])
+            day_label = "Today" if i == today_index else day_names[dt.weekday()]
+        except Exception:
+            day_label = "Day"
+
+        w_code = weather_codes[i] if i < len(weather_codes) and weather_codes[i] is not None else 0
         cond = WMO_CODE_MAP.get(w_code, "Partly Cloudy")
         p_prob = precip_prob[i] if i < len(precip_prob) and precip_prob[i] is not None else (70 if (precip[i] or 0) > 2.0 else 10)
+
+        # Wind speed conversion: Open-Meteo default is km/h. Convert to m/s (1 m/s = 3.6 km/h).
+        raw_wind_kmh = wind_max[i] if i < len(wind_max) and wind_max[i] is not None else None
+        wind_m_s = round(float(raw_wind_kmh) / 3.6, 2) if raw_wind_kmh is not None else 2.5
+
+        # Solar radiation: Open-Meteo returns shortwave_radiation_sum in MJ/m²
+        raw_solar = solar_sum[i] if i < len(solar_sum) and solar_sum[i] is not None else None
+        solar_mj = round(float(raw_solar), 2) if raw_solar is not None else 20.0
 
         forecast_items.append({
             "date": times[i],
@@ -207,6 +319,26 @@ def _parse_open_meteo_response(raw: Dict[str, Any]) -> Dict[str, Any]:
             "rain_probability_pct": p_prob,
             "et0_mm": round(et0[i], 2) if i < len(et0) and et0[i] is not None else 4.2,
             "condition": cond,
+            "wind_m_s": wind_m_s,
+            "solar_mj_m2": solar_mj,
+        })
+
+    # Ensure 7 items in forecast_items
+    while len(forecast_items) < 7:
+        idx = len(forecast_items)
+        d_date = date.today() + timedelta(days=idx)
+        forecast_items.append({
+            "date": d_date.isoformat(),
+            "day": "Today" if idx == 0 else day_names[d_date.weekday()],
+            "temp_max_c": 28.5,
+            "temp_min_c": 19.0,
+            "humidity_pct": 60,
+            "rainfall_mm": 0.0,
+            "rain_probability_pct": 10,
+            "et0_mm": 4.2,
+            "condition": "Partly Cloudy",
+            "wind_m_s": 2.5,
+            "solar_mj_m2": 20.0,
         })
 
     # Past observed weather (prior to today)
@@ -226,7 +358,7 @@ def _parse_open_meteo_response(raw: Dict[str, Any]) -> Dict[str, Any]:
 
 def _generate_offline_baseline_weather(lat: float, lon: float) -> Dict[str, Any]:
     """Generates clearly marked deterministic baseline weather when offline."""
-    day_names = ["Today", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed"]
+    day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     today = date.today()
     mock_temps = [
         (29.5, 19.0, 58, 0.0, 5, 4.6, "Sunny"),
@@ -241,9 +373,10 @@ def _generate_offline_baseline_weather(lat: float, lon: float) -> Dict[str, Any]
     forecast = []
     for idx, (tmax, tmin, hum, rain, prob, et0, cond) in enumerate(mock_temps):
         d_date = today + timedelta(days=idx)
+        day_label = "Today" if idx == 0 else day_names[d_date.weekday()]
         forecast.append({
             "date": d_date.isoformat(),
-            "day": day_names[idx % 7],
+            "day": day_label,
             "temp_max_c": tmax,
             "temp_min_c": tmin,
             "humidity_pct": hum,
@@ -251,10 +384,13 @@ def _generate_offline_baseline_weather(lat: float, lon: float) -> Dict[str, Any]
             "rain_probability_pct": prob,
             "et0_mm": et0,
             "condition": cond,
+            "wind_m_s": 2.5,
+            "solar_mj_m2": 20.0,
         })
 
     return {
         "forecast": forecast,
         "past": [],
         "source": "offline-baseline",
+        "stale": True,
     }

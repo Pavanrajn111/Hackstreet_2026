@@ -18,32 +18,34 @@ not deployable credentials.
    ```
 
    Real environment paths should be ignored; example templates should not be.
-   If real environment files are already tracked, untrack without deleting local
-   copies, then rotate any exposed credentials:
+   If real environment files are already tracked, untrack them without deleting
+   local copies, then rotate any exposed credentials:
 
    ```powershell
    git rm --cached --ignore-unmatch .env backend/.env frontend/.env
    ```
 
-3. This checkout currently contains **no tracked crop-planner `.joblib` files**.
-   The irrigation bundle is disabled, and model binaries are intentionally
-   ignored. Do not copy irrigation models into the crop-planner directory. If
-   crop-planner inference is needed, obtain and verify its actual trained
-   artifacts before committing them under `ml/crop_planner/`. The ignore rules
-   allow those specific files:
+3. This checkout tracks crop-planner model files, including
+   `crop_suitability_rf.joblib` and `price_models.joblib`; the backend loads
+   them when available and has fallback behavior. Verify model provenance and
+   predictions before relying on them for production decisions. In particular,
+   `SYNTHETIC_prices_NOT_REAL.csv` is explicitly synthetic and must not be
+   presented as real market data. The optional
+   `ml/crop_planner/requirements.txt` pins XGBoost 3.4.1, which requires Python
+   3.12 or newer; Render uses Python 3.11.11 and installs
+   `backend/requirements.txt`, not that optional file. Confirm model
+   compatibility before changing the runtime or enabling any XGBoost-dependent
+   inference.
 
    ```powershell
    git ls-files 'ml/crop_planner/**/*.joblib'
    ```
 
-   Until then, crop-planner ML deployment is blocked; deterministic FAO-56
-   recommendations remain the fallback.
-
-   The irrigation adapter is wired into the recommendation route, but the
-   production model remains disabled. The supplied irrigation bundle metadata
-   pins XGBoost 3.4.1, which requires Python 3.12 or newer; the current Render
-   runtime is Python 3.11.11. Keep ML disabled until the actual artifacts and
-   their supported runtime are available together and inference is verified.
+   The separate irrigation adapter is wired into the recommendation route, but
+   its production model remains disabled (`ML_MODEL_ENABLED=false`). Do not
+   copy irrigation artifacts into `ml/crop_planner/`; enable irrigation ML only
+   after the matching artifacts, compatible runtime, and inference have been
+   verified.
 
 ## 2. Deploy the backend to Render
 
@@ -77,13 +79,17 @@ not deployable credentials.
    | `WEATHER_CACHE_TTL_SECONDS` | `3600` |
    | `WEATHER_API_TIMEOUT_SECONDS` | `8.0` |
    | `OPEN_METEO_BASE_URL` | `https://api.open-meteo.com/v1/forecast` |
-   | `GEMINI_API_KEY` | Optional real key, only if configured for use |
-   | `GEMINI_MODEL` | `gemini-2.0-flash` |
+   | `GEMINI_API_KEY` | A newly generated key, entered only in Render |
+   | `GEMINI_MODEL` | `gemini-3.6-flash` |
+   | `GEMINI_API_TIMEOUT_SECONDS` | `25.0` |
+   | `GEMINI_MAX_OUTPUT_TOKENS` | `2400` |
 
    `DATABASE_URL`, `CORS_ORIGINS`, and `GEMINI_API_KEY` use unsynchronized
    Blueprint variables and must be entered in the Dashboard. `CORS_ORIGINS` is a
    comma-separated list of exact origins. Add exact preview origins if needed;
-   never use an unrestricted wildcard with credentials.
+   never use an unrestricted wildcard with credentials. Since the previously
+   supplied Gemini key was shared in chat, revoke it and create a replacement
+   before adding the new value directly to Render.
 
 4. **SQLite persistence must be configured separately.** Attach a Render
    persistent disk on a plan that supports it and mount it at `/var/data`. The
@@ -135,7 +141,8 @@ not deployable credentials.
    Example shape: `https://<your-render-service>.onrender.com`. The frontend
    appends `/api/...` to this base. Vite variables are public in the browser
    bundle; never put backend secrets, a Gemini key, or a Supabase service-role
-   secret in a `VITE_` variable.
+   secret in a `VITE_` variable. The Gemini key belongs only in Render; do not
+   add it to Vercel.
 
 5. Vercel environment variables are applied at **build time**; redeploy after
    changing them. If `VITE_API_BASE_URL` is missing in production, the frontend
@@ -174,8 +181,11 @@ Set the same public values in Vercel Production and Preview environments as
 needed, then redeploy because Vite reads them at build time.
 
 **This is authentication UI only.** The FastAPI endpoints do not validate
-Supabase JWTs, and farm data is not scoped to authenticated users. Do not treat
-sign-in as API or data protection.
+Supabase JWTs, and farm data is not scoped to authenticated users. This includes
+the backend `/api/community-water` endpoints, which can read and write shared
+water resources and requests. Do not treat sign-in as API or data protection;
+do not expose the backend as a production service for private data until
+server-side authentication and authorization are implemented.
 
 ## 5. Community Water showcase
 
@@ -183,7 +193,9 @@ sign-in as API or data protection.
 volumes, locations, and activity are illustrative, not live community data.
 The request form demonstrates a local browser-only preview; it does not contact
 an API or persist or share requests. Refreshing or leaving the page clears the
-preview.
+preview. Separate backend `/api/community-water` endpoints do persist data;
+they are not called by this showcase and currently have no Supabase
+authentication or authorization.
 
 ## 6. Verify the deployed frontend
 
@@ -194,10 +206,12 @@ preview.
 3. Check responses and the browser console for CORS or missing-configuration
    errors. Test Render `/health` and `/docs` directly if API calls fail.
 
-Routes declared in `frontend/src/App.jsx` are `/`, `/login`, `/register`,
-`/recover`, `/reset-password`, `/app`, `/app/setup`, `/app/schedule`,
-`/app/history`, `/app/intelligence`, `/app/community-water`, and `/app/profile`,
-plus redirects from `/dashboard`, `/setup`, `/schedule`, `/history`, and
+Routes declared in `frontend/src/App.jsx` include `/`, `/login`, `/register`,
+`/recover`, `/reset-password`, `/app`, `/app/farms`, `/app/setup`,
+`/app/schedule`, `/app/history`, `/app/intelligence`, its crop-suitability,
+crop-planner, market, adaptive-irrigation, water-resilience, and hybrid
+subroutes, `/app/community-water`, `/app/profile`, and `/app/assistant`, plus
+redirects from `/dashboard`, `/setup`, `/schedule`, `/history`, and
 `/community-water`. Vercel's rewrite returns the SPA shell but cannot add
 application routes.
 
@@ -246,7 +260,8 @@ project dependency. These checks do not claim that a cloud deployment succeeded.
 - **Demo data still appears:** Clear `agr002_use_mock` or switch to live mode.
 - **Direct navigation shows no page:** The rewrite serves `index.html`, but the
   path must also be declared in React Router.
-- **ML does not run:** This is intentional while `ML_MODEL_ENABLED=false` or
-  required model artifacts/dependencies are unavailable. The irrigation engine
-  continues with deterministic FAO-56 recommendations. Crop-planner artifacts
-  are not currently tracked in this repository.
+- **ML does not run:** The irrigation model is intentionally disabled while
+  `ML_MODEL_ENABLED=false` or its required artifacts/dependencies are
+  unavailable; the irrigation engine continues with deterministic FAO-56
+  recommendations. Crop-planner model files are tracked, but verify their
+  provenance, runtime compatibility, and predictions before production use.

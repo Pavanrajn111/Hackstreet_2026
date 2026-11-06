@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { ArrowRight, CheckCircle2, Eye, EyeOff, Sprout } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { getSupabaseClient } from '../services/supabase';
+import React, { useEffect, useState } from 'react';
+import { ArrowRight, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import BrandLogo from '../components/BrandLogo';
+import useAuth from '../auth/useAuth';
 
 const copy = {
   login: {
@@ -16,8 +17,8 @@ const copy = {
   register: {
     eyebrow: 'BEGIN YOUR FIELD RECORD',
     title: 'Grow with clarity.',
-    body: 'Create your account and make the next decision count.',
-    action: 'Create account',
+    body: 'Create your free workspace and make the next decision count.',
+    action: 'Create workspace',
     alternate: 'Already have an account?',
     alternateLink: 'Sign in',
     alternatePath: '/login',
@@ -42,98 +43,120 @@ const copy = {
   },
 };
 
-const successCopy = {
-  register: {
-    title: 'Check your inbox.',
-    body: 'If email confirmation is enabled, use the link we sent to finish creating your account.',
-  },
-  recover: {
-    title: 'Check your inbox.',
-    body: 'If an account exists for that address, Supabase will send a password recovery link.',
-  },
-  reset: {
-    title: 'Password updated.',
-    body: 'Your new password is ready. Sign in to continue.',
-  },
-};
-
 export default function AuthPage({ mode = 'login' }) {
   const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [requiresConfirmation, setRequiresConfirmation] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+  const { signUp, signIn, resetPassword, updatePassword, error: authStateError } = useAuth();
   const content = copy[mode] ?? copy.login;
-  const passwordMode = mode === 'login' || mode === 'register' || mode === 'reset';
+
+  const getDestination = () => {
+    const from = location.state?.from;
+    return from?.pathname ? `${from.pathname}${from.search || ''}${from.hash || ''}` : '/app';
+  };
+
+  const friendlyError = (authError) => {
+    const message = authError?.message || 'Authentication could not be completed.';
+    if (/invalid login credentials/i.test(message)) return 'The email or password is incorrect.';
+    if (/user already registered|already exists/i.test(message)) return 'An account already exists for this email. Try signing in instead.';
+    if (/password/i.test(message) && /characters|length|weak|leaked|common/i.test(message)) return 'Choose a stronger password with at least 6 characters.';
+    if (/rate limit|too many requests/i.test(message)) return 'Too many attempts. Please wait a moment and try again.';
+    return message;
+  };
+
+  useEffect(() => {
+    if (authStateError) {
+      setError(authStateError instanceof Error ? authStateError.message : 'Authentication could not be completed.');
+    }
+  }, [authStateError]);
 
   const submit = async (event) => {
     event.preventDefault();
     setError('');
-    setIsSubmitting(true);
-
     const form = new FormData(event.currentTarget);
-    const email = String(form.get('email') ?? '').trim();
-    const password = String(form.get('password') ?? '');
+    const email = String(form.get('email') || '').trim();
+    const password = String(form.get('password') || '');
+    const confirmPassword = String(form.get('confirmPassword') || '');
+    const fullName = String(form.get('fullName') || '').trim();
+    const phone = String(form.get('phone') || '').trim();
 
+    if (mode !== 'reset' && (!email || !email.includes('@'))) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (mode !== 'recover' && !password) {
+      setError('Please enter a password to continue.');
+      return;
+    }
+    if (mode === 'register' && !fullName) {
+      setError('Please enter your full name.');
+      return;
+    }
+    if ((mode === 'register' || mode === 'reset') && password !== confirmPassword) {
+      setError('The passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
     try {
-      const supabase = getSupabaseClient();
-
       if (mode === 'login') {
-        const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-        if (authError) throw authError;
-        navigate('/app', { replace: true });
-        return;
-      }
-
-      if (mode === 'register') {
-        const { data, error: authError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: `${window.location.origin}/login` },
-        });
-        if (authError) throw authError;
+        await signIn({ email, password });
+        navigate(getDestination(), { replace: true });
+      } else if (mode === 'register') {
+        const data = await signUp({ email, password, fullName, phone });
         if (data.session) {
-          navigate('/app', { replace: true });
-          return;
+          navigate(getDestination(), { replace: true });
+        } else {
+          setRequiresConfirmation(true);
+          setSubmitted(true);
         }
       } else if (mode === 'recover') {
-        const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/reset-password`,
-        });
-        if (authError) throw authError;
+        await resetPassword(email);
+        setSubmitted(true);
       } else if (mode === 'reset') {
-        const confirmation = String(form.get('password-confirmation') ?? '');
-        if (password !== confirmation) {
-          setError('The passwords do not match.');
-          return;
-        }
-        const { error: authError } = await supabase.auth.updateUser({ password });
-        if (authError) throw authError;
+        await updatePassword(password);
+        setSubmitted(true);
       } else {
         throw new Error('This authentication action is not supported.');
       }
-
-      setSuccess(true);
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : 'Supabase could not complete the request. Please try again.',
-      );
+    } catch (authError) {
+      setError(friendlyError(authError));
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
-  const successMessage = successCopy[mode];
+  const successEyebrow = mode === 'reset'
+    ? 'PASSWORD UPDATED'
+    : mode === 'recover'
+      ? 'REQUEST RECEIVED'
+      : requiresConfirmation
+        ? 'CONFIRM YOUR EMAIL'
+        : 'ACCOUNT READY';
+  const successTitle = mode === 'reset'
+    ? 'Password updated.'
+    : mode === 'recover'
+      ? 'Check your inbox.'
+      : requiresConfirmation
+        ? 'One last step.'
+        : 'Your workspace is ready.';
+  const successBody = mode === 'reset'
+    ? 'Your new password is ready. Sign in to continue.'
+    : mode === 'recover'
+      ? 'If an account exists for that email, Supabase has sent a password recovery link.'
+      : requiresConfirmation
+        ? 'We sent a confirmation link to your email. Confirm your address before signing in.'
+        : 'Your account is ready. We are taking you to the field console.';
 
   return (
     <div className="auth-page">
       <div className="auth-visual">
         <div className="auth-visual-shade" />
-        <Link to="/" className="auth-logo">
-          <span><Sprout size={19} /></span>AquaGrow
-        </Link>
+        <Link to="/" className="auth-logo"><BrandLogo theme="light" size="medium" /></Link>
         <div className="auth-quote">
           <span>FIELD NOTE / 001</span>
           <h2>Every field<br /><em>has a rhythm.</em></h2>
@@ -143,82 +166,90 @@ export default function AuthPage({ mode = 'login' }) {
           <span>SOIL • WEATHER • WATER</span>
         </div>
       </div>
-
       <div className="auth-panel">
         <Link to="/" className="auth-back">← Back to AquaGrow</Link>
         <div className="auth-form-wrap">
-          {success ? (
+          {submitted ? (
             <div className="auth-success" aria-live="polite">
               <CheckCircle2 size={37} />
-              <span className="auth-eyebrow">REQUEST COMPLETE</span>
-              <h1>{successMessage.title}</h1>
-              <p>{successMessage.body}</p>
-              <Link to="/login" className="auth-submit">
-                Sign in <ArrowRight size={16} />
-              </Link>
+              <span className="auth-eyebrow">{successEyebrow}</span>
+              <h1>{successTitle}</h1>
+              <p>{successBody}</p>
+              {(mode === 'recover' || mode === 'reset' || requiresConfirmation) && (
+                <Link to="/login" className="auth-submit">
+                  Continue to sign in <ArrowRight size={16} />
+                </Link>
+              )}
             </div>
           ) : (
             <>
               <span className="auth-eyebrow">{content.eyebrow}</span>
               <h1>{content.title}</h1>
               <p className="auth-intro">{content.body}</p>
-              <form onSubmit={submit}>
+              <form onSubmit={submit} noValidate>
                 {mode !== 'reset' && (
-                  <label>
-                    Email address
-                    <input
-                      name="email"
-                      type="email"
-                      placeholder="you@yourfarm.com"
-                      autoComplete="email"
-                      required
-                    />
-                  </label>
+                  <>
+                    {mode === 'register' && (
+                      <>
+                        <label>
+                          Full name
+                          <input name="fullName" type="text" placeholder="Your full name" autoComplete="name" required />
+                        </label>
+                        <label>
+                          Phone number <span>(optional)</span>
+                          <input name="phone" type="tel" placeholder="+91 98765 43210" autoComplete="tel" />
+                        </label>
+                      </>
+                    )}
+                    <label>
+                      Email address
+                      <input name="email" type="email" placeholder="you@yourfarm.com" autoComplete="email" required />
+                    </label>
+                  </>
                 )}
-                {passwordMode && (
-                  <label>
-                    {mode === 'reset' ? 'New password' : 'Password'}
-                    <div className="password-field">
-                      <input
-                        name="password"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder={mode === 'reset' ? 'Choose a new password' : 'Your password'}
-                        autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((visible) => !visible)}
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                      </button>
-                    </div>
-                  </label>
-                )}
-                {mode === 'reset' && (
-                  <label>
-                    Confirm new password
-                    <input
-                      name="password-confirmation"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Enter the new password again"
-                      autoComplete="new-password"
-                      required
-                    />
-                  </label>
+                {mode !== 'recover' && (
+                  <>
+                    <label>
+                      {mode === 'reset' ? 'New password' : 'Password'}
+                      <div className="password-field">
+                        <input
+                          name="password"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder={mode === 'reset' ? 'Choose a new password' : 'Your password'}
+                          autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((visible) => !visible)}
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                        </button>
+                      </div>
+                    </label>
+                    {(mode === 'register' || mode === 'reset') && (
+                      <label>
+                        Confirm password
+                        <input
+                          name="confirmPassword"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Enter your password again"
+                          autoComplete="new-password"
+                          required
+                        />
+                      </label>
+                    )}
+                  </>
                 )}
                 {mode === 'login' && (
                   <div className="auth-options">
-                    <label className="remember">
-                      <input type="checkbox" /> Remember me
-                    </label>
                     <Link to="/recover">Forgot password?</Link>
                   </div>
                 )}
                 {error && <p className="auth-error" role="alert">{error}</p>}
-                <button type="submit" className="auth-submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Please wait…' : content.action}
+                <button type="submit" className="auth-submit" disabled={loading}>
+                  {loading ? 'Please wait…' : content.action}
                   <ArrowRight size={16} />
                 </button>
               </form>

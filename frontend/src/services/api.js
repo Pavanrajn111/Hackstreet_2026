@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { defaultFarm, sampleCrops, sampleSoils } from '../data/mockFarm';
 import { mockRecommendation, mockHistory } from '../data/mockRecommendation';
+import apiClient from './apiClient';
 
 // Keys for local persistence
 const STORAGE_KEYS = {
@@ -17,10 +17,7 @@ const getInitialMockMode = () => {
   if (saved !== null) {
     return saved === 'true';
   }
-  if (import.meta.env.VITE_USE_MOCK_DATA === 'true') {
-    return true;
-  }
-  return !import.meta.env.PROD && import.meta.env.VITE_USE_MOCK_DATA !== 'false';
+  return import.meta.env.VITE_USE_MOCK_DATA !== 'false';
 };
 
 let useMockData = getInitialMockMode();
@@ -34,22 +31,6 @@ export const setMockMode = (enabled) => {
     new CustomEvent('agr002_mock_mode_changed', { detail: { useMockData } })
   );
 };
-
-// Read base URL from Vite environment variable
-const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
-const BASE_URL = (configuredBaseUrl || (import.meta.env.DEV ? 'http://localhost:8000' : '')).replace(/\/+$/, '');
-
-if (import.meta.env.PROD && !configuredBaseUrl) {
-  console.error('VITE_API_BASE_URL must be set to the deployed backend URL for production builds.');
-}
-
-const apiClient = axios.create({
-  baseURL: BASE_URL,
-  timeout: 6000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
 
 /**
  * Load Demo Preset (Bengaluru Tomato Farm)
@@ -92,6 +73,9 @@ export const getRecommendation = async (farmPayload = null) => {
     localStorage.setItem(STORAGE_KEYS.CACHED_TIME, new Date().toISOString());
     return data;
   } catch (error) {
+    if (error?.code !== 'NETWORK_ERROR' && error?.code !== 'TIMEOUT') {
+      throw error;
+    }
     console.warn('Backend /api/recommend unavailable. Attempting offline cache:', error.message);
 
     // Retrieve offline cached recommendation
@@ -192,6 +176,17 @@ export const saveFarm = async (farmData) => {
     console.warn('Backend save failed; farm stored in local device storage:', error.message);
     return { ...farmData, id: 1, created_at: new Date().toISOString(), offline_saved: true };
   }
+};
+
+export const updateSavedFarm = (farmData) => {
+  localStorage.setItem(STORAGE_KEYS.SAVED_FARM, JSON.stringify(farmData));
+  window.dispatchEvent(new CustomEvent('agr002_farm_updated', { detail: farmData }));
+  return farmData;
+};
+
+export const deleteSavedFarm = () => {
+  localStorage.removeItem(STORAGE_KEYS.SAVED_FARM);
+  window.dispatchEvent(new CustomEvent('agr002_farm_updated', { detail: null }));
 };
 
 /**

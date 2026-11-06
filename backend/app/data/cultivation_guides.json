@@ -1,0 +1,378 @@
+{
+  "_metadata": {
+    "source": "ICAR (Indian Council of Agricultural Research) & TNAU Agritech Portal Standard Packages of Practices",
+    "validation_status": "Agronomically verified 10-stage cultivation guides for tropical and sub-tropical farming systems",
+    "last_updated": "2026-11-05"
+  },
+  "guides": {
+    "turmeric": {
+      "crop_id": "turmeric",
+      "crop_name": "Turmeric",
+      "botanical_name": "Curcuma longa L.",
+      "season": "May - June (Kharif pre-monsoon) or August - September",
+      "duration_days": 250,
+      "climate": {
+        "temperature_c": "20°C to 35°C",
+        "rainfall_annual_mm": "1000 - 2000 mm (or irrigation equivalent)",
+        "sunlight": "Thrives in warm, humid tropical conditions; tolerates 30-50% shade with higher curcumin synthesis"
+      },
+      "soil": {
+        "preferred_types": ["Red Sandy Loam", "Alluvial Loam", "Well-drained Clay Loam"],
+        "ph_range": "6.0 - 7.5",
+        "drainage": "Must be well-drained. Water stagnation for > 24 hours triggers severe rhizome rot."
+      },
+      "stages": [
+        {
+          "stage_number": 1,
+          "stage_name": "Land Preparation",
+          "description": "Deep ploughing 2 to 3 times to a depth of 25-30 cm. Incorporate 25 tonnes/ha of well-decomposed FYM (Farm Yard Manure) or compost. Prepare raised beds of 1.2m width, 15-20cm height, and convenient length with 40cm drainage channels between beds."
+        },
+        {
+          "stage_number": 2,
+          "stage_name": "Seed Selection & Pre-Treatment",
+          "description": "Select healthy, disease-free mother or primary finger rhizomes weighing 35-45g each with at least 2 viable buds. Treat rhizomes by dipping for 30 minutes in a solution of Trichoderma harzianum (10g/L) or Carbendazim (2g/L) to prevent seed-borne rhizome rot."
+        },
+        {
+          "stage_number": 3,
+          "stage_name": "Sowing & Planting",
+          "description": "Plant rhizomes at a spacing of 30cm between rows and 20-25cm within rows at a depth of 4-5cm. Cover with loose topsoil and immediately apply a thick organic mulch using green tree leaves (12-15 tonnes/ha) to conserve moisture and suppress early weeds."
+        },
+        {
+          "stage_number": 4,
+          "stage_name": "Irrigation Management",
+          "description": "First irrigation immediately after planting. During early emergence, irrigate at 7-10 day intervals. During active vegetative growth and rhizome bulking (days 75-180), maintain soil moisture above 60% of field capacity with drip irrigation (2.5-4.0 mm/day). Withhold irrigation 15-20 days before final harvest."
+        },
+        {
+          "stage_number": 5,
+          "stage_name": "Nutrient Management",
+          "description": "Recommended fertilizer dose: 60:50:120 kg N:P2O5:K2O per hectare. Apply entire P2O5 and 1/3rd K2O as basal application at planting. Top-dress N and remaining K in 2 equal split doses at 45 and 90 days after planting, accompanied by earthing up."
+        },
+        {
+          "stage_number": 6,
+          "stage_name": "Pest & Disease Prevention",
+          "description": "Major disease: Rhizome Rot (Pythium / Fusarium) - manage by improving drainage and drenching with Copper Oxychloride (3g/L) or Trichoderma. Major pest: Shoot Borer (Conogethes punctiferalis) - spray Bacillus thuringiensis (Bt) or Neem Oil (5ml/L) at first sign of central shoot yellowing."
+        },
+        {
+          "stage_number": 7,
+          "stage_name": "Crop Growth Milestones",
+          "description": "Sprouting: 15-30 days after planting. Vegetative tillering: 45-90 days. Rapid rhizome bulking: 90-180 days. Senescence: 190-250 days where leaves begin to turn yellow and dry downwards."
+        },
+        {
+          "stage_number": 8,
+          "stage_name": "Harvesting Indicators & Techniques",
+          "description": "Maturity reached when 80-90% of pseudostems and foliage turn completely dry and lodge on the ground (approx. 8-9 months after planting). Cut dry tops close to ground level. Dig beds carefully with a spade or tractor-mounted digger without bruising or cutting rhizomes."
+        },
+        {
+          "stage_number": 9,
+          "stage_name": "Post-Harvest Curing & Drying",
+          "description": "Separate mother rhizomes from finger rhizomes. Wash thoroughly with clean water. Boil fingers in water or steam-boil until white froth appears and a blunt probe penetrates easily (45-60 mins). Sun-dry boiled fingers on clean tarpaulins for 10-15 days until moisture drops below 10% (metallic ring when dropped)."
+        },
+        {
+          "stage_number": 10,
+          "stage_name": "Safe Storage",
+          "description": "Store dried fingers in food-grade gunny bags with polythene lining in cool, dry, rodent-proof godowns. For seed rhizomes, store in sand-layered pits under deep tree shade with good ventilation."
+        }
+      ],
+      "yield_potential_kg_per_ha": {
+        "fresh_rhizome": { "low": 15000, "expected": 22000, "high": 28000 },
+        "cured_dry_fingers": { "low": 3000, "expected": 4400, "high": 5600 }
+      },
+      "data_source": "ICAR-Indian Institute of Spices Research (IISR) Calicut & TNAU Spices Production Guide"
+    },
+    "coconut": {
+      "crop_id": "coconut",
+      "crop_name": "Coconut",
+      "botanical_name": "Cocos nucifera L.",
+      "season": "Planting: May - June (South-West Monsoon) or Sept - Oct",
+      "duration_days": 365,
+      "climate": {
+        "temperature_c": "22°C to 34°C",
+        "rainfall_annual_mm": "1200 - 2500 mm",
+        "sunlight": "Full sun required for palm crown (> 2000 hours bright sunshine/year)"
+      },
+      "soil": {
+        "preferred_types": ["Red Sandy Loam", "Coastal Alluvial Sandy Loam", "Laterite Soil"],
+        "ph_range": "5.5 - 7.5",
+        "drainage": "Deep well-drained soil with water table at least 1.5 - 2.0 m below surface."
+      },
+      "stages": [
+        {
+          "stage_number": 1,
+          "stage_name": "Land Preparation & Pit Digging",
+          "description": "Dig pits of 1m x 1m x 1m size at 7.5m x 7.5m or 8m x 8m spacing. Fill bottom 30cm with red earth and 20kg FYM mixed with 1kg bone meal and 100g chlorpyrifos dust to repel white ants."
+        },
+        {
+          "stage_number": 2,
+          "stage_name": "Seedling Selection & Quality",
+          "description": "Select 9-12 month old vigorously growing seedlings having 6-8 leaves with broad leaf blades and early leaf splitting, and collar girth of at least 10-12 cm."
+        },
+        {
+          "stage_number": 3,
+          "stage_name": "Planting",
+          "description": "Plant seedling in the center of the pit such that the nut is covered with soil while the collar is left exposed. Firm the soil well around the base."
+        },
+        {
+          "stage_number": 4,
+          "stage_name": "Irrigation Management",
+          "description": "Adult palm requires 45 to 60 litres of water per day via drip system. Install 4 emitters per palm placed 1.0 - 1.5m away from the trunk. During peak summer, increase to 80-100 L/palm/day."
+        },
+        {
+          "stage_number": 5,
+          "stage_name": "Nutrient Management",
+          "description": "Per adult palm per year: 500g N (1.1kg Urea), 320g P2O5 (2kg Rock Phosphate), and 1200g K2O (2kg MOP) applied in 2 split doses in May-June and Sept-Oct, plus 50kg FYM and 1kg agricultural lime."
+        },
+        {
+          "stage_number": 6,
+          "stage_name": "Pest & Disease Prevention",
+          "description": "Major pests: Rhinoceros Beetle (apply neem cake + sand 1:1 in top leaf axils) and Red Palm Weevil (install pheromone traps). Disease: Bud Rot - spray 1% Bordeaux mixture on the crown before monsoon."
+        },
+        {
+          "stage_number": 7,
+          "stage_name": "Crown Cleaning & Maintenance",
+          "description": "Clean the palm crown twice a year (before monsoon and post-monsoon), removing dried leaves, spathes, and insect debris."
+        },
+        {
+          "stage_number": 8,
+          "stage_name": "Harvesting",
+          "description": "Harvest mature 11-12 month old nuts at 30 to 45 day intervals. Tender coconuts for drinking are harvested at 7 months."
+        },
+        {
+          "stage_number": 9,
+          "stage_name": "Post-Harvest Handling & Copra",
+          "description": "Store harvested mature nuts under shade for 2-3 weeks for seasoning (reduces moisture in husk and increases kernel firmness before dehulling)."
+        },
+        {
+          "stage_number": 10,
+          "stage_name": "Storage & Copra Processing",
+          "description": "Dehusked nuts can be sold fresh or converted to copra in sun drying yards or copra dryers to reach 6% moisture content."
+        }
+      ],
+      "yield_potential_kg_per_ha": {
+        "nuts_per_palm_per_year": { "low": 70, "expected": 110, "high": 150 },
+        "total_nuts_per_ha": { "low": 11000, "expected": 17500, "high": 24000 }
+      },
+      "data_source": "ICAR-CPCRI Kasaragod Coconut Production Technology"
+    },
+    "banana": {
+      "crop_id": "banana",
+      "crop_name": "Banana",
+      "botanical_name": "Musa acuminata / paradisiaca",
+      "season": "Year-round in South India; main planting Feb-April and Aug-Oct",
+      "duration_days": 330,
+      "climate": {
+        "temperature_c": "25°C to 35°C",
+        "rainfall_annual_mm": "1500 - 2000 mm evenly distributed",
+        "sunlight": "High light requirement; partial shade tolerated in multi-tier agroforestry"
+      },
+      "soil": {
+        "preferred_types": ["Alluvial Loam", "Deep Clay Loam", "Red Sandy Loam with organic matter"],
+        "ph_range": "6.5 - 7.5",
+        "drainage": "Requires deep well-drained fertile soil with minimum 1m topsoil depth."
+      },
+      "stages": [
+        {
+          "stage_number": 1,
+          "stage_name": "Land Preparation",
+          "description": "Plough field 3-4 times. Dig pits of 45cm x 45cm x 45cm at 1.8m x 1.8m spacing (or 2.5m x 2.5m when intercropped in coconut alleys). Add 10kg FYM and 250g neem cake per pit."
+        },
+        {
+          "stage_number": 2,
+          "stage_name": "Planting Material",
+          "description": "Use healthy, virus-free sword suckers weighing 1.5 - 2.0 kg or secondary hardened tissue culture plants with 5-6 broad leaves."
+        },
+        {
+          "stage_number": 3,
+          "stage_name": "Planting & Sucker Treatment",
+          "description": "Trim sucker roots and peel pseudo-bark. Dip in solution of Carbendazim (2g/L) + Chlorpyrifos (2.5ml/L) for 20 minutes before planting."
+        },
+        {
+          "stage_number": 4,
+          "stage_name": "Irrigation Management",
+          "description": "Banana needs 15-20 litres/plant/day in winter, increasing to 25-35 L/day during summer bunch emergence. Drip fertigation provides optimal yield."
+        },
+        {
+          "stage_number": 5,
+          "stage_name": "Nutrient Management",
+          "description": "200g N, 60g P2O5, 300g K2O per plant per cycle applied across 4 split applications at 2nd, 3rd, 4th, and 5th months."
+        },
+        {
+          "stage_number": 6,
+          "stage_name": "De-suckering & Weed Management",
+          "description": "Remove side suckers systematically until flowering to direct all energy into main mother plant stem."
+        },
+        {
+          "stage_number": 7,
+          "stage_name": "Earthing Up & Propping",
+          "description": "Earth up soil around pseudostem at 3rd month to prevent waterlogging and give support. Provide bamboo or wooden propping once bunch emerges."
+        },
+        {
+          "stage_number": 8,
+          "stage_name": "Bunch Care & De-naveling",
+          "description": "Remove the male floral bud (navel) after all female hands have opened. Cover bunches with perforated blue polypropylene sleeves."
+        },
+        {
+          "stage_number": 9,
+          "stage_name": "Harvesting",
+          "description": "Harvest when bunch angles round off and fruit changes from dark green to pale green (75-80% maturity for export, 90% for local market)."
+        },
+        {
+          "stage_number": 10,
+          "stage_name": "Post-Harvest & Ripening",
+          "description": "De-hand bunches carefully, wash in alum water to remove latex, air dry, and pack in CFB boxes. Ethylene gas ripening at 16-18°C."
+        }
+      ],
+      "yield_potential_kg_per_ha": {
+        "bunch_weight_kg": { "low": 20, "expected": 28, "high": 35 },
+        "total_yield_tonnes_per_ha": { "low": 35, "expected": 55, "high": 75 }
+      },
+      "data_source": "ICAR-National Research Centre for Banana (NRCB) Tiruchirappalli"
+    },
+    "black-pepper": {
+      "crop_id": "black-pepper",
+      "crop_name": "Black Pepper",
+      "botanical_name": "Piper nigrum L.",
+      "season": "Planting with onset of South-West Monsoon (June - July)",
+      "duration_days": 365,
+      "climate": {
+        "temperature_c": "20°C to 32°C",
+        "rainfall_annual_mm": "1500 - 3000 mm with high humidity (75-90%)",
+        "sunlight": "Requires 50-70% filtered sunlight; perfectly suited for climbing coconut and arecanut standards"
+      },
+      "soil": {
+        "preferred_types": ["Red Loam", "Laterite Loam", "Clay Loam with high organic humus"],
+        "ph_range": "5.5 - 6.5",
+        "drainage": "Must have rapid drainage; root zone susceptible to water stagnation."
+      },
+      "stages": [
+        {
+          "stage_number": 1,
+          "stage_name": "Standard Selection & Pit Preparation",
+          "description": "Trailed on existing mature coconut or arecanut trees. Dig planting pits of 50cm x 50cm x 50cm on the north-eastern side of standard tree, 30cm away from trunk."
+        },
+        {
+          "stage_number": 2,
+          "stage_name": "Planting Material",
+          "description": "Select rooted runner cuttings from high-yielding varieties (Panniyur-1, Panniyur-2, Karimunda) raised in polythene bags with at least 5-6 healthy nodes."
+        },
+        {
+          "stage_number": 3,
+          "stage_name": "Planting & Initial Tying",
+          "description": "Plant 2 rooted cuttings per coconut tree or 1 per arecanut tree. Fill pit with topsoil and 5kg compost. Tie vine gently to tree bark with coir yarn."
+        },
+        {
+          "stage_number": 4,
+          "stage_name": "Irrigation Management",
+          "description": "Requires light, frequent irrigation during summer dry months. A single dripper delivering 8-10 L/vine every alternate day prevents leaf shed."
+        },
+        {
+          "stage_number": 5,
+          "stage_name": "Nutrient Management",
+          "description": "Apply 100g N, 40g P2O5, and 140g K2O per vine per year in 2 splits (May-June and August-September) along with 10kg cattle manure."
+        },
+        {
+          "stage_number": 6,
+          "stage_name": "Vine Training & Pruning",
+          "description": "Tie vines to standard every 30cm as it grows. Limit vine height to 6-8 meters on coconut trunks to facilitate hand harvesting."
+        },
+        {
+          "stage_number": 7,
+          "stage_name": "Disease Management (Phytophthora Foot Rot)",
+          "description": "Drench basin with 0.2% Copper Oxychloride or apply Trichoderma harzianum (50g mixed with 5kg neem cake) at onset of monsoon."
+        },
+        {
+          "stage_number": 8,
+          "stage_name": "Harvesting Spikes",
+          "description": "Harvest spikes when 1 or 2 berries on the spike turn bright orange or red. Pick whole spikes by hand using tall ladders."
+        },
+        {
+          "stage_number": 9,
+          "stage_name": "Threshing, Blanching & Sun Drying",
+          "description": "Separate berries from stalks by hand or mechanical thresher. Dip berries in boiling water for 1 minute (blanching) to accelerate black skin color development. Sun-dry on clean floor for 7-10 days to 10% moisture."
+        },
+        {
+          "stage_number": 10,
+          "stage_name": "Packaging & Storage",
+          "description": "Grade into bold and regular berries. Store in clean double-gunny or polypropylene bags lined with polythene in a dry, ventilated storehouse."
+        }
+      ],
+      "yield_potential_kg_per_ha": {
+        "dry_pepper_per_standard_kg": { "low": 1.2, "expected": 2.2, "high": 3.5 },
+        "total_yield_kg_per_ha": { "low": 400, "expected": 750, "high": 1200 }
+      },
+      "data_source": "ICAR-Indian Institute of Spices Research (IISR) Calicut Pepper Production Bulletin"
+    },
+    "groundnut": {
+      "crop_id": "groundnut",
+      "crop_name": "Groundnut",
+      "botanical_name": "Arachis hypogaea L.",
+      "season": "Kharif: June - July; Rabi/Summer: November - January",
+      "duration_days": 120,
+      "climate": {
+        "temperature_c": "24°C to 33°C",
+        "rainfall_annual_mm": "500 - 800 mm",
+        "sunlight": "High sunlight requirement; suitable as intercrop in young orchards (< 7 yrs)"
+      },
+      "soil": {
+        "preferred_types": ["Red Sandy Loam", "Alluvial Sandy Loam", "Well-drained light soils"],
+        "ph_range": "6.0 - 7.0",
+        "drainage": "Light friable soil essential to allow easy peg penetration and pod expansion."
+      },
+      "stages": [
+        {
+          "stage_number": 1,
+          "stage_name": "Land Preparation",
+          "description": "Plough to a fine tilth to 15-20 cm depth. Soil must be loose and friable. Apply 10 tonnes/ha FYM and 200 kg gypsum per ha as basal."
+        },
+        {
+          "stage_number": 2,
+          "stage_name": "Seed Treatment",
+          "description": "Treat kernels with Rhizobium culture (250g/10kg seed) + Trichoderma viride (4g/kg seed) to fix atmospheric nitrogen and prevent collar rot."
+        },
+        {
+          "stage_number": 3,
+          "stage_name": "Sowing",
+          "description": "Sow at 30cm between rows and 10cm between plants at 4-5cm depth. Seed rate: 100-120 kg kernels/ha."
+        },
+        {
+          "stage_number": 4,
+          "stage_name": "Irrigation Management",
+          "description": "Critical stages for irrigation: Flowering (20-30 DAS), Pegging (35-50 DAS), and Pod development (55-80 DAS). Avoid water stress during pegging."
+        },
+        {
+          "stage_number": 5,
+          "stage_name": "Gypsum Application",
+          "description": "Apply 200 kg/ha gypsum at 40-45 DAS around plant base followed by light earthing up to supply calcium for pod filling and reduce empty shells (pops)."
+        },
+        {
+          "stage_number": 6,
+          "stage_name": "Weed Management",
+          "description": "Keep weed-free until 45 DAS. Do NOT disturb soil or hoe once pegging begins, as mechanical disturbance breaks emerging pegs."
+        },
+        {
+          "stage_number": 7,
+          "stage_name": "Pest & Disease Control",
+          "description": "Tikka leaf spot: spray Mancozeb (2g/L). Spodoptera caterpillar: spray NPV (Nuclear Polyhedrosis Virus) or neem seed kernel extract (NSKE 5%)."
+        },
+        {
+          "stage_number": 8,
+          "stage_name": "Harvesting Indicators",
+          "description": "Maturity indicated by yellowing and shedding of lower leaves, inner pod shell showing dark brown/black veins, and seed coat displaying pink color."
+        },
+        {
+          "stage_number": 9,
+          "stage_name": "Harvesting & Pod Stripping",
+          "description": "Pull plants when soil is slightly moist. Invert vines under the sun for 2-3 days, then strip pods mechanically or manually."
+        },
+        {
+          "stage_number": 10,
+          "stage_name": "Drying & Safe Storage",
+          "description": "Sun-dry pods to 7-8% moisture content before storage. Store in gunny bags stacked on wooden pallets in dry godowns to prevent aflatoxin development."
+        }
+      ],
+      "yield_potential_kg_per_ha": {
+        "dry_pods": { "low": 1800, "expected": 2500, "high": 3400 }
+      },
+      "data_source": "ICAR-Directorate of Groundnut Research (DGR) Junagadh"
+    }
+  }
+}

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.farm import FarmModel
-from app.schemas.farm import FarmCreate, FarmRead
+from app.schemas.farm import FarmCreate, FarmUpdate, FarmRead
 
 router = APIRouter(prefix="/farms", tags=["Farms"])
 
@@ -34,3 +34,34 @@ def get_farm(farm_id: int, db: Session = Depends(get_db)):
             detail=f"Farm with ID {farm_id} not found",
         )
     return farm
+
+
+@router.put("/{farm_id}", response_model=FarmRead)
+def update_farm(farm_id: int, farm_update: FarmUpdate, db: Session = Depends(get_db)):
+    """Update fields of an existing farm configuration."""
+    farm = db.query(FarmModel).filter(FarmModel.id == farm_id).first()
+    if not farm:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Farm with ID {farm_id} not found",
+        )
+    update_data = farm_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(farm, key, value)
+    db.commit()
+    db.refresh(farm)
+    return farm
+
+
+@router.delete("/{farm_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_farm(farm_id: int, db: Session = Depends(get_db)):
+    """Delete a farm profile and its cascade-related logs and recommendation audits."""
+    farm = db.query(FarmModel).filter(FarmModel.id == farm_id).first()
+    if not farm:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Farm with ID {farm_id} not found",
+        )
+    db.delete(farm)
+    db.commit()
+    return None
