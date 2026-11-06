@@ -17,7 +17,10 @@ const getInitialMockMode = () => {
   if (saved !== null) {
     return saved === 'true';
   }
-  return import.meta.env.VITE_USE_MOCK_DATA !== 'false';
+  if (import.meta.env.VITE_USE_MOCK_DATA === 'true') {
+    return true;
+  }
+  return !import.meta.env.PROD && import.meta.env.VITE_USE_MOCK_DATA !== 'false';
 };
 
 let useMockData = getInitialMockMode();
@@ -33,7 +36,12 @@ export const setMockMode = (enabled) => {
 };
 
 // Read base URL from Vite environment variable
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+const BASE_URL = (configuredBaseUrl || (import.meta.env.DEV ? 'http://localhost:8000' : '')).replace(/\/+$/, '');
+
+if (import.meta.env.PROD && !configuredBaseUrl) {
+  console.error('VITE_API_BASE_URL must be set to the deployed backend URL for production builds.');
+}
 
 const apiClient = axios.create({
   baseURL: BASE_URL,

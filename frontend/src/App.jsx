@@ -10,6 +10,7 @@ import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import IntelligencePage from './pages/IntelligencePage';
 import ProfilePage from './pages/ProfilePage';
+import CommunityWaterPage from './pages/CommunityWaterPage';
 
 export default function App() {
   return (
@@ -26,12 +27,15 @@ export default function App() {
             <Route path="app/schedule" element={<SchedulePage />} />
             <Route path="app/history" element={<HistoryPage />} />
             <Route path="app/intelligence" element={<IntelligencePage />} />
+            <Route path="app/community-water" element={<CommunityWaterPage />} />
             <Route path="app/profile" element={<ProfilePage />} />
           </Route>
           <Route path="/dashboard" element={<Navigate to="/app" replace />} />
           <Route path="/setup" element={<Navigate to="/app/setup" replace />} />
           <Route path="/schedule" element={<Navigate to="/app/schedule" replace />} />
           <Route path="/history" element={<Navigate to="/app/history" replace />} />
+          <Route path="/community-water" element={<Navigate to="/app/community-water" replace />} />
+          <Route path="/reset-password" element={<AuthPage mode="reset" />} />
         </Routes>
       </BrowserRouter>
     </I18nProvider>

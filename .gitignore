@@ -1,8 +1,13 @@
 # Environment variables
 .env
-.env.local
-.env.*.local
+.env.*
+**/.env
+**/.env.*
 *.env
+**/*.env
+!/.env.example
+!/backend/.env.example
+!/frontend/.env.example
 
 # Dependencies
 node_modules/
@@ -49,6 +54,8 @@ ml/data/*.parquet
 *.pkl
 *.joblib
 *.onnx
+!ml/crop_planner/*.joblib
+!ml/crop_planner/**/*.joblib
 
 # Build outputs
 frontend/dist/

@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: agr002-smart-irrigation-api
+    runtime: python
+    rootDir: .
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: ML_MODEL_ENABLED
+        value: "false"
+      - key: ML_MODEL_DIR
+        value: ml/models/models
+      - key: WEATHER_CACHE_TTL_SECONDS
+        value: "3600"
+      - key: WEATHER_API_TIMEOUT_SECONDS
+        value: "8.0"
+      - key: OPEN_METEO_BASE_URL
+        value: https://api.open-meteo.com/v1/forecast
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash

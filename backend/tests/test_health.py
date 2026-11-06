@@ -252,34 +252,48 @@ def test_weather_cache_and_fallback():
 
 
 def test_ml_model_unavailable_fallback():
-    # Manager with non-existent path
-    manager = MLModelManager(model_path="ml/models/non_existent.joblib")
+    manager = MLModelManager(model_dir="ml/models/non_existent")
     assert not manager.is_model_available()
 
-    res = manager.predict_irrigation_adjustment({"days_after_sowing": 20})
+    res = manager.predict({})
     assert res["ml_adjustment_used"] is False
-    assert res["adjusted_depth_mm"] is None
+    assert res["irrigate_now"] is False
 
 
 def test_ml_model_invalid_output_handling():
-    # Fake mock model that returns crazy numbers (> 100 mm)
+    # Invalid model outputs must trigger the deterministic fallback.
     class CrazyModel:
         def predict(self, X):
             return [9999.0]
 
     manager = MLModelManager()
-    manager.model = CrazyModel()
+    manager.models = {
+        "irrigation_classifier": CrazyModel(),
+        "irrigation_amount": CrazyModel(),
+        "over_irrigation": CrazyModel(),
+        "under_irrigation": CrazyModel(),
+    }
     assert manager.is_model_available()
 
-    res = manager.predict_irrigation_adjustment({
-        "days_after_sowing": 20,
-        "temp_max": 30.0,
-        "temp_min": 20.0,
-        "humidity_pct": 50.0,
-        "rainfall_mm": 0.0,
-        "crop_kc_baseline": 0.85,
+    res = manager.predict({
+        "crop": "tomato",
+        "soil": "loam",
+        "stage": "initial",
+        "kc": 0.85,
+        "depletion_mm": 18.0,
+        "taw_mm": 90.0,
+        "days_since_irrigation": 3,
+        "et0": 4.2,
+        "tmax": 30.0,
+        "tmin": 20.0,
+        "tmean": 25.0,
+        "rainfall": 0.0,
+        "humidity": 50.0,
+        "wind": 2.5,
+        "solar": 20.0,
+        "latitude": 12.97,
+        "longitude": 77.59,
     })
-    # Must reject out-of-bounds output
     assert res["ml_adjustment_used"] is False
 
 

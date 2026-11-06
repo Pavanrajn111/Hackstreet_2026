@@ -16,12 +16,14 @@ from datetime import datetime, date, timedelta
 from typing import Dict, Any, List, Optional, Tuple
 import httpx
 
+from app.core.config import settings
+
 logger = logging.getLogger(__name__)
 
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "../cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
 CACHE_FILE = os.path.join(CACHE_DIR, "weather_cache.json")
-CACHE_TTL_SECONDS = 3600  # 1 hour cache duration
+CACHE_TTL_SECONDS = settings.WEATHER_CACHE_TTL_SECONDS
 
 # In-memory fast cache
 _MEMORY_CACHE: Dict[str, Dict[str, Any]] = {}
@@ -113,7 +115,7 @@ def fetch_weather_data(lat: float, lon: float) -> Dict[str, Any]:
         return {**data, "source": source}
 
     # 2. Live API Request to Open-Meteo
-    url = "https://api.open-meteo.com/v1/forecast"
+    url = settings.OPEN_METEO_BASE_URL
     params = {
         "latitude": lat,
         "longitude": lon,
@@ -134,7 +136,7 @@ def fetch_weather_data(lat: float, lon: float) -> Dict[str, Any]:
     }
 
     try:
-        response = httpx.get(url, params=params, timeout=8.0)
+        response = httpx.get(url, params=params, timeout=settings.WEATHER_API_TIMEOUT_SECONDS)
         if response.status_code == 200:
             raw = response.json()
             parsed = _parse_open_meteo_response(raw)

@@ -1,11 +1,25 @@
+import logging
+
 from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+
 from app.core.config import settings
 from app.core.database import engine, Base
 from app.api.api_v1 import api_router
 
+logger = logging.getLogger(__name__)
+
 # Initialize database tables (SQLite)
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except SQLAlchemyError as exc:
+    logger.exception("Database initialization failed.")
+    raise RuntimeError(
+        "Database initialization failed. Check DATABASE_URL and ensure its directory is writable."
+    ) from exc
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -41,6 +55,13 @@ def root():
 @app.get("/health", tags=["Root"])
 def health_check():
     """Health status endpoint for monitoring and smoke testing."""
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except SQLAlchemyError as exc:
+        logger.exception("Database health check failed.")
+        raise HTTPException(status_code=503, detail="Database is unavailable.") from exc
+
     return {
         "status": "healthy",
         "environment": settings.APP_ENV,
