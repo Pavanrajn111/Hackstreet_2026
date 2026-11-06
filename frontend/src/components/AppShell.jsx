@@ -18,11 +18,16 @@ import ChatWidget from './ChatWidget';
 const coreNavLinks = [
   { to: '/app', label: 'Overview', icon: LayoutDashboard, end: true },
   { to: '/app/schedule', label: 'Irrigation', icon: Droplets, end: false },
-  { to: '/app/intelligence/hybrid', label: 'Farm Twin', icon: FlaskConical, end: false },
 ];
 
 // Intelligence Dropdown Items
 const intelligenceNavItems = [
+  {
+    to: '/app/intelligence/hybrid',
+    label: 'Hybrid Farming',
+    desc: 'Intercrop compatibility & 3D farm twin',
+    icon: FlaskConical,
+  },
   {
     to: '/app/intelligence/market',
     label: 'Yield & Market AI',
@@ -52,6 +57,7 @@ const intelligenceNavItems = [
     label: 'Field Signals Overview',
     desc: 'Moisture, sensor & weather telemetry',
     icon: Sprout,
+    end: true,
   },
 ];
 
@@ -453,6 +459,7 @@ export default function AppShell() {
                       <NavLink
                         key={item.to}
                         to={item.to}
+                        end={item.end}
                         role="menuitem"
                         onClick={closeAllMenus}
                         className={({ isActive }) =>
@@ -582,20 +589,19 @@ export default function AppShell() {
             </div>
           </nav>
 
-          {/* Tablet Navbar: Overview, Irrigation, Farm Twin & unified More dropdown (768px - 1139px) */}
+          {/* Tablet Navbar: Overview, Irrigation & unified More dropdown (768px - 1139px) */}
           <nav className="product-nav hidden md:flex xl:hidden items-center gap-1" aria-label="Tablet navigation">
-            <NavLink to="/app" end className={({ isActive }) => `product-nav-item ${isActive ? 'is-active' : ''}`}>
-              <LayoutDashboard size={14} />
-              <span>Overview</span>
-            </NavLink>
-            <NavLink to="/app/schedule" className={({ isActive }) => `product-nav-item ${isActive ? 'is-active' : ''}`}>
-              <Droplets size={14} />
-              <span>Irrigation</span>
-            </NavLink>
-            <NavLink to="/app/intelligence/hybrid" className={({ isActive }) => `product-nav-item ${isActive ? 'is-active' : ''}`}>
-              <FlaskConical size={14} />
-              <span>Farm Twin</span>
-            </NavLink>
+            {coreNavLinks.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.end}
+                className={({ isActive }) => `product-nav-item ${isActive ? 'is-active' : ''}`}
+              >
+                <link.icon size={14} />
+                <span>{link.label}</span>
+              </NavLink>
+            ))}
 
             <div
               className="relative"
@@ -631,6 +637,7 @@ export default function AppShell() {
                       <NavLink
                         key={item.to}
                         to={item.to}
+                        end={item.end}
                         role="menuitem"
                         onClick={closeAllMenus}
                         className={({ isActive }) => `nav-dropdown-item group ${isActive ? 'is-active' : ''}`}
@@ -875,6 +882,7 @@ export default function AppShell() {
                       <NavLink
                         key={link.to}
                         to={link.to}
+                        end={link.end}
                         onClick={closeAllMenus}
                         className={({ isActive }) =>
                           `flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
